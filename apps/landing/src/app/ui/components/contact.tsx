@@ -142,7 +142,7 @@ const ContactSection = () => {
             </h1>
           </div>
           <p className="text-sm sm:text-base text-gray-600 max-w-4xl font-open-sans font-bold mx-auto px-4 sm:px-0">
-           Have questions or want to join the PACE ON Community? We're here to help!
+           Have questions or want to join the PACE ON Community? We&apos;re here to help!
           </p>
         </div>
 
