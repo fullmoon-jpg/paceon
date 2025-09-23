@@ -92,11 +92,10 @@ const PaceOnFooter: React.FC = () => {
                             </h3>
                         </div>
                         <p className="text-black text-base lg:text-lg max-w-md leading-relaxed mb-6">
-                            Build Real Connection, Keep The Pace On
+                            Stay moving, stay growing, and keep the PACE ON.
                         </p>
                         <p className="text-gray-700 text-sm max-w-md leading-relaxed">
-                            Connect with founders and professionals through sports activities. 
-                            Play padel, tennis, and build meaningful relationships while staying active.
+                            Connect with founders and professionals through sports. Move your body, stay active, and build meaningful relationships that last.
                         </p>
                         
                         {/* Social Media */}
@@ -183,7 +182,7 @@ const PaceOnFooter: React.FC = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-center mt-16 pt-8 border-t border-gray-200">
                     <div className="text-center sm:text-left">
                         <p className="text-black text-sm mb-2">
-                            © 2025 PACE.ON | All Rights Reserved.
+                            © 2025 PACE ON | All Rights Reserved.
                         </p>
                         <p className="text-gray-700 text-xs">
                             Made with ❤️ for sports networking community

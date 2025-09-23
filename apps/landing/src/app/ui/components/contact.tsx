@@ -300,7 +300,7 @@ const ContactSection = () => {
               {/* Message */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">
-                  Massage *
+                  Message *
                 </label>
                 <textarea
                   value={formData.message}

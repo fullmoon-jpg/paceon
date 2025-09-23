@@ -265,7 +265,7 @@ export default function DashboardPage() {
             Hi {userName}, Welcome to Your Dashboard!
           </h1>
           <p className="text-gray-600 text-base sm:text-lg">
-            Here's your personalized overview and latest updates
+            Here&apos;s your personalized overview and latest updates
           </p>
         </div>
       </div>
