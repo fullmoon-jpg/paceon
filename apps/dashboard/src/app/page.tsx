@@ -18,6 +18,7 @@ import {
   Star,
   MessageCircle
 } from "lucide-react";
+import { Analytics } from "@vercel/analytics/next";
 
 const MainDashboardContent = () => {
   return (
@@ -253,6 +254,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
+      <Analytics />
       {/* Navbar */}
       <header className="shrink-0">
         <DashboardNavbar />

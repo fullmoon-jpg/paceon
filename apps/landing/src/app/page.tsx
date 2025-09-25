@@ -4,6 +4,7 @@ import GetToKnowUsSection from "./ui/unfairsection";
 import PaceOnSection from "./ui/flowsection";
 import dynamic from "next/dynamic";
 import FadeInSection from "../../../../packages/ui/FadeIn"; 
+import { Analytics } from "@vercel/analytics/next";
 
 const PaceOnCTASection = dynamic(() => import("./ui/CTAsectioon"));
 const PaceOnFooter = dynamic(() => import("./ui/footer"));
@@ -11,6 +12,7 @@ const PaceOnFooter = dynamic(() => import("./ui/footer"));
 export default function Home() {
   return (
     <main className="bg-gray-50" id="home">
+      <Analytics />
       <header id="PACE.ON Navbar">
         <PaceNavbar />
       </header>
