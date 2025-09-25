@@ -142,7 +142,7 @@ const AffirmationCube = () => {
               </h1>
             </div>
             <p className="text-sm sm:text-base text-gray-600 max-w-4xl font-open-sans font-bold mx-auto px-4 sm:px-0">
-              Berikan afirmasi positif untuk rekan-rekan komunitas Anda di PACE.ON
+              Berikan Feedback untuk rekan-rekan komunitas Anda di PACE ON
             </p>
           </div>
 
@@ -211,7 +211,7 @@ const AffirmationCube = () => {
             </h1>
           </div>
           <p className="text-sm sm:text-base text-gray-600 max-w-4xl font-open-sans font-bold mx-auto px-4 sm:px-0">
-            Memberikan afirmasi sebagai <span className="text-[#2a6435] font-bold">{selectedUser.name}</span>
+            Memberikan feedback sebagai <span className="text-[#2a6435] font-bold">{selectedUser.name}</span>
           </p>
         </div>
 
@@ -254,7 +254,7 @@ const AffirmationCube = () => {
                   <MessageSquare className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">
-                  Afirmasi untuk {currentFeedback.userName}
+                  Feedback untuk {currentFeedback.userName}
                 </h2>
                 <div className="text-xs sm:text-sm text-gray-700 sm:ml-auto">
                   {currentFeedbackIndex + 1} dari {feedbacks.length}
@@ -353,7 +353,7 @@ const AffirmationCube = () => {
                     ) : (
                       <>
                         <Send size={16} className="sm:w-5 sm:h-5" />
-                        Kirim Affirmation
+                        Kirim Feedback
                       </>
                     )}
                   </button>
@@ -367,7 +367,7 @@ const AffirmationCube = () => {
         <div className="mt-6 sm:mt-8 text-center px-4">
           <p className="text-black font-open-sans font-bold text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
             <AlertCircle size={14} className="sm:w-4 sm:h-4" />
-            <span>Semua affirmation akan dijaga kerahasiaannya dan digunakan untuk pengembangan komunitas</span>
+            <span>Semua Feedback akan dijaga kerahasiaannya dan digunakan untuk pengembangan komunitas</span>
           </p>
         </div>
       </div>
