@@ -358,7 +358,7 @@ const ContactSection = () => {
         <div className="mt-6 sm:mt-8 text-center px-4">
           <p className="text-black font-open-sans font-bold text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2">
             <AlertCircle size={14} className="sm:w-4 sm:h-4" />
-            <span>Tim kami akan merespons dalam 1x24 jam pada hari kerja</span>
+            <span>Our team will respond within 1x24 hours</span>
           </p>
         </div>
       </div>

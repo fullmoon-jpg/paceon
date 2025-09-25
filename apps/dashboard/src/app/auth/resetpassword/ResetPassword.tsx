@@ -115,8 +115,8 @@ export default function ResetPasswordForm() {
       <AuthLayout>
         <Card>
           <FaCheckCircle className="text-green-500 text-6xl mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-4">Password Reset Successful!</h2>
-          <p className="mb-6 text-sm">Redirecting you to login...</p>
+          <h2 className="text-2xl font-bold mb-4 text-[#1f4381]">Password Reset Successful!</h2>
+          <p className="mb-6 text-sm font-open-sans font-bold text-black">Redirecting you to login...</p>
           <Button onClick={handleBackToLogin}>Go to Login</Button>
         </Card>
       </AuthLayout>
