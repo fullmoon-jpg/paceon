@@ -77,7 +77,7 @@ export default function ResetPasswordForm() {
     try {
       await confirmPasswordReset(auth, oobCode!, newPassword);
       setSuccess(true);
-      setTimeout(() => router.replace("/login"), 3000);
+      setTimeout(() => router.replace("/auth/login"), 3000);
     } catch (err: unknown) {
       if (err && typeof err === "object" && "code" in err) {
             const error = err as { code: string; message?: string };
@@ -95,7 +95,7 @@ export default function ResetPasswordForm() {
   };
 
   // 🔙 Back to Login
-  const handleBackToLogin = () => router.push("/login");
+  const handleBackToLogin = () => router.push("/auth/login");
 
   // ⏳ Loading Verification Screen
   if (verifying) {
