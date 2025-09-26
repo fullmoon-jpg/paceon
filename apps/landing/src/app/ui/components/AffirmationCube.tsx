@@ -27,7 +27,6 @@ const AffirmationCube = () => {
     { id: 1, name: "Rayhan Fikri Ramadhandi", position: "CEO Indieworks Creative" },
     { id: 2, name: "Novan Adrian", position: "CTO & Co-founder Qasir" },
     { id: 3, name: "Jessica Manuel Susanto", position: "Founder Office Petzo" },
-    { id: 4, name: "Salma Dias Saraswati", position: "CEO & Co-founder Tenang AI" }
   ];
 
   const getUsersToRate = (selectedUserId: number): User[] => {

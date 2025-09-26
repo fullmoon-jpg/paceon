@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "../../packages/lib/firebaseConfig.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "../../packages/lib/firebaseConfig.ts", "src/app/api/sendWelcomeEmail.tsx/route.js"],
   "exclude": ["node_modules"]
 }
