@@ -1,4 +1,3 @@
-"use client"
 import React, { useState } from "react";
 import {
     Star,
@@ -12,6 +11,8 @@ import {
     ArrowRight,
     ArrowLeft,
 } from "lucide-react";
+import { db } from "@paceon/lib/firebaseConfig";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 // Type definitions
 interface FormData {
@@ -91,12 +92,19 @@ const FeedbackForm = () => {
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Mock Firestore submit function (replace with actual Firebase implementation)
+  // Submit function to Firestore
   const submitToFirestore = async (data: FormData) => {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    console.log("Submitting to Firestore:", data);
-    return { success: true, id: "mock-id-123" };
+    try {
+      const docRef = await addDoc(collection(db, "feedbacks"), {
+        ...data,
+        submittedAt: serverTimestamp()
+      });
+      
+      return { success: true, id: docRef.id };
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      throw error;
+    }
   };
 
   const steps = [
@@ -165,9 +173,9 @@ const FeedbackForm = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      const submissionData: FormData = {
+      const submissionData = {
         ...formData,
-        submittedAt: new Date().toISOString(),
+        submittedAt: null, // Will be replaced by serverTimestamp in Firestore
       };
 
       const result = await submitToFirestore(submissionData);
