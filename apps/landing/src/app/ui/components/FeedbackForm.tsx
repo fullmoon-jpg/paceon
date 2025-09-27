@@ -1,4 +1,3 @@
-"use client"
 import React, { useState } from "react";
 import {
     Star,
@@ -96,7 +95,7 @@ const FeedbackForm = () => {
   // Submit function to Firestore
   const submitToFirestore = async (data: FormData) => {
     try {
-      const docRef = await addDoc(collection(db, "feedbacks"), {
+      const docRef = await addDoc(collection(db, "feedback"), {
         ...data,
         submittedAt: serverTimestamp()
       });
