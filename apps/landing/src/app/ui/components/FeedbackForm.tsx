@@ -12,8 +12,6 @@ import {
     ArrowRight,
     ArrowLeft,
 } from "lucide-react";
-import { db } from "@paceon/lib/firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 // Type definitions
 interface FormData {
@@ -93,25 +91,18 @@ const FeedbackForm = () => {
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // ✅ Firestore submit function
+  // Mock Firestore submit function (replace with actual Firebase implementation)
   const submitToFirestore = async (data: FormData) => {
-    try {
-      const docRef = await addDoc(collection(db, "feedback"), {
-        ...data,
-        submittedAt: serverTimestamp(),
-      });
-      console.log("Document written with ID: ", docRef.id);
-      return { success: true, id: docRef.id };
-    } catch (e) {
-      console.error("Error adding document: ", e);
-      return { success: false, error: e };
-    }
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    console.log("Submitting to Firestore:", data);
+    return { success: true, id: "mock-id-123" };
   };
 
   const steps = [
     { id: "user", title: "User Info", icon: Users, color: "purple" },
     { id: "event", title: "Event Experience", icon: MapPin, color: "green" },
-    { id: "product", title: "Product Experience", icon: Zap, color: "blue" },
+    // { id: "product", title: "Product Experience", icon: Zap, color: "blue" },
   ];
 
   const StarRating: React.FC<StarRatingProps> = ({ value, onChange, label }) => (
@@ -242,16 +233,17 @@ const FeedbackForm = () => {
         formData.fieldCondition !== "" &&
         formData.interestedNextEvent !== ""
       );
-    } else if (stepIndex === 2) {
-      return (
-        formData.productExpectation > 0 &&
-        formData.technicalIssues !== "" &&
-        formData.interfaceDesign > 0 &&
-        formData.contentClarity > 0 &&
-        formData.contentRelevance > 0 &&
-        formData.continuousUsage !== ""
-      );
-    }
+    } 
+    // else if (stepIndex === 2) {
+    //   return (
+    //     formData.productExpectation > 0 &&
+    //     formData.technicalIssues !== "" &&
+    //     formData.interfaceDesign > 0 &&
+    //     formData.contentClarity > 0 &&
+    //     formData.contentRelevance > 0 &&
+    //     formData.continuousUsage !== ""
+    //   );
+    // }
     return false;
   };
 
@@ -364,7 +356,7 @@ const FeedbackForm = () => {
                   <Users className="w-3 h-3 sm:w-4 sm:h-4 text-[#352a64]" />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">User Information</h2>
-                <div className="text-xs sm:text-sm text-gray-700 sm:ml-auto">Step 1 of 3</div>
+                <div className="text-xs sm:text-sm text-gray-700 sm:ml-auto">Step 1 of 2</div>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:gap-6">
@@ -421,7 +413,7 @@ const FeedbackForm = () => {
                   <MapPin className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
                 </div>
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Event Experience</h2>
-                <div className="text-xs sm:text-sm text-gray-700 sm:ml-auto">Step 2 of 3</div>
+                <div className="text-xs sm:text-sm text-gray-700 sm:ml-auto">Step 2 of 2</div>
               </div>
 
               <StarRating
@@ -494,8 +486,8 @@ const FeedbackForm = () => {
             </div>
           )}
 
-          {/* Product Experience Section */}
-          {currentStep === 2 && (
+          {/* Product Experience Section - COMMENTED OUT */}
+          {/* {currentStep === 2 && (
             <div className="p-4 sm:p-8 space-y-6 sm:space-y-8">
               <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-4 sm:mb-6">
                 <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -568,7 +560,7 @@ const FeedbackForm = () => {
                 />
               </div>
             </div>
-          )}
+          )} */}
 
           {/* Navigation Buttons */}
           <div className="px-4 sm:px-8 py-4 sm:py-6 bg-gray-50 border-t">
