@@ -1,6 +1,8 @@
+// apps/dashboard/src/app/layout.tsx
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
+import ClientLayout from "./clientlayout"; // file baru yang kita buat
 
 // Batangas font untuk seluruh body
 const batangas = localFont({
@@ -25,7 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" className={braggadocio.variable}>
       <body className={batangas.className}>
-        <main>{children}</main>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );

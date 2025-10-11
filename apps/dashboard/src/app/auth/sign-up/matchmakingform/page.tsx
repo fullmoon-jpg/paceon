@@ -1,22 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { auth, db } from "../../../../../../../packages/lib/firebaseConfig";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { supabase } from "../../../../../../../packages/lib/supabase";
 
 export default function MatchmakingPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
-  const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [initializing, setInitializing] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({
     fullName: "",
     company: "",
     position: "",
-    positionDuration: "",   // ✅ berapa lama dia jadi founder/pro
-    linkedIn: "",           // ✅ LinkedIn URL
+    positionDuration: "",
+    linkedIn: "",
     location: "",
     locationOther: "",
     goal: "",
@@ -27,11 +28,89 @@ export default function MatchmakingPage() {
     hobby: "",
     hobbyOther: "",
     personality: "",
-    photoURL: "",
-    role: "user",
   });
 
-  const totalSteps = 9; // ✅ nambah 1 step untuk foto profile
+  const totalSteps = 9;
+
+  useEffect(() => {
+    const initializeForm = async () => {
+      try {
+        console.log('🔍 Initializing matchmaking form...');
+        
+        // 🔧 FIX: Use getSession instead of getUser untuk avoid race condition
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('❌ Session error:', sessionError);
+          router.replace('/auth/login?error=session_error');
+          return;
+        }
+
+        if (!session?.user) {
+          console.error('❌ No session found in matchmaking form');
+          // 🔒 CRITICAL: Use replace, NOT push to prevent back button loop
+          router.replace('/auth/login?error=no_session');
+          return;
+        }
+
+        console.log('✅ Session found:', session.user.email);
+        setUserId(session.user.id);
+
+        // Load existing profile data
+        const { data: profile, error: profileError } = await supabase
+          .from("users_profile")
+          .select("full_name")
+          .eq("id", session.user.id)
+          .maybeSingle();
+
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error('⚠️ Profile fetch error:', profileError);
+          // Continue anyway, user can still fill the form
+        }
+
+        if (profile?.full_name) {
+          console.log('ℹ️ Pre-filling name from profile');
+          setFormData(prev => ({ ...prev, fullName: profile.full_name }));
+        }
+
+        // 🔧 NEW: Check if preferences already exist
+        const { data: existingPrefs } = await supabase
+          .from("matchmaking_preferences")
+          .select("*")
+          .eq("user_id", session.user.id)
+          .maybeSingle();
+
+        if (existingPrefs) {
+          console.log('ℹ️ Loading existing preferences');
+          setFormData({
+            fullName: profile?.full_name || "",
+            company: existingPrefs.company || "",
+            position: existingPrefs.position || "",
+            positionDuration: existingPrefs.position_duration?.toString() || "",
+            linkedIn: existingPrefs.linkedin_url || "",
+            location: existingPrefs.location || "",
+            locationOther: "",
+            goal: existingPrefs.goal || "",
+            goalOther: "",
+            networkingStyle: existingPrefs.networking_style || "",
+            passionateTopics: existingPrefs.passionate_topics || [],
+            passionateOther: "",
+            hobby: existingPrefs.hobby || "",
+            hobbyOther: "",
+            personality: existingPrefs.personality || "",
+          });
+        }
+
+        setInitializing(false);
+
+      } catch (error) {
+        console.error('❌ Initialization failed:', error);
+        router.replace('/auth/login?error=init_failed');
+      }
+    };
+
+    initializeForm();
+  }, [router]);
 
   const handleInputChange = (field: keyof typeof formData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -55,7 +134,6 @@ export default function MatchmakingPage() {
         return (
           formData.fullName.trim().length > 0 &&
           formData.linkedIn.trim().length > 0 &&
-          // ✅ Fix: Perbaiki regex LinkedIn - cukup cek domain linkedin.com
           /linkedin\.com\//i.test(formData.linkedIn)
         );
       case 2: return formData.company.trim().length > 0;
@@ -70,7 +148,6 @@ export default function MatchmakingPage() {
       case 7: return formData.passionateTopics.length > 0 || formData.passionateOther.trim().length > 0;
       case 8: return formData.hobby.trim().length > 0 || formData.hobbyOther.trim().length > 0;
       case 9: return formData.personality.trim().length > 0;
-      case 10: return formData.photoURL.trim().length > 0; // ✅ photo wajib
       default: return false;
     }
   };
@@ -82,49 +159,86 @@ export default function MatchmakingPage() {
   const prevStep = () => currentStep > 1 && setCurrentStep(currentStep - 1);
 
   const saveUserData = async () => {
-    const user = auth.currentUser;
-    if (!user) throw new Error("User not logged in");
+    if (!userId) throw new Error("User not logged in");
 
-    const uid = user.uid;
+    console.log('💾 Saving user data...');
 
-    const data = {
-      uid,
-      role: formData.role,
-      fullName: formData.fullName,
-      linkedIn: formData.linkedIn,   // ✅ simpan link linkedin
+    // Update profile
+    const { error: profileError } = await supabase
+      .from("users_profile")
+      .update({
+        full_name: formData.fullName,
+      })
+      .eq("id", userId);
+
+    if (profileError) {
+      console.error('❌ Profile update error:', profileError);
+      throw profileError;
+    }
+
+    // Save matchmaking preferences
+    const matchmakingData = {
+      user_id: userId,
       company: formData.company,
       position: formData.position,
-      positionDuration: formData.positionDuration,
+      position_duration: parseInt(formData.positionDuration) || null,
+      linkedin_url: formData.linkedIn,
       location: formData.location === "Other" ? formData.locationOther : formData.location,
       goal: formData.goal === "Other" ? formData.goalOther : formData.goal,
-      networkingStyle: formData.networkingStyle,
-      passionateTopics: [
+      networking_style: formData.networkingStyle,
+      passionate_topics: [
         ...formData.passionateTopics,
         ...(formData.passionateOther ? [formData.passionateOther] : []),
       ].filter(Boolean),
       hobby: formData.hobby === "Other" ? formData.hobbyOther : formData.hobby,
       personality: formData.personality,
-      photoURL: formData.photoURL,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      completed_at: new Date().toISOString(),
     };
 
-    await setDoc(doc(db, "users", uid), data, { merge: true });
+    const { error: matchmakingError } = await supabase
+      .from("matchmaking_preferences")
+      .upsert(matchmakingData, { onConflict: "user_id" });
+
+    if (matchmakingError) {
+      console.error('❌ Matchmaking save error:', matchmakingError);
+      throw matchmakingError;
+    }
+
+    console.log('✅ Data saved successfully');
   };
 
   const handleSubmit = async () => {
     if (!isStepValid()) return;
+    
+    setLoading(true);
     try {
       await saveUserData();
-      alert("Profile saved & linked to your account! 🎉");
-      router.push("/");
-    } catch (error) {
-      console.error(error);
-      alert("Error saving profile. Please try again.");
+      
+      // 🔒 CRITICAL: Use replace to prevent back button issues
+      router.replace("/?welcome=true");
+      
+    } catch (error: any) {
+      console.error("❌ Error saving profile:", error);
+      alert(error.message || "Error saving profile. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
+  // 🔧 NEW: Loading state while checking auth
+  if (initializing) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#2a6435] mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
   const stepConfig = [
+    // Step 1
     {
       title: "What's your full name?",
       content: (
@@ -147,178 +261,141 @@ export default function MatchmakingPage() {
         </div>
       ),
     },
+    // Step 2
     {
-      title: "Company or Organization",
+      title: "Where do you work?",
       content: (
         <input
           type="text"
           value={formData.company}
           onChange={(e) => handleInputChange("company", e.target.value)}
-          placeholder="Enter your company name"
-          className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
+          placeholder="Company name"
+          className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
         />
       ),
     },
+    // Step 3
     {
-      title: "What's your position/role?",
+      title: "What's your position?",
       content: (
         <div className="space-y-4">
-          <div className="space-y-3">
-            {["Founder", "Professional"].map((role) => (
-              <button
-                key={role}
-                onClick={() => handleInputChange("position", role)}
-                className={`w-full px-4 py-3 rounded-lg border text-left transition ${
-                  formData.position === role
-                    ? "border-[#15b392] bg-blue-50 text-[#1f4381]"
-                    : "border-gray-300 text-black hover:border-gray-400"
-                }`}
-              >
-                {role}
-              </button>
-            ))}
-          </div>
-
-          {/* ✅ Kalau sudah pilih Founder/Professional, munculin input tambahan */}
-          {formData.position && (
-            <div className="space-y-3">
-              <p className="text-black">How many years have you been a {formData.position}?</p>
-              <input
-                type="number"
-                min={0}
-                value={formData.positionDuration}
-                onChange={(e) => handleInputChange("positionDuration", e.target.value)}
-                placeholder={`Enter Number`}
-                className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
-              />
-            </div>
-          )}
+          <input
+            type="text"
+            value={formData.position}
+            onChange={(e) => handleInputChange("position", e.target.value)}
+            placeholder="Your position"
+            className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
+          />
+          <p className="text-black">How long have you been in this position?</p>
+          <select
+            value={formData.positionDuration}
+            onChange={(e) => handleInputChange("positionDuration", e.target.value)}
+            className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
+          >
+            <option value="">Select duration</option>
+            <option value="1">Less than 1 year</option>
+            <option value="2">1-2 years</option>
+            <option value="3">2-3 years</option>
+            <option value="4">3-5 years</option>
+            <option value="5">More than 5 years</option>
+          </select>
         </div>
       ),
     },
+    // Step 4
     {
-      title: "Where are you located?",
+      title: "Where are you based?",
       content: (
         <div className="space-y-3">
-          {["Kebayoran Lama Area", "Pasar Minggu Area", "Pesanggrahan Area"].map(
-            (location) => (
-              <button
-                key={location}
-                onClick={() => handleInputChange("location", location)}
-                className={`w-full px-4 py-3 rounded-lg border text-left transition ${
-                  formData.location === location
-                    ? "border-[#15b392] bg-blue-50 text-[#1f4381]"
-                    : "border-gray-300 text-black hover:border-gray-400"
-                }`}
-              >
-                {location}
-              </button>
-            )
-          )}
-          <div className="space-y-2">
+          {["Jakarta", "Bandung", "Surabaya", "Bali", "Other"].map((loc) => (
             <button
-              onClick={() => handleInputChange("location", "Other")}
-              className={`w-full px-4 py-3 rounded-lg border text-left transition ${
-                formData.location === "Other"
-                  ? "border-[#15b392] bg-blue-50 text-[#1f4381]"
-                  : "border-gray-300 text-black hover:border-gray-400"
+              key={loc}
+              onClick={() => handleInputChange("location", loc)}
+              className={`w-full px-4 py-3 text-left rounded-lg border transition ${
+                formData.location === loc
+                  ? "bg-[#15b392] text-white border-[#15b392]"
+                  : "bg-white text-black border-gray-300 hover:border-[#15b392]"
               }`}
             >
-              Other
+              {loc}
             </button>
-            {formData.location === "Other" && (
-              <input
-                type="text"
-                value={formData.locationOther}
-                onChange={(e) =>
-                  handleInputChange("locationOther", e.target.value)
-                }
-                placeholder="Please specify"
-                className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
-              />
-            )}
-          </div>
+          ))}
+          {formData.location === "Other" && (
+            <input
+              type="text"
+              value={formData.locationOther}
+              onChange={(e) => handleInputChange("locationOther", e.target.value)}
+              placeholder="Please specify"
+              className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
+            />
+          )}
         </div>
       ),
     },
+    // Step 5
     {
-      title: "What's your main goal for joining PACE.ON?",
+      title: "What's your main goal?",
       content: (
         <div className="space-y-3">
-          {["Find potential partners", "Business expansion", "Build social connections"].map(
-            (goal) => (
-              <button
-                key={goal}
-                onClick={() => handleInputChange("goal", goal)}
-                className={`w-full px-4 py-3 rounded-lg border text-left transition ${
-                  formData.goal === goal
-                    ? "border-[#15b392] bg-blue-50 text-[#1f4381]"
-                    : "border-gray-300 text-black hover:border-gray-400"
-                }`}
-              >
-                {goal}
-              </button>
-            )
-          )}
-          <div className="space-y-2">
+          {["Professional Growth", "Find Co-founder", "Make Friends", "Other"].map((g) => (
             <button
-              onClick={() => handleInputChange("goal", "Other")}
-              className={`w-full px-4 py-3 rounded-lg border text-left transition ${
-                formData.goal === "Other"
-                  ? "border-[#15b392] bg-blue-50 text-[#1f4381]"
-                  : "border-gray-300 text-black hover:border-gray-400"
+              key={g}
+              onClick={() => handleInputChange("goal", g)}
+              className={`w-full px-4 py-3 text-left rounded-lg border transition ${
+                formData.goal === g
+                  ? "bg-[#15b392] text-white border-[#15b392]"
+                  : "bg-white text-black border-gray-300 hover:border-[#15b392]"
               }`}
             >
-              Other
+              {g}
             </button>
-            {formData.goal === "Other" && (
-              <input
-                type="text"
-                value={formData.goalOther}
-                onChange={(e) => handleInputChange("goalOther", e.target.value)}
-                placeholder="Please specify"
-                className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
-              />
-            )}
-          </div>
-        </div>
-      ),
-    },
-    {
-      title: "How do you usually prefer networking?",
-      content: (
-        <div className="space-y-3">
-          {["Start casual over activities", "Go straight into business talks"].map(
-            (style) => (
-              <button
-                key={style}
-                onClick={() => handleInputChange("networkingStyle", style)}
-                className={`w-full px-4 py-3 rounded-lg border text-left transition ${
-                  formData.networkingStyle === style
-                    ? "border-[#15b392] bg-blue-50 text-[#1f4381]"
-                    : "border-gray-300 text-black hover:border-gray-400"
-                }`}
-              >
-                {style}
-              </button>
-            )
+          ))}
+          {formData.goal === "Other" && (
+            <input
+              type="text"
+              value={formData.goalOther}
+              onChange={(e) => handleInputChange("goalOther", e.target.value)}
+              placeholder="Please specify"
+              className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
+            />
           )}
         </div>
       ),
     },
+    // Step 6
     {
-      title: "Topics you're most passionate about:",
+      title: "How do you prefer to network?",
       content: (
         <div className="space-y-3">
-          <p className="text-gray-600 text-sm">Select all that apply</p>
-          {["Business", "Technology", "Health", "Lifestyle"].map((topic) => (
+          {["Small Groups", "One-on-One", "Large Events", "Online First"].map((style) => (
+            <button
+              key={style}
+              onClick={() => handleInputChange("networkingStyle", style)}
+              className={`w-full px-4 py-3 text-left rounded-lg border transition ${
+                formData.networkingStyle === style
+                  ? "bg-[#15b392] text-white border-[#15b392]"
+                  : "bg-white text-black border-gray-300 hover:border-[#15b392]"
+              }`}
+            >
+              {style}
+            </button>
+          ))}
+        </div>
+      ),
+    },
+    // Step 7
+    {
+      title: "What topics are you passionate about?",
+      content: (
+        <div className="space-y-3">
+          {["Tech & Innovation", "Business & Startups", "Sports & Fitness", "Arts & Culture", "Social Impact"].map((topic) => (
             <button
               key={topic}
               onClick={() => handleMultiSelect("passionateTopics", topic)}
-              className={`w-full px-4 py-3 rounded-lg border text-left transition ${
+              className={`w-full px-4 py-3 text-left rounded-lg border transition ${
                 formData.passionateTopics.includes(topic)
-                  ? "border-[#15b392] bg-blue-50 text-[#1f4381]"
-                  : "border-gray-300 text-black hover:border-gray-400"
+                  ? "bg-[#15b392] text-white border-[#15b392]"
+                  : "bg-white text-black border-gray-300 hover:border-[#15b392]"
               }`}
             >
               {topic}
@@ -327,75 +404,59 @@ export default function MatchmakingPage() {
           <input
             type="text"
             value={formData.passionateOther}
-            onChange={(e) =>
-              handleInputChange("passionateOther", e.target.value)
-            }
-            placeholder="Others (specify)"
-            className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
+            onChange={(e) => handleInputChange("passionateOther", e.target.value)}
+            placeholder="Other topics (optional)"
+            className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
           />
         </div>
       ),
     },
+    // Step 8
     {
-      title: "What's your hobby outside business?",
+      title: "What's your favorite hobby?",
       content: (
         <div className="space-y-3">
-          {["Sport", "Car", "Beauty"].map((hobby) => (
+          {["Sports", "Reading", "Gaming", "Travel", "Music", "Other"].map((h) => (
             <button
-              key={hobby}
-              onClick={() => handleInputChange("hobby", hobby)}
-              className={`w-full px-4 py-3 rounded-lg border text-left transition ${
-                formData.hobby === hobby
-                  ? "border-[#15b392] bg-blue-50 text-[#1f4381]"
-                  : "border-gray-300 text-black hover:border-gray-400"
+              key={h}
+              onClick={() => handleInputChange("hobby", h)}
+              className={`w-full px-4 py-3 text-left rounded-lg border transition ${
+                formData.hobby === h
+                  ? "bg-[#15b392] text-white border-[#15b392]"
+                  : "bg-white text-black border-gray-300 hover:border-[#15b392]"
               }`}
             >
-              {hobby}
+              {h}
             </button>
           ))}
-          <div className="space-y-2">
-            <button
-              onClick={() => handleInputChange("hobby", "Other")}
-              className={`w-full px-4 py-3 rounded-lg border text-left transition ${
-                formData.hobby === "Other"
-                  ? "border-[#15b392] bg-blue-50 text-[#1f4381]"
-                  : "border-gray-300 text-black hover:border-gray-400"
-              }`}
-            >
-              Other
-            </button>
-            {formData.hobby === "Other" && (
-              <input
-                type="text"
-                value={formData.hobbyOther}
-                onChange={(e) => handleInputChange("hobbyOther", e.target.value)}
-                placeholder="Please specify"
-                className="w-full px-4 py-3 border text-black border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
-              />
-            )}
-          </div>
+          {formData.hobby === "Other" && (
+            <input
+              type="text"
+              value={formData.hobbyOther}
+              onChange={(e) => handleInputChange("hobbyOther", e.target.value)}
+              placeholder="Please specify"
+              className="w-full px-4 py-3 text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392]"
+            />
+          )}
         </div>
       ),
     },
+    // Step 9
     {
-      title: "What kind of person are you?",
+      title: "How would you describe yourself?",
       content: (
         <div className="space-y-3">
-          {[
-            "I usually wait for others to start the conversation. I warm up once I feel comfortable.",
-            "I can be chatty or quiet depending on the vibe. I adjust to the people around me.",
-            "I'm usually the one to break the ice and keep the energy up in the group.",
-          ].map((personality) => (
+          {["I usually wait for others to start the conversation. I warm up once I feel comfortable.", "I can be chatty or quiet depending on the vibe. I adjust to the people around me.", "I'm usually the one to break the ice and keep the energy up in the group."].map((p) => (
             <button
-              key={personality}
-              onClick={() => handleInputChange("personality", personality)}
-              className={`w-full px-4 py-3 rounded-lg border text-left transition text-sm ${
-                formData.personality === personality
-                  ? "border-[#15b392] bg-blue-50 text-[#1f4381]"
-                  : "border-gray-300 text-black hover:border-gray-400"
+              key={p}
+              onClick={() => handleInputChange("personality", p)}
+              className={`w-full px-4 py-3 text-left rounded-lg border transition ${
+                formData.personality === p
+                  ? "bg-[#15b392] text-white border-[#15b392]"
+                  : "bg-white text-black border-gray-300 hover:border-[#15b392]"
               }`}
             >
-              {personality}
+              {p}
             </button>
           ))}
         </div>
@@ -406,13 +467,14 @@ export default function MatchmakingPage() {
   return (
     <div className="relative min-h-screen bg-white">
       <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
-        <h1 className="text-xl sm:text-2xl font-brand font-bold bg-clip-text bg-transparent text-transparent bg-gradient-to-r from-[#15b392] to-[#2a6435]">PACE.ON</h1>
+        <h1 className="text-xl sm:text-2xl font-brand font-bold bg-clip-text bg-transparent text-transparent bg-gradient-to-r from-[#15b392] to-[#2a6435]">
+          PACE.ON
+        </h1>
       </div>
+      
       <main className="flex flex-col lg:flex-row min-h-screen">
-        {/* Left Form */}
         <div className="flex flex-col justify-center items-center w-full lg:w-1/2 bg-white px-4 sm:px-6 lg:px-8 py-8 lg:py-0 z-10">
           <div className="w-full max-w-md space-y-6 lg:space-y-8">
-            {/* Progress */}
             <div>
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-gray-500">
@@ -430,7 +492,6 @@ export default function MatchmakingPage() {
               </div>
             </div>
 
-            {/* Form */}
             <div className="space-y-4 lg:space-y-6 min-h-[300px] sm:min-h-[350px]">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-800">
                 {stepConfig[currentStep - 1].title}
@@ -438,13 +499,12 @@ export default function MatchmakingPage() {
               {stepConfig[currentStep - 1].content}
             </div>
 
-            {/* Nav Buttons */}
             <div className="flex justify-between gap-3 sm:gap-4">
               <button
                 onClick={prevStep}
-                disabled={currentStep === 1}
+                disabled={currentStep === 1 || loading}
                 className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-full font-semibold text-sm sm:text-base transition ${
-                  currentStep === 1
+                  currentStep === 1 || loading
                     ? "bg-gray-200 text-gray-400 cursor-not-allowed"
                     : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                 }`}
@@ -452,12 +512,13 @@ export default function MatchmakingPage() {
                 <ChevronLeft size={18} />
                 Back
               </button>
+              
               {currentStep < totalSteps ? (
                 <button
                   onClick={nextStep}
-                  disabled={!isStepValid()}
+                  disabled={!isStepValid() || loading}
                   className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-full font-semibold text-sm sm:text-base transition ${
-                    isStepValid()
+                    isStepValid() && !loading
                       ? "bg-[#2a6435] text-white hover:bg-green-950"
                       : "bg-gray-200 text-gray-400 cursor-not-allowed"
                   }`}
@@ -468,20 +529,20 @@ export default function MatchmakingPage() {
               ) : (
                 <button
                   onClick={handleSubmit}
-                  disabled={!isStepValid()}
+                  disabled={!isStepValid() || loading}
                   className={`px-4 sm:px-6 py-3 rounded-full font-semibold text-sm sm:text-base transition ${
-                    isStepValid()
+                    isStepValid() && !loading
                       ? "bg-[#1f4381] text-white hover:bg-blue-950"
                       : "bg-gray-200 text-gray-400 cursor-not-allowed"
                   }`}
                 >
-                  Complete
+                  {loading ? "Saving..." : "Complete"}
                 </button>
               )}
             </div>
           </div>
         </div>
-        {/* Right Section Background Only */}
+
         <div
           className="relative w-full lg:w-1/2 h-48 sm:h-64 lg:h-screen bg-cover bg-center order-first lg:order-last"
           style={{ backgroundImage: `url(/images/matchmaking-image.webp)` }}

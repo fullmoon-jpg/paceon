@@ -1,178 +1,228 @@
-"use client"
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { ChevronDown, Settings, User, LogOut, Bell } from "lucide-react";
-import { auth } from "../../../../../packages/lib/firebaseConfig";
-import { onAuthStateChanged, User as FirebaseUser } from "firebase/auth";
+"use client";
+import React, { useEffect, useMemo } from "react";
+import Link from "next/link";
+import { useRouter, usePathname } from "next/navigation";
+import {
+  Home,
+  Calendar,
+  Activity,
+  Bell,
+  User,
+  Settings,
+  LogOut,
+  Box,
+} from "lucide-react";
+import { useAuth } from "../../hooks/useAuth";
+import { useNotifications } from "../../hooks/useRealtimeNotifications";
 
-const DashboardNavbar: React.FC = () => {
+const SideNavbar: React.FC = () => {
   const router = useRouter();
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [showNotif, setShowNotif] = useState(false);
-  const [user, setUser] = useState<FirebaseUser | null>(null);
+  const pathname = usePathname();
 
-  // dummy notifikasi sementara
-  const [notifications, setNotifications] = useState([
-    { id: 1, message: "You joined a new game", time: "2h ago" },
-    { id: 2, message: "Your match with Jane is confirmed", time: "1d ago" },
-    { id: 3, message: "Court booking tomorrow at 9 AM", time: "3d ago" },
-  ]);
+  const { user, profile, loading: authLoading, signOut } = useAuth();
+  const { unreadCount, isConnected } = useNotifications(user?.id || null);
 
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  // Request notification permission on mount
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-    return () => unsubscribe();
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
   }, []);
 
-  const handleProfileClick = () => setShowDropdown(!showDropdown);
-  const handleProfileSettings = () => {
-    router.push("/profile");
-    setShowDropdown(false);
-  };
   const handleLogout = async () => {
-    await auth.signOut();
-    router.push("/login");
-    setShowDropdown(false);
+    await signOut();
+    router.push("/auth/login");
   };
-  const handleLogoClick = () => router.push("/dashboard");
+
+  const menuItems = useMemo(
+    () => [
+      { id: "dashboard", icon: Home, label: "Dashboard", path: "/" },
+      { id: "booking", icon: Calendar, label: "Booking", path: "/booking" },
+      { id: "activity", icon: Activity, label: "Activity Feed", path: "/activityfeed" },
+      {
+        id: "notifications",
+        icon: Bell,
+        label: "Notifications",
+        badge: unreadCount,
+        path: "/notifications",
+      },
+      { id: "profile", icon: User, label: "Profile", path: "/profilepage" },
+      { id: "settings", icon: Settings, label: "Settings", path: "/settings" },
+    ],
+    [unreadCount]
+  );
+
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+
+  if (authLoading) {
+    return (
+      <div className="fixed left-0 top-0 h-screen w-20 bg-gradient-to-b from-[#15b392] via-[#2a6435] to-[#15b392] shadow-2xl flex items-center justify-center z-50">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      {/* Navbar */}
-      <nav className="flex justify-between items-center px-8 py-4 bg-gradient-to-r from-[#15b392] via-[#2a6435] to-[#15b392] backdrop-blur-lg border-b border-white/20 sticky top-0 z-50">
-        {/* Logo */}
-        <div
-          onClick={handleLogoClick}
-          className="logo-underline relative text-xl md:text-2xl lg:text-2xl font-bold font-brand tracking-tight cursor-pointer"
-        >
-          PACE.ON
-        </div>
-
-        <div className="flex items-center space-x-6">
-          {/* Notification Bell */}
-          <div className="relative">
-            <button
-              onClick={() => setShowNotif(!showNotif)}
-              className="relative text-white hover:text-gray-200 transition-colors"
-            >
-              <Bell className="w-6 h-6" />
-              {/* Badge */}
-              {notifications.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-xs text-white w-4 h-4 flex items-center justify-center rounded-full">
-                  {notifications.length}
-                </span>
-              )}
-            </button>
-
-            {showNotif && (
-              <div className="absolute right-0 mt-3 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
-                <div className="px-4 py-3 border-b border-gray-100 bg-gray-50 font-semibold text-gray-800">
-                  Notifications
-                </div>
-                <ul className="max-h-64 overflow-y-auto divide-y divide-gray-100">
-                  {notifications.map((notif) => (
-                    <li key={notif.id} className="px-4 py-3 hover:bg-gray-50 text-sm">
-                      <p className="text-gray-700">{notif.message}</p>
-                      <span className="text-xs text-gray-400">{notif.time}</span>
-                    </li>
-                  ))}
-                </ul>
-                {notifications.length === 0 && (
-                  <div className="px-4 py-6 text-center text-gray-400 text-sm">
-                    No new notifications
-                  </div>
-                )}
-              </div>
-            )}
+    <div
+      className={`fixed left-0 top-0 h-screen bg-gradient-to-b from-[#15b392] via-[#2a6435] to-[#15b392] shadow-2xl flex flex-col z-50 transition-all duration-300 ${
+        isExpanded ? "w-72" : "w-20"
+      }`}
+      onMouseEnter={() => setIsExpanded(true)}
+      onMouseLeave={() => setIsExpanded(false)}
+    >
+      {/* Logo Section */}
+      <div className="px-6 py-8 border-b border-white/20 flex items-center justify-center">
+        {isExpanded ? (
+          <div
+            className="text-2xl font-bold font-brand tracking-tight text-white cursor-pointer"
+            onClick={() => router.push("/")}
+          >
+            PACE.ON
           </div>
+        ) : (
+          <img
+            src="/images/logo-paceon.png"
+            alt="PACE.ON Logo"
+            className="w-10 h-10 object-contain cursor-pointer"
+            onClick={() => router.push("/")}
+          />
+        )}
+      </div>
 
-          {/* Profile Section */}
-          <div className="relative">
-            <button
-              onClick={handleProfileClick}
-              className="flex items-center space-x-3 bg-black/20 backdrop-blur-sm rounded-full px-4 py-2 hover:bg-white/30 transition-all duration-300 hover:shadow-lg"
-            >
-              {/* Profile Photo */}
-              <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/30">
-                {user?.photoURL ? (
-                  <img
-                    src={user.photoURL}
-                    alt={user.displayName || "User"}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-blue-400 to-green-400 flex items-center justify-center text-white font-semibold text-lg">
-                    {user?.displayName
-                      ? user.displayName.charAt(0).toUpperCase()
-                      : user?.email
-                      ? user.email.charAt(0).toUpperCase()
-                      : "?"}
-                  </div>
-                )}
-              </div>
-
-              {/* Name */}
-              <div className="hidden md:block text-left">
-                <p className="text-white font-semibold text-sm leading-tight">
-                  {user?.displayName || "Anonymous User"}
-                </p>
-                <p className="text-white/70 text-xs leading-tight">
-                  {user?.email || ""}
-                </p>
-              </div>
-
-              <ChevronDown
-                className={`w-4 h-4 text-white/70 transition-transform duration-200 ${
-                  showDropdown ? "rotate-180" : ""
-                }`}
+      {/* Profile Section */}
+      <div
+        className={`px-6 py-6 border-b border-white/20 ${
+          isExpanded ? "" : "flex justify-center"
+        }`}
+      >
+        <div className={`flex items-center ${isExpanded ? "space-x-4" : ""}`}>
+          <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/30 flex-shrink-0 relative">
+            {profile?.avatar_url ? (
+              <img
+                src={profile.avatar_url}
+                alt={profile.full_name || "User"}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.currentTarget as HTMLImageElement).src = "";
+                }}
               />
-            </button>
-
-            {/* Dropdown Menu */}
-            {showDropdown && (
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
-                <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                  <p className="text-gray-900 font-semibold text-sm">
-                    {user?.displayName || "Anonymous User"}
-                  </p>
-                  <p className="text-gray-600 text-xs">{user?.email}</p>
-                </div>
-                <div className="py-2">
-                  <button
-                    onClick={handleProfileSettings}
-                    className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <User className="w-4 h-4 mr-3" />
-                    Profile Settings
-                  </button>
-                  <button
-                    onClick={() => {
-                      router.push("/settings");
-                      setShowDropdown(false);
-                    }}
-                    className="flex items-center w-full px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
-                  >
-                    <Settings className="w-4 h-4 mr-3" />
-                    Settings
-                  </button>
-                </div>
-                <div className="border-t border-gray-100 py-2">
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center w-full px-4 py-2 text-red-600 hover:bg-red-50 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4 mr-3" />
-                    Logout
-                  </button>
-                </div>
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-blue-400 to-green-400 flex items-center justify-center text-white font-semibold text-lg">
+                {profile?.full_name
+                  ? getInitials(profile.full_name)
+                  : profile?.email?.charAt(0).toUpperCase() || "?"}
               </div>
             )}
+
+            {/* Realtime Connection Indicator */}
+            {isConnected && (
+              <div
+                className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"
+                title="Connected to real-time notifications"
+              ></div>
+            )}
           </div>
+          {isExpanded && (
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-semibold text-sm truncate">
+                {profile?.full_name || "Loading..."}
+              </p>
+              <p className="text-white/70 text-xs truncate">
+                {profile?.email || ""}
+              </p>
+            </div>
+          )}
         </div>
+      </div>
+
+      {/* Menu Items */}
+      <nav className="flex-1 px-4 py-6 overflow-y-auto">
+        <ul className="space-y-2">
+          {menuItems.map((item) => {
+            const isActive = pathname === item.path;
+            return (
+              <li key={item.id}>
+                <Link
+                  href={item.path}
+                  aria-label={item.label}
+                  className={`flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200 ${
+                    isActive
+                      ? "bg-white text-[#15b392] shadow-lg"
+                      : "text-white hover:bg-white/10"
+                  } ${isExpanded ? "" : "justify-center"}`}
+                >
+                  <div className="relative">
+                    <item.icon className="w-5 h-5" />
+                    {!isExpanded &&
+                      item.badge !== undefined &&
+                      item.badge > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                          {item.badge > 9 ? "9+" : item.badge}
+                        </span>
+                      )}
+                  </div>
+                  {isExpanded && (
+                    <>
+                      <span className="font-medium ml-3">{item.label}</span>
+                      {item.badge !== undefined && item.badge > 0 && (
+                        <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
+                          {item.badge > 99 ? "99+" : item.badge}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       </nav>
-    </>
+
+      {/* Affirmation Cube */}
+      <div
+        className={`px-4 py-4 border-t border-white/20 ${
+          isExpanded ? "px-6" : "flex justify-center"
+        }`}
+      >
+        <Link
+          href="/affirmation-cube"
+          aria-label="Affirmation Cube"
+          className={`flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-medium hover:shadow-lg transition-all duration-200 hover:scale-105 ${
+            isExpanded ? "w-full px-4 py-3" : "w-12 h-12"
+          }`}
+        >
+          <Box className={`${isExpanded ? "w-5 h-5" : "w-6 h-6"}`} />
+          {isExpanded && <span className="ml-2">Affirmation Cube</span>}
+        </Link>
+      </div>
+
+      {/* Logout */}
+      <div
+        className={`px-4 py-4 border-t border-white/20 ${
+          isExpanded ? "px-6" : "flex justify-center"
+        }`}
+      >
+        <button
+          onClick={handleLogout}
+          aria-label="Logout"
+          className={`flex items-center justify-center bg-red-500/20 rounded-xl text-white font-medium hover:bg-red-500/30 transition-all duration-200 ${
+            isExpanded ? "w-full px-4 py-3" : "w-12 h-12"
+          }`}
+        >
+          <LogOut className={`${isExpanded ? "w-5 h-5" : "w-6 h-6"}`} />
+          {isExpanded && <span className="ml-2">Logout</span>}
+        </button>
+      </div>
+    </div>
   );
 };
 
-export default DashboardNavbar;
+export default SideNavbar;

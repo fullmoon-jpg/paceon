@@ -3,12 +3,7 @@
 import React, { useState } from "react";
 import { FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import {
-    createUserWithEmailAndPassword,
-    signInWithPopup,
-    GoogleAuthProvider,
-} from "firebase/auth";
-import { auth } from "../../../../../../packages/lib/firebaseConfig";
+import { supabase } from "../../../../../../packages/lib/supabase";
 
 export default function SignUpPage() {
     const router = useRouter();
@@ -16,10 +11,11 @@ export default function SignUpPage() {
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
+    const [successMessage, setSuccessMessage] = useState("");
+    const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Password validation function
     const validatePassword = (password: string) => {
         const minLength = 8;
         const hasUpperCase = /[A-Z]/.test(password);
@@ -27,16 +23,16 @@ export default function SignUpPage() {
         const hasNumbers = /\d/.test(password);
         
         const errors = [];
-            if (password.length < minLength) {
+        if (password.length < minLength) {
             errors.push("Minimum 8 Characters");
         }
-            if (!hasUpperCase) {
+        if (!hasUpperCase) {
             errors.push("huruf besar (A-Z)");
         }
-            if (!hasLowerCase) {
+        if (!hasLowerCase) {
             errors.push("huruf kecil (a-z)");
         }
-            if (!hasNumbers) {
+        if (!hasNumbers) {
             errors.push("angka (0-9)");
         }
 
@@ -46,158 +42,120 @@ export default function SignUpPage() {
         };
     };
 
-  // Get password strength indicator
     const getPasswordStrength = (password: string) => {
         const validation = validatePassword(password);
-            if (password.length === 0) return { strength: "", color: "" };
-            
-            if (validation.isValid) {
-        return { strength: "Strong", color: "text-green-600" };
-        } else if (password.length >= 6) {
-        return { strength: "Medium", color: "text-yellow-600" };
-        } else {
-        return { strength: "Weak", color: "text-red-600" };
-        }
-    };
-
-    // Send welcome email function
-    const sendWelcomeEmail = async (userEmail: string, userName?: string) => {
-        if (!userEmail) {
-            console.warn("No email provided, skipping welcome email.");
-            return;
-        }
-
-        try {
-        console.log("Sending welcome email to:", userEmail);
+        if (password.length === 0) return { strength: "", color: "" };
         
-        const response = await fetch("/api/sendWelcomeEmail", {
-            method: "POST",
-            headers: { 
-            "Content-Type": "application/json" 
-            },
-            body: JSON.stringify({ 
-            email: userEmail, 
-            name: userName || userEmail.split('@')[0]
-            }),
-        });
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error("Server returned error:", errorText);
-            return;
-        }
-
-        const data = await response.json();
-        console.log("Welcome email sent:", data);
-
-        } catch (err) {
-        console.error("Network request failed:", err);
+        if (validation.isValid) {
+            return { strength: "Strong", color: "text-green-600" };
+        } else if (password.length >= 6) {
+            return { strength: "Medium", color: "text-yellow-600" };
+        } else {
+            return { strength: "Weak", color: "text-red-600" };
         }
     };
 
-    // Handle email signup
     const handleSignUp = async () => {
-        // Reset error
         setError("");
+        setSuccessMessage("");
+        setLoading(true);
 
-        // Basic validation
+        // Validation
         if (!email || !password || !confirmPassword) {
-        setError("All fields are required.");
-        return;
+            setError("All fields are required.");
+            setLoading(false);
+            return;
         }
 
-        // Email validation
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
-        setError("Invalid format email");
-        return;
+            setError("Invalid format email");
+            setLoading(false);
+            return;
         }
 
-        // Password validation
         const passwordValidation = validatePassword(password);
         if (!passwordValidation.isValid) {
-        setError(`Password must have: ${passwordValidation.errors.join(", ")}`);
-        return;
+            setError(`Password must have: ${passwordValidation.errors.join(", ")}`);
+            setLoading(false);
+            return;
         }
 
-        // Confirm password validation
         if (password !== confirmPassword) {
-        setError("Confirm password does not match");
-        return;
+            setError("Confirm password does not match");
+            setLoading(false);
+            return;
         }
 
         try {
-        console.log("🔄 Creating user with email:", email);
-        
-        const userCredential = await createUserWithEmailAndPassword(
-            auth,
-            email,
-            password
-        );
-
-        console.log("User created successfully");
-
-        // Send welcome email
-        await sendWelcomeEmail(email, email.split('@')[0]);
-
-        // Redirect to matchmaking
-        router.push("/auth/sign-up/matchmakingform");
-        
-        } catch (err: unknown) {
-            if (typeof err === "object" && err !== null && "code" in err) {
-                const errorCode = (err as { code: string }).code;
-
-                switch (errorCode) {
-                    case "auth/email-already-in-use":
-                        setError("Email is already registered. Use another email or login.");
-                        break;
-                    case "auth/weak-password":
-                        setError("Password is too weak. Use a combination of letters, numbers, and symbols.");
-                        break;
-                    case "auth/invalid-email":
-                        setError("Invalid format email.");
-                        break;
-                    default:
-                        setError("An error occurred. Please try again later.");
+            console.log("🔄 Creating user with Supabase...");
+            
+            const { data, error: signUpError } = await supabase.auth.signUp({
+                email: email,
+                password: password,
+                options: {
+                    // 🔧 FIX: Redirect langsung ke matchmaking form untuk email signup
+                    emailRedirectTo: `${window.location.origin}/auth/sign-up/matchmakingform?verified=true`,
+                    data: {
+                        full_name: email.split('@')[0],
+                    }
                 }
+            });
+
+            if (signUpError) throw signUpError;
+
+            console.log("✅ User created:", data.user?.email);
+
+            setSuccessMessage("Account created successfully! Please check your email for verification.");
+
+            // 🔧 FIX: Redirect ke verification page
+            setTimeout(() => {
+                router.replace("/auth/verify-email");
+            }, 2000);
+            
+        } catch (err: any) {
+            console.error("❌ Signup error:", err);
+
+            if (err.message.includes("already registered") || err.message.includes("User already registered")) {
+                setError("Email is already registered. Use another email or login.");
+            } else if (err.message.includes("Password")) {
+                setError("Password is too weak.");
             } else {
-                console.error("Unexpected signup error:", err);
-                setError("Something went wrong. Please try again.");
+                setError(err.message || "An error occurred. Please try again.");
             }
+        } finally {
+            setLoading(false);
         }
     };
 
-    // Handle Google signup
     const handleGoogleSignUp = async () => {
+        setLoading(true);
+        setError("");
+
         try {
-        console.log("Starting Google signup...");
-        
-        const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-
-        const userEmail = result.user.email || "";
-        const userName = result.user.displayName || userEmail.split('@')[0];
-
-        console.log("Google signup successful");
-
-        // Send welcome email
-        await sendWelcomeEmail(userEmail, userName);
-
-        // Redirect to matchmaking
-        router.push("./sign-up/matchmakingform");
-        
-        } catch (err: unknown) {
-            if (typeof err === "object" && err !== null && "code" in err) {
-                const errorCode = (err as { code: string }).code;
-
-                if (errorCode === "auth/popup-closed-by-user") {
-                    console.log("ℹ User closed popup");
-                    return;
+            console.log("🔄 Starting Google OAuth for signup...");
+            
+            // 🔧 FIX: Gunakan callback route dengan flow parameter
+            const { data, error } = await supabase.auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    flowType: 'pkce',
+                    redirectTo: `${window.location.origin}/auth/callback?source=signup`,
+                    queryParams: {
+                        access_type: 'offline',
+                        prompt: 'select_account', // 🔧 Changed: Allow account selection
+                    }
                 }
-            }
+            });
 
-            console.error("Google signup failed:", err);
+            if (error) throw error;
+
+            console.log("✅ Redirecting to Google...");
+            
+        } catch (err: any) {
+            console.error("❌ Google signup failed:", err);
             setError("Google signup failed. Please try again.");
+            setLoading(false);
         }
     };
 
@@ -205,129 +163,165 @@ export default function SignUpPage() {
 
     return (
         <div
-        className="relative w-full h-screen bg-cover bg-center"
-        style={{ backgroundImage: "url('/images/login-img.webp')" }}
+            className="relative w-full h-screen bg-cover bg-center"
+            style={{ backgroundImage: "url('/images/login-img.webp')" }}
         >
-        <div className="absolute inset-0 bg-black/50" />
-        {/* ✅ Brand Logo */}
-        <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
-            <h1 className="text-xl sm:text-2xl font-bold text-white font-brand">PACE.ON</h1>
-        </div>
-        <div className="relative flex items-center justify-center h-full">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 w-[400px] text-center">
-            <h2 className="text-2xl font-bold text-[#1f4381] mb-6">SIGN UP</h2>
-
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
-                {error}
-                </div>
-            )}
-
-            {/* Email Input */}
-            <input
-                type="email"
-                placeholder="Enter Your Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="text-black w-full mb-4 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
-            />
-
-            {/* Password Input */}
-            <div className="relative mb-2">
-                <input
-                type={showPassword ? "text" : "password"}
-                placeholder="Enter Your Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="text-black w-full px-4 py-3 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
-                />
-                <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
+            <div className="absolute inset-0 bg-black/50" />
+            
+            <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
+                <h1 className="text-xl sm:text-2xl font-bold text-white font-brand">PACE.ON</h1>
             </div>
 
-            {/* Password Strength Indicator */}
-            {password && (
-                <div className="text-left mb-4">
-                <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Password Strength:</span>
-                    <span className={passwordStrength.color}>{passwordStrength.strength}</span>
-                </div>
-                <div className="text-xs text-gray-500 mt-1">
-                    Password must have: minimum 8 characters, uppercase letters, lowercase letters, numbers
-                </div>
-                </div>
-            )}
+            <div className="relative flex items-center justify-center h-full">
+                <div className="bg-white rounded-2xl shadow-2xl p-8 w-[400px] text-center">
+                    <h2 className="text-2xl font-bold text-[#1f4381] mb-6">SIGN UP</h2>
 
-            {/* Confirm Password Input */}
-            <div className="relative mb-6">
-                <input
-                type={showConfirmPassword ? "text" : "password"}
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="text-black w-full px-4 py-3 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
-                />
-                <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                >
-                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-                </button>
+                    {successMessage && (
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-500 px-4 py-3 rounded-lg mb-4 animate-fade-in">
+                            <div className="flex items-center gap-3">
+                                <div className="flex-shrink-0">
+                                    <svg className="w-6 h-6 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <p className="text-green-800 font-medium text-sm">{successMessage}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {error && (
+                        <div className="bg-gradient-to-r from-red-50 to-rose-50 border-l-4 border-red-500 px-4 py-3 rounded-lg mb-4 animate-fade-in">
+                            <div className="flex items-center gap-3">
+                                <div className="flex-shrink-0">
+                                    <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <p className="text-red-800 text-sm">{error}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    <input
+                        type="email"
+                        placeholder="Enter Your Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                        className="text-black w-full mb-4 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#15b392] focus:border-transparent disabled:bg-gray-100"
+                    />
+
+                    <div className="relative mb-2">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Enter Your Password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            disabled={loading}
+                            className="text-black w-full px-4 py-3 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#15b392] focus:border-transparent disabled:bg-gray-100"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(!showPassword)}
+                            disabled={loading}
+                            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                            {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                    </div>
+
+                    {password && (
+                        <div className="text-left mb-4">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-gray-600">Password Strength:</span>
+                                <span className={passwordStrength.color}>{passwordStrength.strength}</span>
+                            </div>
+                            <div className="text-xs text-gray-500 mt-1">
+                                Password must have: minimum 8 characters, uppercase letters, lowercase letters, numbers
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="relative mb-6">
+                        <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Confirm Password"
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            disabled={loading}
+                            className="text-black w-full px-4 py-3 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#15b392] focus:border-transparent disabled:bg-gray-100"
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                            disabled={loading}
+                            className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                            {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                    </div>
+
+                    {confirmPassword && (
+                        <div className="text-left mb-4">
+                            {password === confirmPassword ? (
+                                <div className="text-green-600 text-sm">✓ Password Match</div>
+                            ) : (
+                                <div className="text-red-600 text-sm">✗ Password not Match</div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className="flex items-center my-6">
+                        <div className="flex-grow border-t border-gray-300"></div>
+                        <span className="mx-3 text-gray-500 text-sm">Or</span>
+                        <div className="flex-grow border-t border-gray-300"></div>
+                    </div>
+
+                    <button
+                        onClick={handleGoogleSignUp}
+                        disabled={loading}
+                        className="text-black w-full flex items-center justify-center gap-3 bg-gray-50 border border-gray-300 rounded-full py-3 mb-4 hover:bg-gray-100 transition-colors disabled:bg-gray-200 disabled:cursor-not-allowed"
+                    >
+                        <FaGoogle className="text-red-500" />
+                        <span>{loading ? "Loading..." : "Sign-up with Google"}</span>
+                    </button>
+
+                    <button
+                        onClick={handleSignUp}
+                        disabled={loading}
+                        className="w-full bg-[#2a6435] text-white py-3 rounded-full hover:bg-green-950 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                    >
+                        {loading ? "Signing up..." : "Sign Up"}
+                    </button>
+
+                    <p className="mt-6 text-sm text-gray-600">
+                        Have Account?{" "}
+                        <button
+                            onClick={() => router.push("./login")}
+                            disabled={loading}
+                            className="text-[#2a6435] hover:text-green-950 hover:underline font-medium disabled:text-gray-400"
+                        >
+                            Login Here!
+                        </button>
+                    </p>
+                </div>
             </div>
 
-            {/* Password Match Indicator */}
-            {confirmPassword && (
-                <div className="text-left mb-4">
-                {password === confirmPassword ? (
-                    <div className="text-green-600 text-sm">✓ Password Match</div>
-                ) : (
-                    <div className="text-red-600 text-sm">✗ Password not Match</div>
-                )}
-                </div>
-            )}
-
-            {/* Divider */}
-            <div className="flex items-center my-6">
-                <div className="flex-grow border-t border-gray-300"></div>
-                <span className="mx-3 text-gray-500 text-sm">Or</span>
-                <div className="flex-grow border-t border-gray-300"></div>
-            </div>
-
-            {/* Google Sign Up Button */}
-            <button
-                onClick={handleGoogleSignUp}
-                className="text-black w-full flex items-center justify-center gap-3 bg-gray-50 border border-gray-300 rounded-full py-3 mb-4 hover:bg-gray-100 transition-colors"
-            >
-                <FaGoogle className="text-red-500" />
-                <span>Sign-up with Google</span>
-            </button>
-
-            {/* Email Sign Up Button */}
-            <button
-                onClick={handleSignUp}
-                className="w-full bg-[#2a6435] text-white py-3 rounded-full hover:bg-green-950 transition-colors font-medium"
-            >
-                Sign Up
-            </button>
-
-            {/* Login Link */}
-            <p className="mt-6 text-sm text-gray-600">
-                Have Account?{" "}
-                <button
-                onClick={() => router.push("./login")}
-                className="text-[#2a6435] hover:text-green-950 hover:underline font-medium"
-                >
-                Login Here!
-                </button>
-            </p>
-            </div>
-        </div>
+            <style jsx>{`
+                @keyframes fade-in {
+                    from {
+                        opacity: 0;
+                        transform: translateY(-10px);
+                    }
+                    to {
+                        opacity: 1;
+                        transform: translateY(0);
+                    }
+                }
+                .animate-fade-in {
+                    animation: fade-in 0.3s ease-out;
+                }
+            `}</style>
         </div>
     );
 }

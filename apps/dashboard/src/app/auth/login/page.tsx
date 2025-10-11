@@ -3,15 +3,7 @@
 import React, { useState } from "react";
 import { FaGoogle, FaEye, FaEyeSlash, FaTimes } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import {
-  signInWithEmailAndPassword,
-  signInWithPopup,
-  GoogleAuthProvider,
-  sendPasswordResetEmail,
-} from "firebase/auth";
-import { auth } from "../../../../../../packages/lib/firebaseConfig";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../../../../../../packages/lib/firebaseConfig"; // pastikan db diexport di firebaseConfig.ts
+import { supabase } from "../../../../../../packages/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -27,20 +19,6 @@ export default function LoginPage() {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetMessage, setResetMessage] = useState("");
   const [resetError, setResetError] = useState("");
-
-  // Ambil role user dari Firestore
-  const getUserRole = async (uid: string): Promise<string> => {
-    try {
-      const userRef = doc(db, "users", uid);
-      const snap = await getDoc(userRef);
-      if (snap.exists()) {
-        return (snap.data().role as string) || "user"; // default user
-      }
-    } catch (err) {
-      console.error("Error fetching user role:", err);
-    }
-    return "user";
-  };
 
   // Handle email login
   const handleEmailLogin = async () => {
@@ -61,39 +39,36 @@ export default function LoginPage() {
     }
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const uid = userCredential.user.uid;
-      const role = await getUserRole(uid);
+      const { data, error: signInError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+      });
+
+      if (signInError) throw signInError;
+
+      // Check user role from users_profile table
+      const { data: profile } = await supabase
+        .from('users_profile')
+        .select('role')
+        .eq('id', data.user.id)
+        .single();
+
+      const role = profile?.role || 'user';
 
       if (role === "admin") {
-        router.push("/admin/dashboard");
+        router.push("/admin");
       } else {
         router.push("/");
       }
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Login error:", err);
 
-      const errorObj = err as Record<string, unknown>;
-      const code = errorObj?.code as string | undefined;
-
-      switch (code) {
-        case "auth/user-not-found":
-          setError("Email is not registered. Please register first.");
-          break;
-        case "auth/wrong-password":
-          setError("Wrong password. Please check your password again.");
-          break;
-        case "auth/invalid-email":
-          setError("Invalid email format.");
-          break;
-        case "auth/user-disabled":
-          setError("This account has been disabled.");
-          break;
-        case "auth/too-many-requests":
-          setError("Too many login attempts. Please try again later.");
-          break;
-        default:
-          setError("An error occurred. Please try again later.");
+      if (err.message?.includes("Invalid login credentials")) {
+        setError("Wrong email or password. Please check again.");
+      } else if (err.message?.includes("Email not confirmed")) {
+        setError("Please confirm your email first. Check your inbox.");
+      } else {
+        setError(err.message || "An error occurred. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -103,31 +78,24 @@ export default function LoginPage() {
   // Handle Google login
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setError("");
 
     try {
-      const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/auth/callback`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
+      });
 
-      const uid = result.user.uid;
-      const role = await getUserRole(uid);
-
-      if (role === "admin") {
-        router.push("/admin/dashboard");
-      } else {
-        router.push("/");
-      }
-    } catch (err: unknown) {
-      const errorObj = err as Record<string, unknown>;
-      const code = errorObj?.code as string | undefined;
-
-      if (code === "auth/popup-closed-by-user") {
-        setLoading(false);
-        return;
-      }
-
+      if (error) throw error;
+    } catch (err: any) {
       console.error("Google login failed:", err);
       setError("Google login failed. Please try again.");
-    } finally {
       setLoading(false);
     }
   };
@@ -152,56 +120,35 @@ export default function LoginPage() {
     }
 
     try {
-      // Custom action URL to redirect to your Vercel domain
-      const actionCodeSettings = {
-        url: `${window.location.origin}/reset-password`, // Redirect ke /reset-password page
-        handleCodeInApp: true,
-      };
+      const { error } = await supabase.auth.resetPasswordForEmail(resetEmail, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      });
 
-      await sendPasswordResetEmail(auth, resetEmail, actionCodeSettings);
+      if (error) throw error;
       
       setResetMessage("Password reset email sent! Check your inbox and follow the instructions.");
       setResetEmail("");
       
-      // Auto close modal after 3 seconds
       setTimeout(() => {
         setShowForgotModal(false);
         setResetMessage("");
       }, 3000);
 
-    } catch (err: unknown) {
+    } catch (err: any) {
       console.error("Password reset error:", err);
-      
-      const errorObj = err as Record<string, unknown>;
-      const code = errorObj?.code as string | undefined;
-
-      switch (code) {
-        case "auth/user-not-found":
-          setResetError("Email is not registered.");
-          break;
-        case "auth/invalid-email":
-          setResetError("Invalid email format.");
-          break;
-        case "auth/too-many-requests":
-          setResetError("Too many requests. Please try again later.");
-          break;
-        default:
-          setResetError("An error occurred. Please try again.");
-      }
+      setResetError(err.message || "An error occurred. Please try again.");
     } finally {
       setResetLoading(false);
     }
   };
 
-  // Open forgot password modal
   const openForgotModal = () => {
     setShowForgotModal(true);
     setResetError("");
     setResetMessage("");
-    setResetEmail(email); // Pre-fill with login email if available
+    setResetEmail(email);
   };
 
-  // Close forgot password modal
   const closeForgotModal = () => {
     setShowForgotModal(false);
     setResetError("");
@@ -216,10 +163,11 @@ export default function LoginPage() {
       style={{ backgroundImage: "url('/images/login-img.webp')" }}
     >
       <div className="absolute inset-0 bg-black/50" />
-      {/* ✅ Brand Logo */}
+      
       <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
         <h1 className="text-xl sm:text-2xl font-bold text-white font-brand">PACE.ON</h1>
       </div>
+      
       <div className="relative flex items-center justify-center h-full">
         <div className="bg-white rounded-2xl shadow-2xl p-8 w-[400px] text-center">
           <h2 className="text-2xl font-bold text-[#1f4381] mb-6">LOGIN</h2>
@@ -350,7 +298,7 @@ export default function LoginPage() {
               <button
                 onClick={handleForgotPassword}
                 disabled={resetLoading || !resetEmail}
-                className="flex-1 bg-[#2a6435] hover:text-green-950] text-white py-3 rounded-full hover:bg-green-950 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#2a6435] text-white py-3 rounded-full hover:bg-green-950 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
               >
                 {resetLoading ? "Sending..." : "Send Reset Link"}
               </button>
