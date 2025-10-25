@@ -1,8 +1,8 @@
 // src/app/api/posts/feed/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../../../../../../packages/lib/mongodb';
-import Post from '../../../../lib/models/Posts';
-import { supabaseAdmin } from '../../../../../../../packages/lib/supabase';
+import connectDB from '@paceon/lib/mongodb';
+import Post from '@/lib/models/Posts';
+import { supabaseAdmin } from '@paceon/lib/supabase';
 
 // GET /api/posts/feed - Personalized feed (future: based on connections, preferences)
 export async function GET(request: NextRequest) {

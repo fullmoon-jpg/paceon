@@ -1,9 +1,8 @@
 // src/app/api/saved-posts/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../../../../../packages/lib/mongodb';
-import SavedPost from '../../../lib/models/SavedPost';
+import connectDB from '@paceon/lib/mongodb';
+import SavedPost from '@/lib/models/SavedPost';
 
-// GET /api/saved-posts - Get user's saved posts
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
@@ -18,13 +17,30 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const savedPosts = await SavedPost.find({ userId })
-      .sort({ createdAt: -1 })
-      .lean();
+    // ✅ Add pagination support
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const skip = (page - 1) * limit;
+
+    // ✅ Parallel queries
+    const [savedPosts, total] = await Promise.all([
+      SavedPost.find({ userId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      SavedPost.countDocuments({ userId })
+    ]);
 
     return NextResponse.json({
       success: true,
       data: savedPosts,
+      pagination: {
+        page,
+        limit,
+        total,
+        hasMore: skip + limit < total,
+      },
     });
   } catch (error: any) {
     console.error('GET /api/saved-posts error:', error);
@@ -35,7 +51,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/saved-posts - Save a post
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -49,16 +64,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Check if already saved
-    const existing = await SavedPost.findOne({ userId, postId });
-    if (existing) {
-      return NextResponse.json(
-        { success: false, error: 'Post already saved' },
-        { status: 400 }
-      );
-    }
-
-    const savedPost = await SavedPost.create({ userId, postId });
+    // ✅ Use upsert to avoid duplicate check
+    const savedPost = await SavedPost.findOneAndUpdate(
+      { userId, postId },
+      { userId, postId, createdAt: new Date() },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
 
     return NextResponse.json({
       success: true,
@@ -66,6 +77,14 @@ export async function POST(request: NextRequest) {
       message: 'Post saved successfully',
     });
   } catch (error: any) {
+    // Handle duplicate key error
+    if (error.code === 11000) {
+      return NextResponse.json(
+        { success: false, error: 'Post already saved' },
+        { status: 400 }
+      );
+    }
+    
     console.error('POST /api/saved-posts error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
@@ -74,12 +93,22 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// DELETE /api/saved-posts - Unsave a post
 export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
 
-    const { userId, postId } = await request.json();
+    // ✅ Support both body and query params
+    let userId, postId;
+    
+    try {
+      const body = await request.json();
+      userId = body.userId;
+      postId = body.postId;
+    } catch {
+      const { searchParams } = new URL(request.url);
+      userId = searchParams.get('userId');
+      postId = searchParams.get('postId');
+    }
 
     if (!userId || !postId) {
       return NextResponse.json(
@@ -88,11 +117,12 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await SavedPost.deleteOne({ userId, postId });
+    const result = await SavedPost.deleteOne({ userId, postId });
 
     return NextResponse.json({
       success: true,
-      message: 'Post unsaved successfully',
+      message: result.deletedCount > 0 ? 'Post unsaved successfully' : 'Post was not saved',
+      data: { deletedCount: result.deletedCount },
     });
   } catch (error: any) {
     console.error('DELETE /api/saved-posts error:', error);

@@ -1,21 +1,22 @@
 // src/app/api/posts/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../../../../../../packages/lib/mongodb';
-import Post from '../../../../lib/models/Posts';
-import Comment from '../../../../lib/models/Comment';
-import Like from '../../../../lib/models/Like';
-import { supabaseAdmin } from '../../../../../../../packages/lib/supabase';
+import connectDB from '@paceon/lib/mongodb';
+import Post from '@/lib/models/Posts';
+import { supabaseAdmin } from '@paceon/lib/supabase';
 
-// ✅ GET /api/posts/[id] - Get single post
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
 
-    const { id } = await context.params;
-    const post = await Post.findById(id).lean();
+    const resolvedParams = await params;
+    const postId = resolvedParams.id;
+
+    // ✅ Find post from MongoDB
+    const post = await Post.findById(postId).lean();
+
     if (!post) {
       return NextResponse.json(
         { success: false, error: 'Post not found' },
@@ -23,21 +24,22 @@ export async function GET(
       );
     }
 
-    // ✅ Ambil data user dari Supabase
-    const { data: profile, error: profileError } = await supabaseAdmin
+    // ✅ Fetch user profile from Supabase
+    const { data: userProfile, error: userError } = await supabaseAdmin
       .from('users_profile')
       .select('id, full_name, avatar_url')
       .eq('id', post.userId)
       .single();
 
-    if (profileError) {
-      console.warn('Supabase profile fetch warning:', profileError.message);
+    if (userError) {
+      console.error('Error fetching user profile:', userError);
     }
 
-    const enrichedPost = {
+    // ✅ Combine post with user data
+    const postWithUser = {
       ...post,
       _id: post._id.toString(),
-      user: profile || {
+      user: userProfile || {
         id: post.userId,
         full_name: 'Unknown User',
         avatar_url: null,
@@ -46,27 +48,41 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      data: enrichedPost,
+      data: postWithUser,
     });
+
   } catch (error: any) {
     console.error('GET /api/posts/[id] error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-// ✅ DELETE /api/posts/[id] - Delete post + related data + Supabase images
-export async function DELETE(
+// ✅ PATCH for edit post
+export async function PATCH(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
 
-    const { id } = await context.params;
-    const post = await Post.findById(id);
+    const resolvedParams = await params;
+    const postId = resolvedParams.id;
+    const body = await request.json();
+    const { userId, content, mediaUrls, location, sport } = body;
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: 'userId is required' },
+        { status: 400 }
+      );
+    }
+
+    // Find post
+    const post = await Post.findById(postId);
+
     if (!post) {
       return NextResponse.json(
         { success: false, error: 'Post not found' },
@@ -74,126 +90,104 @@ export async function DELETE(
       );
     }
 
-    const userId = post.userId;
-    const mediaUrls = post.mediaUrls || [];
-
-    // ✅ Hapus post + komentar + like terkait
-    await Promise.all([
-      Post.findByIdAndDelete(id),
-      Comment.deleteMany({ postId: id }),
-      Like.deleteMany({ targetType: 'post', targetId: id }),
-    ]);
-
-    // ✅ Hapus file dari Supabase Storage
-    if (mediaUrls.length > 0) {
-      try {
-        // Ubah URL penuh jadi relative path untuk remove()
-        const filePaths = mediaUrls
-          .map((url: string) => {
-            const parts = url.split('/storage/v1/object/public/uploads/');
-            return parts[1] ? decodeURIComponent(parts[1]) : null;
-          })
-          .filter(Boolean) as string[];
-
-        if (filePaths.length > 0) {
-          const { error: deleteError } = await supabaseAdmin
-            .storage
-            .from('uploads')
-            .remove(filePaths);
-
-          if (deleteError) {
-            console.error('❌ Supabase delete error:', deleteError.message);
-          } else {
-            console.log('✅ Supabase files deleted:', filePaths);
-          }
-        }
-      } catch (err: any) {
-        console.error('⚠️ Failed to delete Supabase images:', err.message);
-      }
+    // Check ownership
+    if (post.userId !== userId) {
+      // Check if admin (you can add admin check here)
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 403 }
+      );
     }
 
-    // ✅ Update statistik di Supabase
-    const { error: statsError } = await supabaseAdmin.rpc(
-      'decrement_total_posts',
-      { p_user_id: userId }
-    );
-    if (statsError) {
-      console.error('Error decrementing total_posts:', statsError.message);
-    }
+    // Update fields
+    if (content !== undefined) post.content = content;
+    if (mediaUrls !== undefined) post.mediaUrls = mediaUrls;
+    if (location !== undefined) post.location = location;
+    if (sport !== undefined) post.sport = sport;
+
+    await post.save();
+
+    // Fetch user profile for response
+    const { data: userProfile } = await supabaseAdmin
+      .from('users_profile')
+      .select('id, full_name, avatar_url')
+      .eq('id', post.userId)
+      .single();
+
+    const postWithUser = {
+      ...post.toObject(),
+      _id: post._id.toString(),
+      user: userProfile || {
+        id: post.userId,
+        full_name: 'Unknown User',
+        avatar_url: null,
+      },
+    };
 
     return NextResponse.json({
       success: true,
-      message: 'Post and associated data deleted successfully',
+      data: postWithUser,
     });
+
   } catch (error: any) {
-    console.error('DELETE /api/posts/[id] error:', error);
+    console.error('PATCH /api/posts/[id] error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-// ✅ PATCH /api/posts/[id] - Edit post
-export async function PATCH(
+// ✅ DELETE for delete post
+export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     await connectDB();
 
-    const { id } = await context.params;
-    const { content, location, sport } = await request.json();
+    const resolvedParams = await params;
+    const postId = resolvedParams.id;
+    const body = await request.json();
+    const { userId } = body;
 
-    if (!content || !content.trim()) {
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: 'Content is required' },
+        { success: false, error: 'userId is required' },
         { status: 400 }
       );
     }
 
-    if (content.length > 5000) {
-      return NextResponse.json(
-        { success: false, error: 'Content too long (max 5000 characters)' },
-        { status: 400 }
-      );
-    }
+    // Find post
+    const post = await Post.findById(postId);
 
-    const updateData: any = {
-      content,
-      updatedAt: new Date(),
-    };
-
-    if (location !== undefined) updateData.location = location;
-    if (sport !== undefined) updateData.sport = sport ? sport.toLowerCase() : undefined;
-
-    const updatedPost = await Post.findByIdAndUpdate(
-      id,
-      updateData,
-      { new: true }
-    );
-
-    if (!updatedPost) {
+    if (!post) {
       return NextResponse.json(
         { success: false, error: 'Post not found' },
         { status: 404 }
       );
     }
 
+    // Check ownership (or admin)
+    if (post.userId !== userId) {
+      // You can add admin check here
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized' },
+        { status: 403 }
+      );
+    }
+
+    await Post.findByIdAndDelete(postId);
+
     return NextResponse.json({
       success: true,
-      data: {
-        content: updatedPost.content,
-        location: updatedPost.location,
-        sport: updatedPost.sport,
-        updatedAt: updatedPost.updatedAt,
-      },
-      message: 'Post updated successfully',
+      message: 'Post deleted successfully',
     });
+
   } catch (error: any) {
-    console.error('PATCH /api/posts/[id] error:', error);
+    console.error('DELETE /api/posts/[id] error:', error);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: error.message || 'Internal server error' },
       { status: 500 }
     );
   }

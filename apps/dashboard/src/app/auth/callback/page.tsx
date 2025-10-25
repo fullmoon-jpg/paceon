@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '../../../../../../packages/lib/supabase';
+import { supabase } from '@paceon/lib/supabase';
 
 export default function CallbackPage() {
     const router = useRouter();

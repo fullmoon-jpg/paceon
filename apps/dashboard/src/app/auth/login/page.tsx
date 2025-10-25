@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { FaGoogle, FaEye, FaEyeSlash, FaTimes } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../../../../../packages/lib/supabase";
+import { supabase } from "@paceon/lib/supabase";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -56,7 +56,7 @@ export default function LoginPage() {
       const role = profile?.role || 'user';
 
       if (role === "admin") {
-        router.push("/admin");
+        router.push("/admin/dashbord");
       } else {
         router.push("/");
       }

@@ -1,11 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
 @import "tailwindcss";
 
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
 }
+
+
+html.dark {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+}
+
 
 @theme inline {
   --color-background: var(--background);
@@ -17,17 +23,10 @@
   --font-braggadocio: 'braggadocio', 'Arial Black', sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 /* Batangas Font Family */
 @font-face {
   font-family: 'batangas';
-  src: url('../../../../packages/lib/font/Batangas-Bold.otf') format('otf');
+  src: url('../../../../packages/lib/font/Batangas-Bold.otf') format('opentype'); /* ✅ FIX: format('otf') → format('opentype') */
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -78,6 +77,15 @@
 
 .green-fill:hover {
   color: white !important;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 html {

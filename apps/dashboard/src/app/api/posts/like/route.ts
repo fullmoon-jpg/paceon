@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "../../../../../../../packages/lib/mongodb";
-import Like from "../../../../lib/models/Like";
+import connectDB from "@paceon/lib/mongodb";
+import Like from "@/lib/models/Like";
 
 // ✅ GET semua post yang di-like oleh user
 export async function GET(request: NextRequest) {

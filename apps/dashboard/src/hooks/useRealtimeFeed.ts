@@ -1,78 +1,107 @@
-// src/hooks/useRealtimeFeed.ts
+// src/components/ActivityFeed/hooks/useRealtimeFeed.ts
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '../../../../packages/lib/supabase';
+import { supabase } from '@paceon/lib/supabase';
 
 interface Post {
   _id: string;
   userId: string;
   content: string;
-  createdAt: string;
   [key: string]: any;
+}
+
+interface UseRealtimeFeedReturn {
+  isConnected: boolean;
 }
 
 interface UseRealtimeFeedOptions {
   enabled: boolean;
+  currentUserId: string;
   onNewPost?: (post: Post) => void;
-  onPostUpdate?: (postId: string, updates: Partial<Post>) => void;
-  onPostDelete?: (postId: string) => void;
+  onUpdatePost?: (postId: string, updates: Partial<Post>) => void;
+  onDeletePost?: (postId: string) => void;
+  onNewLike?: (postId: string, likesCount: number) => void;
+  onNewComment?: (postId: string, commentsCount: number) => void;
 }
 
 export function useRealtimeFeed({
   enabled,
+  currentUserId,
   onNewPost,
-  onPostUpdate,
-  onPostDelete
-}: UseRealtimeFeedOptions) {
+  onUpdatePost,
+  onDeletePost,
+  onNewLike,
+  onNewComment,
+}: UseRealtimeFeedOptions): UseRealtimeFeedReturn {
   const [isConnected, setIsConnected] = useState(false);
   const channelRef = useRef<any>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const lastCheckRef = useRef<Date>(new Date());
+  const mountedRef = useRef(true);
+  const handlersRef = useRef({ onNewPost, onUpdatePost, onDeletePost, onNewLike, onNewComment });
 
+  // ✅ Update handlers ref without triggering re-render
   useEffect(() => {
-    if (!enabled) {
-      cleanup();
+    handlersRef.current = { onNewPost, onUpdatePost, onDeletePost, onNewLike, onNewComment };
+  }, [onNewPost, onUpdatePost, onDeletePost, onNewLike, onNewComment]);
+
+  // ✅ Main effect - STABLE dependencies
+  useEffect(() => {
+    mountedRef.current = true;
+
+    if (!enabled || !currentUserId) {
+      setIsConnected(false);
       return;
     }
 
-    // Start polling for new posts
-    startPolling();
+    console.log('🔌 Setting up realtime feed...');
 
-    return () => cleanup();
-  }, [enabled]);
+    const channel = supabase.channel('feed-updates');
 
-  const startPolling = () => {
-    // Poll every 10 seconds for new posts
-    pollingIntervalRef.current = setInterval(async () => {
-      try {
-        const response = await fetch(
-          `/api/posts/recent?since=${lastCheckRef.current.toISOString()}`
-        );
-        const data = await response.json();
-
-        if (data.success && data.data.length > 0) {
-          // New posts found
-          data.data.forEach((post: Post) => {
-            onNewPost?.(post);
-          });
-          
-          // Update last check time
-          lastCheckRef.current = new Date();
+    channel
+      .on('broadcast', { event: 'new_post' }, (payload) => {
+        if (mountedRef.current && payload.payload) {
+          handlersRef.current.onNewPost?.(payload.payload);
         }
-      } catch (error) {
-        console.error('Error polling for new posts:', error);
+      })
+      .on('broadcast', { event: 'update_post' }, (payload) => {
+        if (mountedRef.current && payload.payload) {
+          const { postId, updates } = payload.payload;
+          handlersRef.current.onUpdatePost?.(postId, updates);
+        }
+      })
+      .on('broadcast', { event: 'delete_post' }, (payload) => {
+        if (mountedRef.current && payload.payload) {
+          handlersRef.current.onDeletePost?.(payload.payload.postId);
+        }
+      })
+      .on('broadcast', { event: 'new_like' }, (payload) => {
+        if (mountedRef.current && payload.payload) {
+          const { postId, likesCount } = payload.payload;
+          handlersRef.current.onNewLike?.(postId, likesCount);
+        }
+      })
+      .on('broadcast', { event: 'new_comment' }, (payload) => {
+        if (mountedRef.current && payload.payload) {
+          const { postId, commentsCount } = payload.payload;
+          handlersRef.current.onNewComment?.(postId, commentsCount);
+        }
+      })
+      .subscribe((status) => {
+        console.log('📡 Feed channel status:', status);
+        if (mountedRef.current) {
+          setIsConnected(status === 'SUBSCRIBED');
+        }
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      mountedRef.current = false;
+      console.log('🔌 Cleaning up realtime feed...');
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
-    }, 40000); // Poll every 10 seconds
-
-    setIsConnected(true);
-  };
-
-  const cleanup = () => {
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-    setIsConnected(false);
-  };
+    };
+  }, [enabled, currentUserId]); // ✅ Only these 2 dependencies
 
   return { isConnected };
 }

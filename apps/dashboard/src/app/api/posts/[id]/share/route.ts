@@ -1,9 +1,9 @@
 // src/app/api/posts/[id]/share/route.ts
+// ✅ This route is already optimal - no user fetching needed
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../../../../../../../packages/lib/mongodb';
-import Post from '../../../../../lib/models/Posts';
+import connectDB from '@paceon/lib/mongodb';
+import Post from '@/lib/models/Posts';
 
-// POST /api/posts/[id]/share - Track share action
 export async function POST(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
@@ -13,7 +13,6 @@ export async function POST(
 
     const { id: postId } = await context.params;
 
-    // Check if post exists
     const post = await Post.findById(postId);
     if (!post) {
       return NextResponse.json(
@@ -22,11 +21,9 @@ export async function POST(
       );
     }
 
-    // Increment share count
-    post.sharesCount += 1;
-    await post.save();
+    // ✅ Use atomic increment
+    await Post.findByIdAndUpdate(postId, { $inc: { sharesCount: 1 } });
 
-    // Generate shareable link
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
     const shareUrl = `${baseUrl}/activityfeed/post/${postId}`;
 
@@ -34,7 +31,7 @@ export async function POST(
       success: true,
       data: {
         shareUrl,
-        sharesCount: post.sharesCount,
+        sharesCount: post.sharesCount + 1,
       },
       message: 'Share link generated',
     });

@@ -2,46 +2,174 @@
 "use client";
 
 import { useEffect, useState } from 'react';
-import { supabase } from '../../../../../packages/lib/supabase';
-import ActivityFeed from '../ui/components/ActivityFeed';
+import { supabase } from '@paceon/lib/supabase';
+import ActivityFeed from '../components';
 import { Loader2 } from 'lucide-react';
 
-// Type definition jika perlu
+// Type definitions
 type TabType = 'all' | 'yours' | 'saved';
 
+interface UserProfile {
+  id: string;
+  full_name: string;
+  avatar_url?: string;
+  role: string;
+  position?: string;
+  company?: string;
+}
+
 export default function ActivityFeedPage() {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [user, setUser] = useState<{
+    id: string;
+    email?: string;
+  } | null>(null);
+
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'all' | 'yours' | 'saved'>('all');
+  const [activeTab, setActiveTab] = useState<TabType>('all');
 
   useEffect(() => {
-    // Get current user
     const getUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session?.user) {
-        setUser(session.user);
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        console.log('=== AUTH DEBUG START ===');
+        console.log('1. Session exists:', !!session);
+        console.log('2. Session user ID:', session?.user?.id);
+        console.log('3. Session access token:', session?.access_token ? 'Present ✅' : 'Missing ❌');
+        console.log('4. Session expires at:', session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'N/A');
         
-        // Get profile data including role
-        const { data: profileData } = await supabase
+        if (sessionError) {
+          console.error('❌ Session Error:', sessionError);
+          console.log('=== AUTH DEBUG END ===');
+          setLoading(false);
+          return;
+        }
+
+        if (!session?.user) {
+          console.warn('⚠️ No session found');
+          console.log('=== AUTH DEBUG END ===');
+          setLoading(false);
+          return;
+        }
+
+        if (session.access_token) {
+          try {
+            const tokenParts = session.access_token.split('.');
+            if (tokenParts.length === 3) {
+              const payload = JSON.parse(atob(tokenParts[1]));
+              console.log('5. JWT Payload:', {
+                sub: payload.sub,
+                role: payload.role,
+                exp: new Date(payload.exp * 1000).toISOString()
+              });
+            }
+          } catch (e) {
+            console.error('Failed to parse JWT:', e);
+          }
+        }
+
+        setUser({
+          id: session.user.id,
+          email: session.user.email ?? undefined,
+        });
+
+        console.log('6. Fetching profile for user:', session.user.id);
+
+        const profileStart = Date.now();
+        const { data: profileData, error: profileError } = await supabase
           .from('users_profile')
-          .select('*')
+          .select('id, full_name, avatar_url, role')
           .eq('id', session.user.id)
-          .single();
-        
-        setProfile(profileData);
+          .maybeSingle();
+
+        const profileTime = Date.now() - profileStart;
+        console.log(`7. Profile query took: ${profileTime}ms`);
+        console.log('8. Profile Data:', profileData);
+        console.log('9. Profile Error:', profileError);
+
+        const prefsStart = Date.now();
+        const { data: preferencesData, error: preferencesError } = await supabase
+          .from('matchmaking_preferences')
+          .select('position, company')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+
+        const prefsTime = Date.now() - prefsStart;
+        console.log(`10. Preferences query took: ${prefsTime}ms`);
+        console.log('11. Preferences Data:', preferencesData);
+        console.log('12. Preferences Error:', preferencesError);
+
+        if (profileData) {
+          console.log('✅ Profile loaded successfully');
+          setProfile({
+            id: profileData.id,
+            full_name: profileData.full_name,
+            avatar_url: profileData.avatar_url,
+            role: profileData.role,
+            position: preferencesData?.position,
+            company: preferencesData?.company,
+          });
+        } else {
+          console.warn('⚠️ No profile data found. Using fallback.');
+          const userName = session.user.user_metadata?.full_name 
+            || session.user.email?.split('@')[0] 
+            || 'User';
+          
+          setProfile({
+            id: session.user.id,
+            full_name: userName,
+            avatar_url: session.user.user_metadata?.avatar_url,
+            role: 'user',
+            position: preferencesData?.position,
+            company: preferencesData?.company,
+          });
+        }
+
+        console.log('=== AUTH DEBUG END ===');
+      } catch (error) {
+        console.error('💥 Unexpected error in getUser:', error);
+        console.log('=== AUTH DEBUG END ===');
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     getUser();
 
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
+      async (event, session) => {
+        console.log('🔐 Auth state changed:', event);
+        
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email ?? undefined,
+          });
+
+          const { data: profileData } = await supabase
+            .from('users_profile')
+            .select('id, full_name, avatar_url, role')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          const { data: preferencesData } = await supabase
+            .from('matchmaking_preferences')
+            .select('position, company')
+            .eq('user_id', session.user.id)
+            .maybeSingle();
+
+          if (profileData) {
+            setProfile({
+              ...profileData,
+              position: preferencesData?.position,
+              company: preferencesData?.company,
+            });
+          }
+        } else {
+          setUser(null);
+          setProfile(null);
+        }
       }
     );
 
@@ -67,7 +195,7 @@ export default function ActivityFeedPage() {
             You need to be logged in to view the activity feed.
           </p>
           <a
-            href="/login"
+            href="/auth/login"
             className="inline-block px-6 py-3 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white rounded-lg font-bold hover:shadow-lg transition-all"
           >
             Go to Login
@@ -81,7 +209,7 @@ export default function ActivityFeedPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Header - Dipindahkan ke sini */}
+      {/* Header - Will scroll away */}
       <div className="bg-gray-100">
         <div className="p-4 sm:p-6 max-w-3xl mx-auto">
           <h1 className="text-3xl text-black font-bold mb-2">Activity Feed</h1>
@@ -94,60 +222,47 @@ export default function ActivityFeedPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto p-4 sm:p-6">
-        {/* Tabs Navigation - Dipindahkan ke sini */}
-        <div className="bg-white rounded-xl shadow-md mb-6 overflow-hidden">
-          <div className="flex border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('all')}
-              className={`flex-1 py-4 px-6 font-semibold transition-colors relative ${
-                activeTab === 'all'
-                  ? 'text-[#15b392] bg-gray-50'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              All Posts
-              {activeTab === 'all' && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#15b392]"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('yours')}
-              className={`flex-1 py-4 px-6 font-semibold transition-colors relative ${
-                activeTab === 'yours'
-                  ? 'text-[#15b392] bg-gray-50'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              Your Posts
-              {activeTab === 'yours' && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#15b392]"></div>
-              )}
-            </button>
-            <button
-              onClick={() => setActiveTab('saved')}
-              className={`flex-1 py-4 px-6 font-semibold transition-colors relative ${
-                activeTab === 'saved'
-                  ? 'text-[#15b392] bg-gray-50'
-                  : 'text-gray-600 hover:bg-gray-50'
-              }`}
-            >
-              Saved Posts
-              {activeTab === 'saved' && (
-                <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#15b392]"></div>
-              )}
-            </button>
+      <div className="max-w-3xl mx-auto px-4 sm:px-6">
+        {/* ✅ Sticky Tabs */}
+        <div className="sticky top-0 z-20 bg-gray-100 pb-4 -mx-4 px-4">
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+            <div className="flex border-b border-gray-200">
+              {(['all', 'yours', 'saved'] as TabType[]).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`flex-1 py-4 px-6 font-semibold transition-colors relative ${
+                    activeTab === tab
+                      ? 'text-[#15b392] bg-gray-50'
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {tab === 'all'
+                    ? 'All Posts'
+                    : tab === 'yours'
+                    ? 'Your Posts'
+                    : 'Saved Posts'}
+                  {activeTab === tab && (
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#15b392]" />
+                  )}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
-        {/* Activity Feed Component */}
-        <ActivityFeed
-          currentUserId={user.id}
-          currentUserName={profile?.full_name || 'User'}
-          currentUserSkillLevel={profile?.skill_level || 'Beginner'}
-          currentUserRole={profile?.role || 'user'}
-          activeTab={activeTab}
-        />
+        {/* Activity Feed - Scrollable */}
+        <div className="pb-6">
+          <ActivityFeed
+            currentUserId={user.id}
+            currentUserName={profile?.full_name || user.email?.split('@')[0] || 'User'}
+            avatar_url={profile?.avatar_url}
+            currentUserPosition={profile?.position}
+            currentUserCompany={profile?.company}
+            currentUserRole={profile?.role || 'user'}
+            activeTab={activeTab}
+          />
+        </div>
       </div>
     </div>
   );

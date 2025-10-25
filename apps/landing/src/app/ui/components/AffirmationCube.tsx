@@ -24,9 +24,12 @@ const AffirmationCube = () => {
   const [isCompleted, setIsCompleted] = useState<boolean>(false);
 
   const users: User[] = [
-    { id: 1, name: "Rayhan Fikri Ramadhandi", position: "CEO Indieworks Creative" },
-    { id: 2, name: "Novan Adrian", position: "CTO & Co-founder Qasir" },
-    { id: 3, name: "Jessica Manuel Susanto", position: "Founder Office Petzo" },
+    { id: 1, name: "Alifian Al Ghifari", position: "Founder Kinomaru Rental" },
+    { id: 2, name: "Ariiq Alfajri", position: "Founder Tech no Phi Agency" },
+    { id: 3, name: "Dewi Sri", position: "Account Executive Aenigma Picture" },
+    { id: 4, name: "Hafidz Wijaya", position: "COO Indiworks Creative" },
+    { id: 5, name: "Rayhan Fikri", position: "CEO Indieworks Creative" },
+    { id: 6, name: "Vito Mulia", position: "CEO Soohara Technologies" },
   ];
 
   const getUsersToRate = (selectedUserId: number): User[] => {

@@ -1,26 +1,27 @@
-// ============================================
-// src/hooks/useNotifications.ts (OPTIMIZED)
-// ============================================
-import { useEffect, useState, useCallback, useRef } from "react";
-import { supabase } from "../../../../packages/lib/supabase";
-import { RealtimeChannel } from "@supabase/supabase-js";
+// src/hooks/useRealtimeNotifications.ts
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { supabase } from '@paceon/lib/supabase';
+import { RealtimeChannel } from '@supabase/supabase-js';
+
+interface NotificationActor {
+  id: string;
+  full_name: string;
+  avatar_url?: string | null;
+}
 
 interface Notification {
   id: string;
   user_id: string;
-  type: "system" | "social";
+  type: 'system' | 'social';
   category: string;
   title: string;
   message: string;
   is_read: boolean;
   created_at: string;
-  metadata?: any;
-  actor_id: string;
-  actor?: {
-    id: string;
-    full_name: string;
-    avatar_url?: string;
-  };
+  read_at?: string | null;
+  metadata?: Record<string, unknown>;
+  actor_id?: string | null;
+  actor?: NotificationActor;
 }
 
 interface UseNotificationsReturn {
@@ -33,193 +34,131 @@ interface UseNotificationsReturn {
   refreshNotifications: () => Promise<void>;
 }
 
-// ✅ PERBAIKAN 1: Cache global di luar component
-const notificationsCache = new Map<string, {
-  data: Notification[];
-  unreadCount: number;
-  timestamp: number;
-}>();
-
-const CACHE_DURATION = 30000; // 30 detik
-const activeChannels = new Map<string, RealtimeChannel>();
+const IS_DEV = process.env.NODE_ENV === 'development';
 
 export function useNotifications(userId: string | null): UseNotificationsReturn {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [isConnected, setIsConnected] = useState(false);
+  
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const fetchingRef = useRef(false);
+  const mountedRef = useRef(true);
+  const actorCacheRef = useRef(new Map<string, NotificationActor>());
 
-  const refreshTimer = useRef<NodeJS.Timeout | null>(null);
-  const isFetchingRef = useRef(false); // ✅ Prevent concurrent fetches
-
-  // ✅ PERBAIKAN 2: Check cache first
-  const fetchNotifications = useCallback(async (forceRefresh = false) => {
-    if (!userId) {
-      setNotifications([]);
-      setUnreadCount(0);
-      setLoading(false);
-      return;
+  const fetchActor = useCallback(async (actorId: string): Promise<NotificationActor> => {
+    if (actorCacheRef.current.has(actorId)) {
+      return actorCacheRef.current.get(actorId)!;
     }
 
-    // ✅ Prevent concurrent requests
-    if (isFetchingRef.current) {
-      console.log("⏳ Fetch already in progress, skipping...");
-      return;
+    try {
+      const { data, error } = await supabase
+        .from('users_profile')
+        .select('id, full_name, avatar_url')
+        .eq('id', actorId)
+        .single();
+
+      if (error) throw error;
+
+      const actor: NotificationActor = {
+        id: data.id,
+        full_name: data.full_name || 'Unknown User',
+        avatar_url: data.avatar_url,
+      };
+
+      actorCacheRef.current.set(actorId, actor);
+      return actor;
+    } catch (error) {
+      const fallbackActor: NotificationActor = {
+        id: actorId,
+        full_name: 'Unknown User',
+        avatar_url: null,
+      };
+      return fallbackActor;
     }
+  }, []);
 
-    // ✅ Check cache
-    const cached = notificationsCache.get(userId);
-    const now = Date.now();
+  const showBrowserNotification = useCallback((notification: Notification) => {
+    if (typeof window === 'undefined') return;
+    if (!('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
 
-    if (!forceRefresh && cached && (now - cached.timestamp) < CACHE_DURATION) {
-      console.log("📦 Using cached notifications");
-      setNotifications(cached.data);
-      setUnreadCount(cached.unreadCount);
-      setLoading(false);
-      return;
+    try {
+      const notif = new Notification(notification.title, {
+        body: notification.message,
+        icon: '/images/logo-paceon.png',
+        badge: '/images/logo-paceon.png',
+        tag: notification.id,
+        requireInteraction: false,
+        silent: false,
+      });
+
+      setTimeout(() => notif.close(), 5000);
+
+      notif.onclick = () => {
+        window.focus();
+        notif.close();
+        window.location.href = '/notifications';
+      };
+    } catch (error) {
+      // Silent fail in production
+      if (IS_DEV) console.error('Browser notification error:', error);
     }
+  }, []);
 
-    isFetchingRef.current = true;
+  const fetchNotifications = useCallback(async () => {
+    if (!userId || fetchingRef.current) return;
+
+    fetchingRef.current = true;
     setLoading(true);
 
     try {
-      console.log("🔄 Fetching fresh notifications...");
-      
       const { data, error } = await supabase
-        .from("notifications")
-        .select(
-          `
+        .from('notifications')
+        .select(`
           *,
           actor:actor_id (
             id,
             full_name,
             avatar_url
           )
-        `
-        )
-        .eq("user_id", userId)
-        .order("created_at", { ascending: false })
-        .limit(20);
+        `)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .limit(50);
 
-      if (error) {
-        console.error("Supabase fetch error:", error.message, error.details);
-        throw error;
-      }
+      if (error) throw error;
 
-      const notifData = data || [];
-      const unreadCountData = notifData.filter((n) => !n.is_read).length;
+      if (!mountedRef.current) return;
 
-      // ✅ Update cache
-      notificationsCache.set(userId, {
-        data: notifData,
-        unreadCount: unreadCountData,
-        timestamp: now,
+      // Cache actors
+      data?.forEach((notif) => {
+        if (notif.actor && notif.actor_id) {
+          actorCacheRef.current.set(notif.actor_id, notif.actor);
+        }
       });
 
-      setNotifications(notifData);
-      setUnreadCount(unreadCountData);
-
+      setNotifications(data || []);
+      setUnreadCount(data?.filter((n) => !n.is_read).length || 0);
     } catch (error) {
-      console.error("Error fetching notifications:", error);
+      if (!mountedRef.current) return;
+      
+      setNotifications([]);
+      setUnreadCount(0);
+      
+      if (IS_DEV) console.error('Fetch notifications error:', error);
     } finally {
-      setLoading(false);
-      isFetchingRef.current = false;
+      fetchingRef.current = false;
+      if (mountedRef.current) {
+        setLoading(false);
+      }
     }
   }, [userId]);
 
-  // ✅ PERBAIKAN 3: Reuse existing channel
-  const setupRealtime = useCallback((uid: string) => {
-    // Check if channel already exists
-    const existingChannel = activeChannels.get(uid);
-    if (existingChannel) {
-      console.log("♻️ Reusing existing realtime channel");
-      return existingChannel;
-    }
-
-    console.log("🔌 Creating new realtime channel");
-    
-    const channel = supabase
-      .channel(`notifications:${uid}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${uid}`,
-        },
-        async (payload) => {
-          console.log("🔔 New notification:", payload.new);
-
-          let newNotif = payload.new as Notification;
-
-          // fetch actor manual
-          if (newNotif.actor_id) {
-            const { data: actor } = await supabase
-              .from("users_profile")
-              .select("id, full_name, avatar_url")
-              .eq("id", newNotif.actor_id)
-              .single();
-
-            if (actor) {
-              newNotif = { ...newNotif, actor };
-            }
-          }
-
-          setNotifications((prev) => [newNotif, ...prev]);
-          setUnreadCount((prev) => prev + 1);
-
-          // ✅ Invalidate cache
-          notificationsCache.delete(uid);
-
-          showBrowserNotification(newNotif);
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${uid}`,
-        },
-        (payload) => {
-          const updated = payload.new as Notification;
-
-          setNotifications((prev) =>
-            prev.map((n) => (n.id === updated.id ? { ...n, ...updated } : n))
-          );
-
-          if (updated.is_read && !payload.old?.is_read) {
-            setUnreadCount((prev) => Math.max(0, prev - 1));
-          }
-
-          // ✅ Invalidate cache
-          notificationsCache.delete(uid);
-        }
-      )
-      .subscribe((status) => {
-        console.log("🔌 Notifications realtime status:", status);
-        setIsConnected(status === "SUBSCRIBED");
-      });
-
-    // Store in global map
-    activeChannels.set(uid, channel);
-    return channel;
-  }, []);
-
-  // ✅ PERBAIKAN 4: Proper cleanup
-  const cleanupRealtime = useCallback((uid: string) => {
-    const channel = activeChannels.get(uid);
-    if (channel) {
-      console.log("🧹 Cleaning up realtime channel");
-      supabase.removeChannel(channel);
-      activeChannels.delete(uid);
-    }
-    setIsConnected(false);
-  }, []);
-
   useEffect(() => {
+    mountedRef.current = true;
+
     if (!userId) {
       setNotifications([]);
       setUnreadCount(0);
@@ -227,119 +166,155 @@ export function useNotifications(userId: string | null): UseNotificationsReturn 
       return;
     }
 
-    // ✅ Fetch with cache check
     fetchNotifications();
 
-    // ✅ Setup realtime (reuse if exists)
-    setupRealtime(userId);
+    // Setup realtime
+    if (channelRef.current) {
+      supabase.removeChannel(channelRef.current);
+    }
 
-    // ✅ Reduced refresh interval (60s instead of 30s)
-    refreshTimer.current = setInterval(() => {
-      fetchNotifications(true); // Force refresh every 60s
-    }, 60000);
+    const channel = supabase
+      .channel(`notifications:${userId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        async (payload) => {
+          if (!mountedRef.current) return;
 
-    return () => {
-      if (refreshTimer.current) {
-        clearInterval(refreshTimer.current);
-        refreshTimer.current = null;
-      }
-      // ✅ Don't cleanup realtime on unmount, keep it alive
-      // cleanupRealtime(userId);
-    };
-  }, [userId, fetchNotifications, setupRealtime]);
+          const newNotif = payload.new as Notification;
 
-  // ✅ Cleanup on userId change only
-  useEffect(() => {
-    return () => {
-      if (userId) {
-        // Only cleanup when user changes (logout)
-        const prevUserId = userId;
-        setTimeout(() => {
-          if (!document.querySelector('[data-user-id="' + prevUserId + '"]')) {
-            cleanupRealtime(prevUserId);
+          // Fetch actor if exists
+          if (newNotif.actor_id && !newNotif.actor) {
+            newNotif.actor = await fetchActor(newNotif.actor_id);
           }
-        }, 5000);
+
+          setNotifications((prev) => {
+            // Prevent duplicates
+            if (prev.some((n) => n.id === newNotif.id)) return prev;
+            return [newNotif, ...prev].slice(0, 50);
+          });
+          
+          setUnreadCount((prev) => prev + 1);
+          showBrowserNotification(newNotif);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          if (!mountedRef.current) return;
+
+          const updated = payload.new as Notification;
+          const old = payload.old as Partial<Notification>;
+
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === updated.id ? { ...n, ...updated } : n))
+          );
+
+          // Update unread count
+          if (updated.is_read && !old?.is_read) {
+            setUnreadCount((prev) => Math.max(0, prev - 1));
+          } else if (!updated.is_read && old?.is_read) {
+            setUnreadCount((prev) => prev + 1);
+          }
+        }
+      )
+      .subscribe((status) => {
+        if (mountedRef.current) {
+          setIsConnected(status === 'SUBSCRIBED');
+        }
+      });
+
+    channelRef.current = channel;
+
+    return () => {
+      mountedRef.current = false;
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
       }
     };
-  }, [userId, cleanupRealtime]);
+  }, [userId, fetchActor, showBrowserNotification, fetchNotifications]);
 
-  const showBrowserNotification = (notification: Notification) => {
-    if ("Notification" in window && Notification.permission === "granted") {
-      new Notification(notification.title, {
-        body: notification.message,
-        icon: "/images/logo-paceon.png",
-        badge: "/images/logo-paceon.png",
-        tag: notification.id,
-      });
-    }
-  };
+  const markAsRead = useCallback(
+    async (notificationId: string) => {
+      if (!userId) return;
 
-  const markAsRead = useCallback(async (notificationId: string) => {
-    if (!userId) return;
+      // Optimistic update
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notificationId
+            ? { ...n, is_read: true, read_at: new Date().toISOString() }
+            : n
+        )
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
 
-    // ✅ Optimistic update
-    setNotifications((prev) =>
-      prev.map((n) => (n.id === notificationId ? { ...n, is_read: true } : n))
-    );
-    setUnreadCount((prev) => Math.max(0, prev - 1));
+      try {
+        const { error } = await supabase
+          .from('notifications')
+          .update({
+            is_read: true,
+            read_at: new Date().toISOString(),
+          })
+          .eq('id', notificationId)
+          .eq('user_id', userId);
 
-    try {
-      const { error } = await supabase
-        .from("notifications")
-        .update({
-          is_read: true,
-          read_at: new Date().toISOString(),
-        })
-        .eq("id", notificationId)
-        .eq("user_id", userId);
-
-      if (error) throw error;
-
-      // ✅ Invalidate cache
-      notificationsCache.delete(userId);
-
-    } catch (error) {
-      console.error("Error marking notification as read:", error);
-      // ✅ Rollback on error
-      await fetchNotifications(true);
-    }
-  }, [userId, fetchNotifications]);
+        if (error) throw error;
+      } catch (error) {
+        // Rollback on error
+        await fetchNotifications();
+      }
+    },
+    [userId, fetchNotifications]
+  );
 
   const markAllAsRead = useCallback(async () => {
     if (!userId) return;
 
-    // ✅ Optimistic update
-    const prevNotifications = notifications;
-    const prevUnreadCount = unreadCount;
+    const unreadIds = notifications.filter((n) => !n.is_read).map((n) => n.id);
+    if (unreadIds.length === 0) return;
 
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    // Optimistic update
+    setNotifications((prev) =>
+      prev.map((n) => ({
+        ...n,
+        is_read: true,
+        read_at: n.read_at || new Date().toISOString(),
+      }))
+    );
     setUnreadCount(0);
 
     try {
       const { error } = await supabase
-        .from("notifications")
+        .from('notifications')
         .update({
           is_read: true,
           read_at: new Date().toISOString(),
         })
-        .eq("user_id", userId)
-        .eq("is_read", false);
+        .in('id', unreadIds)
+        .eq('user_id', userId);
 
       if (error) throw error;
-
-      // ✅ Invalidate cache
-      notificationsCache.delete(userId);
-
     } catch (error) {
-      console.error("Error marking all as read:", error);
-      // ✅ Rollback on error
-      setNotifications(prevNotifications);
-      setUnreadCount(prevUnreadCount);
+      // Rollback on error
+      await fetchNotifications();
     }
-  }, [userId, notifications, unreadCount]);
+  }, [userId, notifications, fetchNotifications]);
 
   const refreshNotifications = useCallback(async () => {
-    await fetchNotifications(true);
+    fetchingRef.current = false;
+    await fetchNotifications();
   }, [fetchNotifications]);
 
   return {
@@ -351,13 +326,4 @@ export function useNotifications(userId: string | null): UseNotificationsReturn 
     markAllAsRead,
     refreshNotifications,
   };
-}
-
-// ✅ BONUS: Export untuk clear cache manual (kalo perlu)
-export function clearNotificationsCache(userId?: string) {
-  if (userId) {
-    notificationsCache.delete(userId);
-  } else {
-    notificationsCache.clear();
-  }
 }

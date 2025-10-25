@@ -38,6 +38,7 @@ export const metadata: Metadata = {
     "Booking",
     "Jakarta",
     "Sport",
+    "PACE ON"
   ],
   robots: {
     index: true,

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../../../../../packages/lib/supabase";
+import { supabase } from "@paceon/lib/supabase";
 
 export default function SignUpPage() {
     const router = useRouter();
@@ -139,7 +139,6 @@ export default function SignUpPage() {
             const { data, error } = await supabase.auth.signInWithOAuth({
                 provider: 'google',
                 options: {
-                    flowType: 'pkce',
                     redirectTo: `${window.location.origin}/auth/callback?source=signup`,
                     queryParams: {
                         access_type: 'offline',

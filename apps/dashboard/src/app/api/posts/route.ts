@@ -1,84 +1,96 @@
+// src/app/api/posts/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../../../../../packages/lib/mongodb';
-import Post from '../../../lib/models/Posts';
-import { supabaseAdmin } from '../../../../../../packages/lib/supabase';
+import connectDB from '@paceon/lib/mongodb';
+import Post from '@/lib/models/Posts';
+import { supabaseAdmin } from '@paceon/lib/supabase';
+import { broadcastFeedUpdate } from '@/lib/utils/broadcast';
 
-// 🧠 GET /api/posts - Get all posts with pagination
+// ===========================
+// GET - Fetch Posts
+// ===========================
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const userId = searchParams.get('userId'); // Optional filter
-    const sport = searchParams.get('sport'); // Optional filter
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const userId = searchParams.get('userId');
 
     const skip = (page - 1) * limit;
 
-    // 🧩 Build MongoDB query
+    // Build query
     const query: any = {};
-    if (userId) query.userId = userId;
-    if (sport) query.sport = sport.toLowerCase();
+    if (userId) {
+      query.userId = userId;
+    }
 
-    // 🧠 Get posts
+    // Fetch posts
     const posts = await Post.find(query)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean();
 
-    const total = await Post.countDocuments(query);
+    if (posts.length === 0) {
+      return NextResponse.json({
+        success: true,
+        data: [],
+        hasMore: false,
+        page,
+        limit,
+        total: 0
+      });
+    }
 
-    // 🧠 Collect unique user IDs from posts
-    const userIds = [...new Set(posts.map(post => post.userId))];
+    // Get unique user IDs and convert to string
+    const userIds = [...new Set(posts.map(p => p.userId.toString()))];
 
-    // 🧩 Fetch user profiles from Supabase
-    const { data: profiles, error: profileError } = await supabaseAdmin
+    // Fetch user profiles from Supabase
+    const { data: profiles } = await supabaseAdmin
       .from('users_profile')
       .select('id, full_name, avatar_url')
       .in('id', userIds);
 
-    if (profileError) {
-      console.error('❌ Supabase profile fetch error:', profileError);
-    }
+    // Create profile map
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
 
-    // 🔍 Map Supabase user data by id
-    const userMap = new Map(profiles?.map(p => [p.id, p]) || []);
-
-    // ✨ Enrich posts with user info
+    // Enrich posts with user data
     const enrichedPosts = posts.map(post => ({
       ...post,
       _id: post._id.toString(),
-      user: userMap.get(post.userId) || {
-        id: post.userId,
+      user: profileMap.get(post.userId.toString()) || {
+        id: post.userId.toString(),
         full_name: 'Unknown User',
         avatar_url: null,
       },
     }));
 
-    // ✅ Success
+    // Calculate total and hasMore
+    const totalCount = await Post.countDocuments(query);
+    const hasMore = skip + posts.length < totalCount;
+
     return NextResponse.json({
       success: true,
       data: enrichedPosts,
-      pagination: {
-        page,
-        limit,
-        total,
-        totalPages: Math.ceil(total / limit),
-        hasMore: page * limit < total,
-      },
+      hasMore,
+      page,
+      limit,
+      total: totalCount
     });
+
   } catch (error: any) {
     console.error('GET /api/posts error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
 
-// 🧠 POST /api/posts - Create a new post
+// ===========================
+// POST - Create Post
+// ===========================
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
@@ -86,22 +98,14 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { userId, content, mediaUrls, mediaType, location, sport } = body;
 
-    // ✅ Basic validation
     if (!userId || !content) {
       return NextResponse.json(
         { success: false, error: 'userId and content are required' },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    if (content.length > 5000) {
-      return NextResponse.json(
-        { success: false, error: 'Content too long (max 5000 characters)' },
-        { status: 400 },
-      );
-    }
-
-    // 🧩 Create the post
+    // Create post
     const post = await Post.create({
       userId,
       content,
@@ -109,31 +113,18 @@ export async function POST(request: NextRequest) {
       mediaType,
       location,
       sport: sport ? sport.toLowerCase() : undefined,
+      likesCount: 0,
+      commentsCount: 0,
+      sharesCount: 0,
     });
 
-    // 🧠 Increment user's post count in Supabase
-    const { error: statsError } = await supabaseAdmin.rpc(
-      'increment_total_posts',
-      { p_user_id: userId },
-    );
-    if (statsError) console.error('⚠️ Failed to increment total_posts:', statsError);
-
-    // 🧠 Fetch author info from Supabase
-    console.log('🔍 Fetching profile for userId:', userId);
-    const { data: profile, error: profileError } = await supabaseAdmin
+    // Fetch user profile
+    const { data: profile } = await supabaseAdmin
       .from('users_profile')
       .select('id, full_name, avatar_url')
       .eq('id', userId)
       .single();
 
-    if (profileError) {
-      console.error('⚠️ Supabase profile fetch error:', profileError);
-      console.error('⚠️ userId that failed:', userId);
-    } else {
-      console.log('✅ Profile found:', profile);
-    }
-
-    // ✨ Attach user info
     const enrichedPost = {
       ...post.toObject(),
       _id: post._id.toString(),
@@ -144,19 +135,28 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    return NextResponse.json(
-      {
-        success: true,
-        data: enrichedPost,
-        message: 'Post created successfully',
-      },
-      { status: 201 },
-    );
+    // ✅ Broadcast to all connected clients (optional - comment out if causing issues)
+    try {
+      await broadcastFeedUpdate('new_post', enrichedPost);
+    } catch (broadcastError) {
+      console.warn('Broadcast failed, but post created:', broadcastError);
+    }
+
+    // Update user stats (non-blocking)
+    supabaseAdmin.rpc('increment_total_posts', { p_user_id: userId })
+      .catch(err => console.error('Stats update failed:', err));
+
+    return NextResponse.json({
+      success: true,
+      data: enrichedPost,
+      message: 'Post created successfully',
+    }, { status: 201 });
+
   } catch (error: any) {
     console.error('POST /api/posts error:', error);
     return NextResponse.json(
       { success: false, error: error.message },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../../../../../../packages/lib/supabase";
+import { supabase } from "@paceon/lib/supabase";
 
 export default function MatchmakingPage() {
   const router = useRouter();

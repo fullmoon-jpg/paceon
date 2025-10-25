@@ -1,10 +1,48 @@
-// src/app/api/posts/recent/route.ts
+// src/app/api/posts/recent/route.ts - Same pattern
 import { NextRequest, NextResponse } from 'next/server';
-import connectDB from '../../../../../../../packages/lib/mongodb';
-import Post from '../../../../lib/models/Posts';
-import { supabaseAdmin } from '../../../../../../../packages/lib/supabase';
+import connectDB from '@paceon/lib/mongodb';
+import Post from '@/lib/models/Posts';
+import { supabaseAdmin } from '@paceon/lib/supabase';
 
-// GET /api/posts/recent - Get posts created after a certain time
+// ✅ Reuse cache helper (extract to shared utils if needed)
+const profileCache = new Map<string, { profile: any; timestamp: number }>();
+const CACHE_TTL = 5 * 60 * 1000;
+
+async function fetchUserProfiles(userIds: string[]) {
+  const now = Date.now();
+  const uncachedIds: string[] = [];
+  const result = new Map();
+
+  for (const userId of userIds) {
+    const cached = profileCache.get(userId);
+    if (cached && (now - cached.timestamp) < CACHE_TTL) {
+      result.set(userId, cached.profile);
+    } else {
+      uncachedIds.push(userId);
+    }
+  }
+
+  if (uncachedIds.length > 0) {
+    const { data: profiles } = await supabaseAdmin
+      .from('users_profile')
+      .select('id, full_name, avatar_url')
+      .in('id', uncachedIds);
+
+    profiles?.forEach(profile => {
+      profileCache.set(profile.id, { profile, timestamp: now });
+      result.set(profile.id, profile);
+    });
+
+    uncachedIds.forEach(id => {
+      if (!result.has(id)) {
+        result.set(id, { id, full_name: 'Unknown User', avatar_url: null });
+      }
+    });
+  }
+
+  return result;
+}
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
@@ -21,7 +59,6 @@ export async function GET(request: NextRequest) {
 
     const sinceDate = new Date(since);
 
-    // Get posts created after the given time
     const posts = await Post.find({
       createdAt: { $gt: sinceDate }
     })
@@ -37,24 +74,15 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Get user data
     const userIds = [...new Set(posts.map(post => post.userId))];
-    const { data: profiles } = await supabaseAdmin
-      .from('users_profile')
-      .select('id, full_name, avatar_url')
-      .in('id', userIds);
+    
+    // ✅ Use cached fetch
+    const userMap = await fetchUserProfiles(userIds);
 
-    const userMap = new Map(profiles?.map(p => [p.id, p]) || []);
-
-    // Enrich posts
     const enrichedPosts = posts.map(post => ({
       ...post,
       _id: post._id.toString(),
-      user: userMap.get(post.userId) || {
-        id: post.userId,
-        full_name: 'Unknown User',
-        avatar_url: null,
-      },
+      user: userMap.get(post.userId),
     }));
 
     return NextResponse.json({
