@@ -4,7 +4,7 @@ import connectDB from '@paceon/lib/mongodb';
 import Post from '@/lib/models/Posts';
 import { supabaseAdmin } from '@paceon/lib/supabase';
 
-// ✅ Reuse cache helper (extract to shared utils if needed)
+// Reuse cache helper (extract to shared utils if needed)
 const profileCache = new Map<string, { profile: any; timestamp: number }>();
 const CACHE_TTL = 5 * 60 * 1000;
 
@@ -76,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     const userIds = [...new Set(posts.map(post => post.userId))];
     
-    // ✅ Use cached fetch
+    // Use cached fetch
     const userMap = await fetchUserProfiles(userIds);
 
     const enrichedPosts = posts.map(post => ({

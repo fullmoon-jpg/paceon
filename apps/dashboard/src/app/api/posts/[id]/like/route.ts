@@ -5,7 +5,6 @@ import Post from '@/lib/models/Posts';
 import Like from '@/lib/models/Like';
 import { supabaseAdmin } from '@paceon/lib/supabase';
 
-// ✅ Enhanced rate limiter with request tracking
 const rateLimitMap = new Map<string, { 
   lastRequest: number; 
   processing: boolean;
@@ -13,8 +12,8 @@ const rateLimitMap = new Map<string, {
   resetTime: number;
 }>();
 
-const RATE_LIMIT_MS = 1000; // 1 second between requests
-const MAX_REQUESTS_PER_MINUTE = 10; // Max 10 requests per minute per user-post pair
+const RATE_LIMIT_MS = 1000;
+const MAX_REQUESTS_PER_MINUTE = 10;
 const MINUTE_MS = 60 * 1000;
 
 function checkRateLimit(userId: string, postId: string): { allowed: boolean; reason?: string } {
@@ -22,13 +21,11 @@ function checkRateLimit(userId: string, postId: string): { allowed: boolean; rea
   const entry = rateLimitMap.get(rateLimitKey);
   const now = Date.now();
 
-  // Check if currently processing
   if (entry?.processing) {
     return { allowed: false, reason: 'Request already in progress' };
   }
 
   if (!entry) {
-    // First request
     rateLimitMap.set(rateLimitKey, {
       lastRequest: now,
       processing: true,
@@ -38,7 +35,6 @@ function checkRateLimit(userId: string, postId: string): { allowed: boolean; rea
     return { allowed: true };
   }
 
-  // Reset counter if minute has passed
   if (now > entry.resetTime) {
     rateLimitMap.set(rateLimitKey, {
       lastRequest: now,
@@ -49,17 +45,14 @@ function checkRateLimit(userId: string, postId: string): { allowed: boolean; rea
     return { allowed: true };
   }
 
-  // Check per-minute limit
   if (entry.requestCount >= MAX_REQUESTS_PER_MINUTE) {
     return { allowed: false, reason: 'Too many requests per minute' };
   }
 
-  // Check cooldown
   if (now - entry.lastRequest < RATE_LIMIT_MS) {
     return { allowed: false, reason: 'Please wait before liking again' };
   }
 
-  // Update entry
   rateLimitMap.set(rateLimitKey, {
     lastRequest: now,
     processing: true,
@@ -87,7 +80,6 @@ function cleanupRateLimit(userId: string, postId: string) {
   rateLimitMap.delete(rateLimitKey);
 }
 
-// Cleanup old entries every 5 minutes
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of rateLimitMap.entries()) {
@@ -112,9 +104,7 @@ export async function POST(
     
     const body = await request.json();
     userId = body.userId;
-    const clientAction = body.action; // 'like' or 'unlike'
-
-    console.log('🔵 API REQUEST:', { postId, userId, clientAction });
+    const clientAction = body.action;
 
     if (!userId || !postId) {
       return NextResponse.json(
@@ -123,17 +113,14 @@ export async function POST(
       );
     }
 
-    // ✅ Check rate limit
     const rateLimitCheck = checkRateLimit(userId, postId);
     if (!rateLimitCheck.allowed) {
-      console.warn(`⚠️ Rate limit hit: ${rateLimitCheck.reason}`);
       return NextResponse.json(
         { success: false, error: rateLimitCheck.reason },
         { status: 429 }
       );
     }
 
-    // ✅ Find post
     const post = await Post.findById(postId);
 
     if (!post) {
@@ -144,7 +131,6 @@ export async function POST(
       );
     }
 
-    // ✅ Check current like status dari Like collection
     const existingLike = await Like.findOne({
       userId,
       targetType: 'post',
@@ -154,42 +140,27 @@ export async function POST(
     const isCurrentlyLiked = !!existingLike;
     const postOwnerId = post.userId.toString();
 
-    console.log('📊 SERVER Current state:', {
-      postId,
-      userId,
-      isCurrentlyLiked,
-      currentLikesCount: post.likesCount,
-      clientAction,
-    });
-
     let actionPerformed: 'liked' | 'unliked' | 'no-change';
     let newLikesCount = post.likesCount;
 
-    // ✅ IDEMPOTENT OPERATION
     if (clientAction === 'unlike') {
       if (isCurrentlyLiked) {
-        // Actually unlike - delete Like document
         await Like.deleteOne({
           userId,
           targetType: 'post',
           targetId: postId,
         });
 
-        // Decrement counter
         newLikesCount = Math.max(0, post.likesCount - 1);
         post.likesCount = newLikesCount;
         await post.save();
 
         actionPerformed = 'unliked';
-        console.log('➖ SERVER UNLIKE executed:', { newLikesCount });
       } else {
-        // Already unliked - return current state (idempotent)
         actionPerformed = 'no-change';
-        console.log('⚠️ Already unliked - returning current state');
       }
     } else if (clientAction === 'like') {
       if (!isCurrentlyLiked) {
-        // Actually like - create Like document
         try {
           await Like.create({
             userId,
@@ -197,15 +168,12 @@ export async function POST(
             targetId: postId,
           });
 
-          // Increment counter
           newLikesCount = post.likesCount + 1;
           post.likesCount = newLikesCount;
           await post.save();
 
           actionPerformed = 'liked';
-          console.log('➕ SERVER LIKE executed:', { newLikesCount });
 
-          // ✅ Create notification (only if not self-like)
           if (userId !== postOwnerId) {
             try {
               const { data: actorProfile } = await supabaseAdmin
@@ -227,20 +195,14 @@ export async function POST(
                   post_content: post.content.substring(0, 100)
                 }
               });
-
-              console.log('✅ Like notification created');
             } catch (notifError) {
-              console.error('⚠️ Failed to create notification:', notifError);
-              // Don't fail the request if notification fails
+              // Silent fail
             }
           }
         } catch (error: any) {
-          // Handle duplicate key error (race condition safety)
           if (error.code === 11000) {
-            console.warn('⚠️ Duplicate like attempt (race condition caught by DB)');
             actionPerformed = 'no-change';
             
-            // Still sync the count to be safe
             const actualCount = await Like.countDocuments({
               targetType: 'post',
               targetId: postId,
@@ -252,13 +214,11 @@ export async function POST(
               newLikesCount = actualCount;
             }
           } else {
-            throw error; // Re-throw other errors
+            throw error;
           }
         }
       } else {
-        // Already liked - return current state (idempotent)
         actionPerformed = 'no-change';
-        console.log('⚠️ Already liked - returning current state');
       }
     } else {
       cleanupRateLimit(userId, postId);
@@ -268,10 +228,8 @@ export async function POST(
       );
     }
 
-    // ✅ Release rate limit
     releaseRateLimit(userId, postId);
 
-    // ✅ Get final state untuk ensure consistency
     const finalLike = await Like.findOne({
       userId,
       targetType: 'post',
@@ -279,25 +237,16 @@ export async function POST(
     });
     const finalIsLiked = !!finalLike;
 
-    // ✅ Get actual count dari database untuk ensure accuracy
     const actualCount = await Like.countDocuments({
       targetType: 'post',
       targetId: postId,
     });
 
-    // ✅ Sync count jika ada discrepancy
     if (actualCount !== post.likesCount) {
-      console.warn(`⚠️ Count mismatch! Post: ${post.likesCount}, Actual: ${actualCount}. Syncing...`);
       post.likesCount = actualCount;
       await post.save();
       newLikesCount = actualCount;
     }
-
-    console.log('✅ SERVER RESPONSE:', {
-      isLiked: finalIsLiked,
-      likesCount: newLikesCount,
-      actionPerformed,
-    });
 
     return NextResponse.json({
       success: true,
@@ -313,9 +262,6 @@ export async function POST(
     });
 
   } catch (error: any) {
-    console.error('❌ POST /api/posts/[id]/like error:', error);
-    
-    // Clean up rate limit on error
     if (userId && postId) {
       cleanupRateLimit(userId, postId);
     }

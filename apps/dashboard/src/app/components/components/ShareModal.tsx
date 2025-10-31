@@ -24,26 +24,28 @@ export default function ShareModal({
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-md w-full">
-        <div className="border-b border-gray-200 p-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-gray-800">Share Post</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full shadow-2xl">
+        {/* Header */}
+        <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+          <h3 className="text-lg font-bold text-gray-800 dark:text-white">Share Post</h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
           >
-            <X size={20} className="text-gray-600" />
+            <X size={20} className="text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
+        {/* Content */}
         <div className="p-4">
-          <p className="text-sm text-gray-600 mb-4">Share this post with others</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Share this post with others</p>
           
           <div className="flex gap-2 mb-4">
             <input
               type="text"
-              value={`${window.location.origin}/activity-feed/post/${postId}`}
+              value={`${window.location.origin}/activityfeed/post/${postId}`}
               readOnly
-              className="flex-1 px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm text-gray-600"
+              className="flex-1 px-3 py-2 bg-gray-50 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-600 dark:text-gray-300"
             />
             <button
               onClick={copyShareLink}
@@ -64,8 +66,8 @@ export default function ShareModal({
           </div>
 
           {copySuccess && (
-            <div className="text-sm text-green-600 text-center bg-green-50 py-2 rounded-lg">
-              ✓ Link copied to clipboard!
+            <div className="text-sm text-green-600 dark:text-green-400 text-center bg-green-50 dark:bg-green-900/30 py-2 rounded-lg">
+              Link copied to clipboard!
             </div>
           )}
         </div>

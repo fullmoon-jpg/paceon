@@ -17,12 +17,12 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // ✅ Add pagination support
+    // Add pagination support
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
-    // ✅ Parallel queries
+    // Parallel queries
     const [savedPosts, total] = await Promise.all([
       SavedPost.find({ userId })
         .sort({ createdAt: -1 })
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Use upsert to avoid duplicate check
+    // Use upsert to avoid duplicate check
     const savedPost = await SavedPost.findOneAndUpdate(
       { userId, postId },
       { userId, postId, createdAt: new Date() },
@@ -97,7 +97,7 @@ export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
 
-    // ✅ Support both body and query params
+    // Support both body and query params
     let userId, postId;
     
     try {

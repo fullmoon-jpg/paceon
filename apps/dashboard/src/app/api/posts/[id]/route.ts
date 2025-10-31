@@ -1,4 +1,3 @@
-// src/app/api/posts/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@paceon/lib/mongodb';
 import Post from '@/lib/models/Posts';
@@ -14,7 +13,6 @@ export async function GET(
     const resolvedParams = await params;
     const postId = resolvedParams.id;
 
-    // ✅ Find post from MongoDB
     const post = await Post.findById(postId).lean();
 
     if (!post) {
@@ -24,7 +22,6 @@ export async function GET(
       );
     }
 
-    // ✅ Fetch user profile from Supabase
     const { data: userProfile, error: userError } = await supabaseAdmin
       .from('users_profile')
       .select('id, full_name, avatar_url')
@@ -35,7 +32,6 @@ export async function GET(
       console.error('Error fetching user profile:', userError);
     }
 
-    // ✅ Combine post with user data
     const postWithUser = {
       ...post,
       _id: post._id.toString(),
@@ -60,7 +56,6 @@ export async function GET(
   }
 }
 
-// ✅ PATCH for edit post
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -80,7 +75,6 @@ export async function PATCH(
       );
     }
 
-    // Find post
     const post = await Post.findById(postId);
 
     if (!post) {
@@ -92,7 +86,6 @@ export async function PATCH(
 
     // Check ownership
     if (post.userId !== userId) {
-      // Check if admin (you can add admin check here)
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
@@ -107,7 +100,6 @@ export async function PATCH(
 
     await post.save();
 
-    // Fetch user profile for response
     const { data: userProfile } = await supabaseAdmin
       .from('users_profile')
       .select('id, full_name, avatar_url')
@@ -138,7 +130,6 @@ export async function PATCH(
   }
 }
 
-// ✅ DELETE for delete post
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -150,6 +141,10 @@ export async function DELETE(
     const postId = resolvedParams.id;
     const body = await request.json();
     const { userId } = body;
+
+    // Get isAdmin dari query parameter
+    const { searchParams } = new URL(request.url);
+    const isAdmin = searchParams.get('isAdmin') === 'true';
 
     if (!userId) {
       return NextResponse.json(
@@ -168,15 +163,16 @@ export async function DELETE(
       );
     }
 
-    // Check ownership (or admin)
-    if (post.userId !== userId) {
-      // You can add admin check here
+    // Check ownership OR admin
+    const isOwner = post.userId === userId;
+    if (!isOwner && !isAdmin) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
         { status: 403 }
       );
     }
 
+    // Delete post
     await Post.findByIdAndDelete(postId);
 
     return NextResponse.json({

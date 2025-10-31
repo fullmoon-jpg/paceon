@@ -1,3 +1,4 @@
+// src/app/dashboard/page.tsx - PART 1
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
@@ -115,7 +116,7 @@ const DashboardPage = () => {
 
       setStats(data);
     } catch (error) {
-      // Silent fail
+      console.error('Stats fetch error:', error);
     }
   }, [user, fetchWithCache]);
 
@@ -149,13 +150,14 @@ const DashboardPage = () => {
 
       setConnections(data);
     } catch (error) {
-      // Silent fail
+      console.error('Connections fetch error:', error);
     }
   }, [user, fetchWithCache]);
 
+  // ✅ FIXED: Fetch events dengan current_players yang benar
   const fetchAllEvents = useCallback(async () => {
     try {
-      const { data, error } = await supabase
+      const { data: eventsData, error } = await supabase
         .from("events")
         .select("*")
         .eq("is_active", true)
@@ -163,12 +165,30 @@ const DashboardPage = () => {
         .order("event_date", { ascending: true });
 
       if (error) throw error;
-      setAllEvents((data as Event[]) || []);
+
+      // ✅ Count current_players for each event
+      const eventsWithCounts = await Promise.all(
+        (eventsData || []).map(async (event: any) => {
+          const { count } = await supabase
+            .from('bookings')
+            .select('*', { count: 'exact', head: true })
+            .eq('event_id', event.id)
+            .in('booking_status', ['confirmed', 'pending', 'attended']);
+
+          return {
+            ...event,
+            current_players: count || 0,
+          };
+        })
+      );
+
+      setAllEvents(eventsWithCounts as Event[]);
     } catch (error) {
-      // Silent fail
+      console.error('All events fetch error:', error);
     }
   }, []);
 
+  // ✅ FIXED: Fetch registered events dengan current_players
   const fetchRegisteredEvents = useCallback(async () => {
     if (!user) return;
 
@@ -177,14 +197,31 @@ const DashboardPage = () => {
         .from("bookings")
         .select("event_id, events(*)")
         .eq("user_id", user.id)
-        .in("booking_status", ["pending", "confirmed", "pending_payment"]);
+        .in("booking_status", ['confirmed', 'pending', 'attended']);
 
       if (error) throw error;
 
-      const events = data?.map((b: any) => b.events).filter((e): e is Event => e !== null) || [];
-      setRegisteredEvents(events);
+      const eventsList = data?.map((b: any) => b.events).filter((e): e is Event => e !== null) || [];
+
+      // ✅ Count current_players for registered events
+      const eventsWithCounts = await Promise.all(
+        eventsList.map(async (event: Event) => {
+          const { count } = await supabase
+            .from('bookings')
+            .select('*', { count: 'exact', head: true })
+            .eq('event_id', event.id)
+            .in('booking_status', ['confirmed', 'pending', 'attended']);
+
+          return {
+            ...event,
+            current_players: count || 0,
+          };
+        })
+      );
+
+      setRegisteredEvents(eventsWithCounts);
     } catch (error) {
-      // Silent fail
+      console.error('Registered events fetch error:', error);
     }
   }, [user]);
 
@@ -195,7 +232,7 @@ const DashboardPage = () => {
     }
   }, [loading, user, fetchStats, fetchConnections, fetchAllEvents, fetchRegisteredEvents]);
 
-  // Realtime subscription
+  // ✅ IMPROVED: Realtime subscription with current_players update
   useEffect(() => {
     if (!user) return;
 
@@ -207,25 +244,18 @@ const DashboardPage = () => {
       .channel("dashboard-events-realtime")
       .on(
         "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "events",
-        },
-        (payload) => {
-          const updatedEvent = payload.new as Event;
-
-          setAllEvents((prev) =>
-            prev.map((e) =>
-              e.id === updatedEvent.id ? { ...e, current_players: updatedEvent.current_players } : e
-            )
-          );
-
-          setRegisteredEvents((prev) =>
-            prev.map((e) =>
-              e.id === updatedEvent.id ? { ...e, current_players: updatedEvent.current_players } : e
-            )
-          );
+        { event: "*", schema: "public", table: "events" },
+        () => {
+          fetchAllEvents();
+          fetchRegisteredEvents();
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings" },
+        () => {
+          fetchAllEvents();
+          fetchRegisteredEvents();
         }
       )
       .subscribe();
@@ -236,7 +266,7 @@ const DashboardPage = () => {
         channelRef.current = null;
       }
     };
-  }, [user]);
+  }, [user, fetchAllEvents, fetchRegisteredEvents]);
 
   // Visibility change - refetch
   useEffect(() => {
@@ -297,10 +327,10 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#15b392] mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading dashboard...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -310,11 +340,13 @@ const DashboardPage = () => {
 
   const userName = profile?.full_name || profile?.username || user?.email?.split("@")[0] || "User";
 
+    // ... continuing from Part 1
+
   return (
-    <div className="min-h-screen flex flex-col bg-gray-50">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="relative bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-60">
+        <div className="absolute inset-0 opacity-60 dark:opacity-40">
           <img
             src="/images/login-img.webp"
             alt="Sports Background"
@@ -331,34 +363,34 @@ const DashboardPage = () => {
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 overflow-hidden">
         {/* MAIN CONTENT */}
-        <div className="lg:col-span-2 overflow-y-auto px-4 sm:px-8 pt-8 pb-8 bg-white">
+        <div className="lg:col-span-2 overflow-y-auto px-4 sm:px-8 pt-8 pb-8 bg-white dark:bg-gray-800">
           {/* Calendar */}
           <div className="mb-8">
-            <h2 className="text-xl font-extrabold mb-4 text-gray-800">Upcoming Events</h2>
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-6">
+            <h2 className="text-xl font-extrabold mb-4 text-gray-800 dark:text-white">Upcoming Events</h2>
+            <div className="bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 p-6">
               <div className="flex items-center justify-between mb-4">
                 <div></div>
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
                     aria-label="Previous month"
                   >
-                    <ChevronLeft size={20} className="text-black" />
+                    <ChevronLeft size={20} className="text-black dark:text-white" />
                   </button>
-                  <span className="font-bold text-gray-800 min-w-[140px] text-center">
+                  <span className="font-bold text-gray-800 dark:text-white min-w-[140px] text-center">
                     {format(currentMonth, "MMMM yyyy")}
                   </span>
                   <button
                     onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
                     aria-label="Next month"
                   >
-                    <ChevronRight size={20} className="text-black" />
+                    <ChevronRight size={20} className="text-black dark:text-white" />
                   </button>
                   {selectedDate && (
                     <button
-                      className="ml-2 text-sm text-[#15b392] hover:underline font-medium"
+                      className="ml-2 text-sm text-[#15b392] dark:text-green-400 hover:underline font-medium"
                       onClick={() => setSelectedDate(null)}
                     >
                       Clear
@@ -368,7 +400,7 @@ const DashboardPage = () => {
               </div>
               <div className="grid grid-cols-7 gap-2 text-center">
                 {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                  <div key={day} className="font-semibold text-gray-500 text-sm py-2">
+                  <div key={day} className="font-semibold text-gray-500 dark:text-gray-400 text-sm py-2">
                     {day}
                   </div>
                 ))}
@@ -382,8 +414,8 @@ const DashboardPage = () => {
                         isSelected
                           ? "bg-[#15b392] text-white font-bold shadow-lg scale-105"
                           : isToday(date)
-                          ? "bg-green-50 text-[#15b392] font-bold border-2 border-[#15b392]"
-                          : "hover:bg-gray-100 text-gray-700"
+                          ? "bg-green-50 dark:bg-green-900 text-[#15b392] dark:text-green-300 font-bold border-2 border-[#15b392] dark:border-green-400"
+                          : "hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300"
                       }`}
                       onClick={() => setSelectedDate(isSelected ? null : date)}
                       aria-label={`Select ${format(date, "MMMM d, yyyy")}`}
@@ -392,7 +424,7 @@ const DashboardPage = () => {
                       {dateHasEvents && (
                         <div
                           className={`w-1.5 h-1.5 mx-auto mt-0.5 rounded-full ${
-                            isSelected ? "bg-white" : "bg-[#15b392]"
+                            isSelected ? "bg-white" : "bg-[#15b392] dark:bg-green-400"
                           }`}
                         />
                       )}
@@ -406,7 +438,7 @@ const DashboardPage = () => {
           {/* Your Events */}
           <section className="mb-8">
             <div className="flex items-center mb-4 justify-between">
-              <h3 className="text-lg font-bold text-gray-800">Your Events</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white">Your Events</h3>
               <span className="bg-[#15b392] text-white text-sm px-3 py-1 rounded-full font-semibold">
                 {registeredEvents.length} joined
               </span>
@@ -417,10 +449,10 @@ const DashboardPage = () => {
                   <DashboardEventCard key={event.id} event={event} onClick={() => setModalEvent(event)} />
                 ))
               ) : (
-                <div className="col-span-2 bg-gray-50 rounded-xl p-8 text-center border-2 border-dashed border-gray-300">
-                  <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">No events joined yet</p>
-                  <p className="text-gray-400 text-sm mt-1 font-open-sans font-bold">
+                <div className="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-xl p-8 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  <Calendar className="w-12 h-12 text-gray-300 dark:text-gray-500 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400 font-medium">No events joined yet</p>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-1 font-open-sans font-bold">
                     Browse available events below to get started!
                   </p>
                 </div>
@@ -431,8 +463,8 @@ const DashboardPage = () => {
           {/* Available Events */}
           <section>
             <div className="flex items-center mb-4 justify-between">
-              <h3 className="text-lg font-bold text-gray-800">Available Events</h3>
-              <span className="bg-gray-200 text-gray-700 text-sm px-3 py-1 rounded-full font-semibold">
+              <h3 className="text-lg font-bold text-gray-800 dark:text-white">Available Events</h3>
+              <span className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm px-3 py-1 rounded-full font-semibold">
                 {upcomingAvailableEvents.length} events
               </span>
             </div>
@@ -442,10 +474,10 @@ const DashboardPage = () => {
                   <DashboardEventCard key={event.id} event={event} onClick={() => setModalEvent(event)} />
                 ))
               ) : (
-                <div className="col-span-2 bg-gray-50 rounded-xl p-8 text-center border-2 border-dashed border-gray-300">
-                  <Trophy className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500 font-medium">All events joined!</p>
-                  <p className="text-gray-400 text-sm mt-1 font-open-sans font-bold">
+                <div className="col-span-2 bg-gray-50 dark:bg-gray-700 rounded-xl p-8 text-center border-2 border-dashed border-gray-300 dark:border-gray-600">
+                  <Trophy className="w-12 h-12 text-gray-300 dark:text-gray-500 mx-auto mb-3" />
+                  <p className="text-gray-500 dark:text-gray-400 font-medium">All events joined!</p>
+                  <p className="text-gray-400 dark:text-gray-500 text-sm mt-1 font-open-sans font-bold">
                     You&apos;re up to date with all available events
                   </p>
                 </div>
@@ -455,7 +487,7 @@ const DashboardPage = () => {
         </div>
 
         {/* SIDEBAR */}
-        <div className="overflow-y-auto p-4 sm:p-6 bg-gray-50 border-l border-gray-200">
+        <div className="overflow-y-auto p-4 sm:p-6 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700">
           <div className="space-y-6">
             {/* Profile Card */}
             <div className="bg-gradient-to-br from-[#15b392] to-[#2a6435] rounded-xl shadow-lg p-6 text-white text-center">
@@ -483,7 +515,7 @@ const DashboardPage = () => {
             </div>
 
             {/* Tabs */}
-            <div className="bg-white rounded-xl border border-gray-200 p-2 shadow-md">
+            <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-2 shadow-md">
               <div className="flex gap-2">
                 <button className="flex-1 py-2 px-3 rounded-lg font-medium text-sm bg-[#15b392] text-white relative">
                   Notifications
@@ -494,7 +526,7 @@ const DashboardPage = () => {
                   )}
                 </button>
                 <button
-                  className="flex-1 py-2 px-3 rounded-lg font-medium text-sm text-gray-600 hover:bg-gray-100 transition-colors"
+                  className="flex-1 py-2 px-3 rounded-lg font-medium text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                   onClick={() => setShowFindPlayers(true)}
                 >
                   Find Players
@@ -504,9 +536,9 @@ const DashboardPage = () => {
 
             {/* Notifications */}
             {notifications && notifications.length > 0 && (
-              <div className="bg-white rounded-xl border border-gray-200 shadow-md overflow-hidden">
-                <div className="p-4 border-b border-gray-200 bg-gray-50">
-                  <h3 className="font-semibold text-gray-900 flex items-center gap-2">
+              <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-md overflow-hidden">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-600">
+                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
                     <Bell className="w-5 h-5 text-[#15b392]" />
                     Recent Activity
                   </h3>
@@ -517,14 +549,14 @@ const DashboardPage = () => {
                       key={notif.id}
                       className={`p-3 rounded-lg transition-all ${
                         !notif.is_read
-                          ? "bg-blue-50 border-l-4 border-blue-500"
-                          : "bg-gray-50 hover:bg-gray-100"
+                          ? "bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500"
+                          : "bg-gray-50 dark:bg-gray-600 hover:bg-gray-100 dark:hover:bg-gray-500"
                       }`}
                     >
-                      <p className={`text-sm ${!notif.is_read ? "font-semibold text-gray-900" : "text-gray-700"}`}>
+                      <p className={`text-sm ${!notif.is_read ? "font-semibold text-gray-900 dark:text-white" : "text-gray-700 dark:text-gray-300"}`}>
                         {notif.message}
                       </p>
-                      <p className="text-xs text-gray-500 mt-1">{format(new Date(notif.created_at), "MMM dd, HH:mm")}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{format(new Date(notif.created_at), "MMM dd, HH:mm")}</p>
                     </div>
                   ))}
                 </div>
@@ -533,31 +565,30 @@ const DashboardPage = () => {
           </div>
         </div>
       </main>
-
-      {/* Find Players Modal */}
+          {/* Find Players Modal */}
       {showFindPlayers && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto relative shadow-2xl">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto relative shadow-2xl">
             <button
-              className="absolute top-4 right-4 text-gray-600 hover:text-[#15b392] transition-colors"
+              className="absolute top-4 right-4 text-gray-600 dark:text-gray-300 hover:text-[#15b392] dark:hover:text-green-400 transition-colors"
               onClick={() => setShowFindPlayers(false)}
               aria-label="Close"
             >
               <X size={24} />
             </button>
-            <h3 className="font-bold text-2xl mb-6 text-gray-800">Your Connections</h3>
+            <h3 className="font-bold text-2xl mb-6 text-gray-800 dark:text-white">Your Connections</h3>
             {connections.length > 0 ? (
               <ul className="space-y-3">
                 {connections.map((conn) => (
                   <li
                     key={conn.id}
-                    className="flex items-center gap-3 bg-gray-50 rounded-lg p-4 hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                   >
                     {conn.avatar ? (
                       <img
                         src={conn.avatar}
                         alt={conn.name}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
+                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
                       />
                     ) : (
                       <div className="w-12 h-12 rounded-full bg-[#15b392] flex items-center justify-center text-white text-lg font-bold">
@@ -565,17 +596,17 @@ const DashboardPage = () => {
                       </div>
                     )}
                     <div>
-                      <div className="font-semibold text-gray-800">{conn.name || "Unknown User"}</div>
-                      <div className="text-gray-500 text-sm">{conn.email}</div>
+                      <div className="font-semibold text-gray-800 dark:text-white">{conn.name || "Unknown User"}</div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm">{conn.email}</div>
                     </div>
                   </li>
                 ))}
               </ul>
             ) : (
               <div className="text-center py-8">
-                <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 font-medium">No connections yet</p>
-                <p className="text-gray-400 text-sm mt-2 font-open-sans font-bold">Join events to meet new players!</p>
+                <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                <p className="text-gray-500 dark:text-gray-400 font-medium">No connections yet</p>
+                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2 font-open-sans font-bold">Join events to meet new players!</p>
               </div>
             )}
           </div>
@@ -585,9 +616,9 @@ const DashboardPage = () => {
       {/* Event Detail Modal */}
       {modalEvent && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl p-6 max-w-lg w-full relative shadow-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full relative shadow-2xl max-h-[90vh] overflow-y-auto">
             <button
-              className="absolute top-4 right-4 z-10 bg-white/90 hover:bg-white p-2 rounded-full text-gray-800 hover:text-[#15b392] transition-all shadow-lg"
+              className="absolute top-4 right-4 z-10 bg-white/90 dark:bg-gray-700/90 hover:bg-white dark:hover:bg-gray-700 p-2 rounded-full text-gray-800 dark:text-gray-200 hover:text-[#15b392] dark:hover:text-green-400 transition-all shadow-lg"
               onClick={() => setModalEvent(null)}
               aria-label="Close"
             >
@@ -608,24 +639,24 @@ const DashboardPage = () => {
               </div>
             </div>
 
-            <h3 className="font-bold text-2xl mb-2 text-gray-800">{modalEvent.title}</h3>
-            <p className="text-gray-600 mb-1">{modalEvent.venue_name}</p>
-            <p className="text-gray-500 text-sm mb-4">
+            <h3 className="font-bold text-2xl mb-2 text-gray-800 dark:text-white">{modalEvent.title}</h3>
+            <p className="text-gray-600 dark:text-gray-400 mb-1">{modalEvent.venue_name}</p>
+            <p className="text-gray-500 dark:text-gray-500 text-sm mb-4">
               {modalEvent.venue_address}, {modalEvent.venue_city}
             </p>
 
             <div className="space-y-3 mb-6">
-              <div className="flex items-center gap-3 text-gray-700">
+              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                 <Calendar className="w-5 h-5 text-[#15b392]" />
                 <span className="text-sm">{format(new Date(modalEvent.event_date), "EEEE, MMMM dd, yyyy")}</span>
               </div>
-              <div className="flex items-center gap-3 text-gray-700">
+              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                 <Clock className="w-5 h-5 text-[#15b392]" />
                 <span className="text-sm">
                   {formatTime(modalEvent.start_time)} - {formatTime(modalEvent.end_time)}
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-gray-700">
+              <div className="flex items-center gap-3 text-gray-700 dark:text-gray-300">
                 <Users className="w-5 h-5 text-[#15b392]" />
                 <span className="text-sm font-semibold">
                   {modalEvent.current_players}/{modalEvent.max_players} players
@@ -635,15 +666,15 @@ const DashboardPage = () => {
 
             {modalEvent.description && (
               <div className="mb-6">
-                <h4 className="font-semibold text-gray-800 mb-2">Description</h4>
-                <p className="text-gray-600 text-sm">{modalEvent.description}</p>
+                <h4 className="font-semibold text-gray-800 dark:text-white mb-2">Description</h4>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">{modalEvent.description}</p>
               </div>
             )}
 
-            <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6">
               <div className="flex items-center justify-between">
-                <span className="text-gray-600 font-medium">Price per person</span>
-                <span className="text-2xl font-bold text-gray-900">
+                <span className="text-gray-600 dark:text-gray-400 font-medium">Price per person</span>
+                <span className="text-2xl font-bold text-gray-900 dark:text-white">
                   Rp {parseInt(String(modalEvent.price_per_person || 0), 10).toLocaleString()}
                 </span>
               </div>
@@ -672,7 +703,7 @@ interface DashboardEventCardProps {
 
 const DashboardEventCard = ({ event, onClick }: DashboardEventCardProps) => (
   <div
-    className="border border-gray-200 rounded-xl overflow-hidden shadow-sm hover:shadow-lg cursor-pointer bg-white transition-all hover:scale-[1.02]"
+    className="border border-gray-200 dark:border-gray-600 rounded-xl overflow-hidden shadow-sm hover:shadow-lg cursor-pointer bg-white dark:bg-gray-700 transition-all hover:scale-[1.02]"
     onClick={onClick}
   >
     <div className="relative h-40 overflow-hidden">
@@ -688,17 +719,17 @@ const DashboardEventCard = ({ event, onClick }: DashboardEventCardProps) => (
       </div>
     </div>
     <div className="p-4">
-      <h4 className="font-bold text-base text-gray-800 mb-2 line-clamp-1">{event.title}</h4>
-      <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+      <h4 className="font-bold text-base text-gray-800 dark:text-white mb-2 line-clamp-1">{event.title}</h4>
+      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
         <Calendar size={14} />
         {format(new Date(event.event_date), "PPP")}
       </div>
-      <div className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
         <Clock size={14} />
         {formatTime(event.start_time)} - {formatTime(event.end_time)}
       </div>
       <div className="flex items-center justify-between mt-3">
-        <div className="text-xs text-gray-600 flex items-center gap-1">
+        <div className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
           <Users size={14} />
           <span className="font-semibold">
             {event.current_players}/{event.max_players}
@@ -721,13 +752,14 @@ interface StatCardProps {
 }
 
 const StatCard = ({ icon, value, label, color }: StatCardProps) => (
-  <div className="bg-white rounded-xl shadow-md p-4 border border-gray-200">
+  <div className="bg-white dark:bg-gray-700 rounded-xl shadow-md p-4 border border-gray-200 dark:border-gray-600">
     <div className="flex items-center gap-2 mb-2">
-      <div className={`w-8 h-8 bg-${color}-100 rounded-lg flex items-center justify-center`}>{icon}</div>
+      <div className={`w-8 h-8 bg-${color}-100 dark:bg-${color}-900/30 rounded-lg flex items-center justify-center`}>{icon}</div>
     </div>
-    <div className="text-2xl font-bold text-gray-800">{value}</div>
-    <div className="text-xs text-gray-500 font-medium">{label}</div>
+    <div className="text-2xl font-bold text-gray-800 dark:text-white">{value}</div>
+    <div className="text-xs text-gray-500 dark:text-gray-400 font-medium">{label}</div>
   </div>
 );
 
 export default DashboardPage;
+

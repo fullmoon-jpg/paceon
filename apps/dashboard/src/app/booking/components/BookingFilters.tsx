@@ -29,47 +29,47 @@ export default function BookingFilters({
     { id: "other", label: "Other", color: "slate" },
   ];
 
-  // ✅ Color mapping helper
+  // ✅ Dark mode color mapping helper
   const getColorClasses = (eventTypeId: string, isSelected: boolean) => {
     if (!isSelected) {
-      return "bg-gray-100 text-gray-700 hover:bg-gray-200";
+      return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600";
     }
 
     const colorMap: Record<string, string> = {
-      all: "bg-gray-800 text-white shadow-md",
-      tennis: "bg-blue-500 text-white shadow-md",
-      padel: "bg-green-500 text-white shadow-md",
-      badminton: "bg-orange-500 text-white shadow-md",
-      coffee_chat: "bg-amber-600 text-white shadow-md",
-      workshop: "bg-yellow-500 text-white shadow-md",
-      meetup: "bg-pink-500 text-white shadow-md",
-      social: "bg-indigo-500 text-white shadow-md",
-      other: "bg-slate-500 text-white shadow-md",
+      all: "bg-gray-800 dark:bg-gray-600 text-white shadow-md",
+      tennis: "bg-blue-500 dark:bg-blue-600 text-white shadow-md",
+      padel: "bg-green-500 dark:bg-green-600 text-white shadow-md",
+      badminton: "bg-orange-500 dark:bg-orange-600 text-white shadow-md",
+      coffee_chat: "bg-amber-600 dark:bg-amber-700 text-white shadow-md",
+      workshop: "bg-yellow-500 dark:bg-yellow-600 text-white shadow-md",
+      meetup: "bg-pink-500 dark:bg-pink-600 text-white shadow-md",
+      social: "bg-indigo-500 dark:bg-indigo-600 text-white shadow-md",
+      other: "bg-slate-500 dark:bg-slate-600 text-white shadow-md",
     };
 
     return colorMap[eventTypeId] || colorMap.all;
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
       {/* Search Bar */}
       <div className="relative mb-4">
         <Search
           size={20}
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-gray-500"
         />
         <input
           type="text"
           placeholder="Search events, venues, or locations..."
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent transition-all"
+          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent transition-all"
         />
       </div>
 
       {/* Event Type Filters */}
       <div className="flex items-start gap-2">
-        <Filter size={18} className="text-gray-500 flex-shrink-0 mt-2" />
+        <Filter size={18} className="text-gray-500 dark:text-gray-400 flex-shrink-0 mt-2" />
         <div className="flex flex-wrap gap-2">
           {eventTypes.map((eventType) => (
             <button

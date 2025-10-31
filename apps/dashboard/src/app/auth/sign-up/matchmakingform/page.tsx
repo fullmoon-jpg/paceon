@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@paceon/lib/supabase";
+import { useToast } from "@/contexts/ToastContext";
 
 export default function MatchmakingPage() {
   const router = useRouter();
@@ -11,7 +12,7 @@ export default function MatchmakingPage() {
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  
+  const { showToast } = useToast();
   const [formData, setFormData] = useState({
     fullName: "",
     company: "",
@@ -35,25 +36,25 @@ export default function MatchmakingPage() {
   useEffect(() => {
     const initializeForm = async () => {
       try {
-        console.log('🔍 Initializing matchmaking form...');
+        console.log('Initializing matchmaking form...');
         
-        // 🔧 FIX: Use getSession instead of getUser untuk avoid race condition
+        // FIX: Use getSession instead of getUser untuk avoid race condition
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          console.error('❌ Session error:', sessionError);
+          console.error('Session error:', sessionError);
           router.replace('/auth/login?error=session_error');
           return;
         }
 
         if (!session?.user) {
-          console.error('❌ No session found in matchmaking form');
-          // 🔒 CRITICAL: Use replace, NOT push to prevent back button loop
+          console.error('No session found in matchmaking form');
+          // CRITICAL: Use replace, NOT push to prevent back button loop
           router.replace('/auth/login?error=no_session');
           return;
         }
 
-        console.log('✅ Session found:', session.user.email);
+        console.log('Session found:', session.user.email);
         setUserId(session.user.id);
 
         // Load existing profile data
@@ -64,16 +65,16 @@ export default function MatchmakingPage() {
           .maybeSingle();
 
         if (profileError && profileError.code !== 'PGRST116') {
-          console.error('⚠️ Profile fetch error:', profileError);
+          console.error('Profile fetch error:', profileError);
           // Continue anyway, user can still fill the form
         }
 
         if (profile?.full_name) {
-          console.log('ℹ️ Pre-filling name from profile');
+          console.log('ℹPre-filling name from profile');
           setFormData(prev => ({ ...prev, fullName: profile.full_name }));
         }
 
-        // 🔧 NEW: Check if preferences already exist
+        // NEW: Check if preferences already exist
         const { data: existingPrefs } = await supabase
           .from("matchmaking_preferences")
           .select("*")
@@ -81,7 +82,7 @@ export default function MatchmakingPage() {
           .maybeSingle();
 
         if (existingPrefs) {
-          console.log('ℹ️ Loading existing preferences');
+          console.log('ℹLoading existing preferences');
           setFormData({
             fullName: profile?.full_name || "",
             company: existingPrefs.company || "",
@@ -104,7 +105,7 @@ export default function MatchmakingPage() {
         setInitializing(false);
 
       } catch (error) {
-        console.error('❌ Initialization failed:', error);
+        console.error('Initialization failed:', error);
         router.replace('/auth/login?error=init_failed');
       }
     };
@@ -161,7 +162,7 @@ export default function MatchmakingPage() {
   const saveUserData = async () => {
     if (!userId) throw new Error("User not logged in");
 
-    console.log('💾 Saving user data...');
+    console.log('Saving user data...');
 
     // Update profile
     const { error: profileError } = await supabase
@@ -172,7 +173,7 @@ export default function MatchmakingPage() {
       .eq("id", userId);
 
     if (profileError) {
-      console.error('❌ Profile update error:', profileError);
+      console.error('Profile update error:', profileError);
       throw profileError;
     }
 
@@ -200,11 +201,11 @@ export default function MatchmakingPage() {
       .upsert(matchmakingData, { onConflict: "user_id" });
 
     if (matchmakingError) {
-      console.error('❌ Matchmaking save error:', matchmakingError);
+      console.error('Matchmaking save error:', matchmakingError);
       throw matchmakingError;
     }
 
-    console.log('✅ Data saved successfully');
+    console.log('Data saved successfully');
   };
 
   const handleSubmit = async () => {
@@ -214,12 +215,12 @@ export default function MatchmakingPage() {
     try {
       await saveUserData();
       
-      // 🔒 CRITICAL: Use replace to prevent back button issues
+      // CRITICAL: Use replace to prevent back button issues
       router.replace("/?welcome=true");
       
     } catch (error: any) {
-      console.error("❌ Error saving profile:", error);
-      alert(error.message || "Error saving profile. Please try again.");
+      console.error("Error saving profile:", error);
+      showToast('error', error.message || "Error saving profile. Please try again.");
     } finally {
       setLoading(false);
     }

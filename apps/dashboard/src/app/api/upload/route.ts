@@ -1,13 +1,12 @@
 // app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@paceon/lib/supabase';
-import sharp from 'sharp'; // ✅ Optional: for image optimization
+import sharp from 'sharp';
 
-// ✅ Configuration
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const VALID_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-const MAX_WIDTH = 1920; // Max image width
-const MAX_HEIGHT = 1920; // Max image height
+const MAX_WIDTH = 1920;
+const MAX_HEIGHT = 1920;
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +14,6 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File;
     const userId = formData.get('userId') as string;
 
-    // ✅ Validation
     if (!file) {
       return NextResponse.json(
         { success: false, error: 'No file provided' },
@@ -44,18 +42,14 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Generate unique filename
     const fileExt = file.name.split('.').pop();
     const timestamp = Date.now();
     const random = Math.random().toString(36).substring(7);
     const fileName = `${userId}/${timestamp}-${random}.${fileExt}`;
 
-    // ✅ Convert and optimize image
     const arrayBuffer = await file.arrayBuffer();
     let buffer = Buffer.from(arrayBuffer);
 
-    // ✅ Optional: Optimize with sharp (install: npm install sharp)
-    
     try {
       buffer = await sharp(buffer)
         .resize(MAX_WIDTH, MAX_HEIGHT, {
@@ -65,34 +59,27 @@ export async function POST(request: NextRequest) {
         .jpeg({ quality: 85 })
         .toBuffer();
     } catch (err) {
-      console.warn('Image optimization skipped:', err);
+      // Silent optimization skip
     }
-    
 
-    // ✅ Upload to Supabase Storage
     const { data, error } = await supabaseAdmin.storage
       .from('uploads')
       .upload(fileName, buffer, {
         contentType: file.type,
         upsert: false,
-        cacheControl: '3600', // Cache for 1 hour
+        cacheControl: '3600',
       });
 
     if (error) {
-      console.error('Supabase upload error:', error);
-      
-      // Handle specific errors
       if (error.message.includes('Duplicate')) {
         return NextResponse.json(
           { success: false, error: 'File already exists. Please try again.' },
           { status: 409 }
         );
       }
-      
       throw error;
     }
 
-    // ✅ Get public URL
     const { data: { publicUrl } } = supabaseAdmin.storage
       .from('uploads')
       .getPublicUrl(fileName);
@@ -104,7 +91,6 @@ export async function POST(request: NextRequest) {
       size: buffer.length,
     });
   } catch (error: any) {
-    console.error('Upload error:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to upload image' },
       { status: 500 }
@@ -114,7 +100,6 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    // ✅ Support both query params and body
     let fileName;
     
     const { searchParams } = new URL(request.url);
@@ -136,13 +121,11 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    // ✅ Delete from Supabase Storage
     const { error } = await supabaseAdmin.storage
       .from('uploads')
       .remove([fileName]);
 
     if (error) {
-      console.error('Delete error:', error);
       throw error;
     }
 
@@ -151,7 +134,6 @@ export async function DELETE(request: NextRequest) {
       message: 'Image deleted successfully',
     });
   } catch (error: any) {
-    console.error('Delete error:', error);
     return NextResponse.json(
       { success: false, error: error.message || 'Failed to delete image' },
       { status: 500 }

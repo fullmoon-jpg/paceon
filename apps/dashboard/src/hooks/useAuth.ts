@@ -20,9 +20,8 @@ interface UseAuthReturn {
   refreshProfile: () => Promise<void>;
 }
 
-// ✅ In-memory cache to prevent redundant fetches
 const profileCache = new Map<string, { profile: Profile; timestamp: number }>();
-const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
+const CACHE_TTL = 2 * 60 * 1000;
 
 export function useAuth(): UseAuthReturn {
   const [user, setUser] = useState<User | null>(null);
@@ -34,13 +33,10 @@ export function useAuth(): UseAuthReturn {
   const abortControllerRef = useRef<AbortController | null>(null);
   const initializedRef = useRef(false);
 
-  // ✅ Fetch profile with OAuth fallback and background update
   const fetchProfile = useCallback(async (userId: string, forceRefresh = false) => {
-    // Check cache first
     if (!forceRefresh) {
       const cached = profileCache.get(userId);
       if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-        console.log('✅ Using cached profile');
         if (mountedRef.current) {
           setProfile(cached.profile);
           setLoading(false);
@@ -49,20 +45,15 @@ export function useAuth(): UseAuthReturn {
       }
     }
 
-    // Prevent concurrent fetches
     if (fetchingRef.current) {
-      console.log('⏭️ Profile fetch already in progress');
       return;
     }
 
     fetchingRef.current = true;
-
-    // Cancel previous request
     abortControllerRef.current?.abort();
     abortControllerRef.current = new AbortController();
 
     try {
-      // Parallel fetch
       const [profileResponse, authResponse] = await Promise.all([
         supabase
           .from('users_profile')
@@ -78,33 +69,22 @@ export function useAuth(): UseAuthReturn {
       if (profileResponse.data && mountedRef.current) {
         const oauthAvatar = authResponse.data.user?.user_metadata?.avatar_url;
         const dbAvatar = profileResponse.data.avatar_url;
-        
-        // ✅ Use OAuth avatar as fallback if DB avatar is null
         const finalAvatar = dbAvatar || oauthAvatar || null;
         
         const enrichedProfile: Profile = {
           ...profileResponse.data,
           email: authResponse.data.user?.email,
-          avatar_url: finalAvatar, // Use fallback
+          avatar_url: finalAvatar,
         };
 
-        // Cache the profile
         profileCache.set(userId, {
           profile: enrichedProfile,
           timestamp: Date.now()
         });
 
         setProfile(enrichedProfile);
-        console.log('✅ Profile loaded', { 
-          dbAvatar: !!dbAvatar, 
-          oauthAvatar: !!oauthAvatar,
-          usingFallback: !dbAvatar && !!oauthAvatar 
-        });
 
-        // ✅ Background update: If using OAuth fallback, update DB
         if (!dbAvatar && oauthAvatar) {
-          console.log('📸 Updating avatar from OAuth metadata...');
-          
           supabase
             .from('users_profile')
             .update({ 
@@ -113,24 +93,16 @@ export function useAuth(): UseAuthReturn {
             })
             .eq('id', userId)
             .then(({ error }) => {
-              if (error) {
-                console.error('❌ Avatar update failed:', error);
-              } else {
-                console.log('✅ Avatar synced to database');
-                // Clear cache to force fresh fetch next time
+              if (!error) {
                 profileCache.delete(userId);
               }
             });
         }
       }
     } catch (err: any) {
-      // Ignore abort errors
       if (err.name === 'AbortError') return;
       
-      console.error('❌ Error fetching profile:', err);
-      
       if (mountedRef.current) {
-        // Fallback profile from auth metadata
         const { data: { user: authUser } } = await supabase.auth.getUser();
         const fallbackProfile: Profile = {
           id: userId,
@@ -144,7 +116,6 @@ export function useAuth(): UseAuthReturn {
         };
         
         setProfile(fallbackProfile);
-        console.log('⚠️ Using fallback profile from auth metadata');
       }
     } finally {
       fetchingRef.current = false;
@@ -154,7 +125,6 @@ export function useAuth(): UseAuthReturn {
     }
   }, []);
 
-  // ✅ Main effect - only runs once
   useEffect(() => {
     mountedRef.current = true;
 
@@ -175,7 +145,6 @@ export function useAuth(): UseAuthReturn {
           setLoading(false);
         }
       } catch (err) {
-        console.error('❌ Error checking user:', err);
         if (mountedRef.current) {
           setLoading(false);
         }
@@ -184,13 +153,8 @@ export function useAuth(): UseAuthReturn {
 
     checkUser();
 
-    // ✅ Auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        if (event !== 'TOKEN_REFRESHED') {
-          console.log('🔐 Auth event:', event);
-        }
-        
         const currentUser = session?.user ?? null;
         
         if (mountedRef.current) {
@@ -209,23 +173,18 @@ export function useAuth(): UseAuthReturn {
             
           case 'SIGNED_IN':
             if (currentUser && !initializedRef.current) {
-              console.log('🔄 First login - fetching profile with OAuth fallback');
               await fetchProfile(currentUser.id, true);
               initializedRef.current = true;
-            } else {
-              console.log('⏭️ Already initialized - skipping fetch');
             }
             break;
 
           case 'USER_UPDATED':
             if (currentUser) {
-              console.log('🔄 User updated - refetching profile');
               await fetchProfile(currentUser.id, true);
             }
             break;
             
           case 'TOKEN_REFRESHED':
-            // Skip fetch - profile hasn't changed
             break;
             
           default:
@@ -243,7 +202,6 @@ export function useAuth(): UseAuthReturn {
     };
   }, [fetchProfile]);
 
-  // ✅ Manual profile refresh
   const refreshProfile = useCallback(async () => {
     if (user) {
       fetchingRef.current = false;
@@ -251,7 +209,6 @@ export function useAuth(): UseAuthReturn {
     }
   }, [user, fetchProfile]);
 
-  // ✅ Sign out
   const signOut = useCallback(async () => {
     try {
       abortControllerRef.current?.abort();
@@ -267,7 +224,7 @@ export function useAuth(): UseAuthReturn {
       await supabase.auth.signOut();
       
     } catch (error) {
-      console.error('Error signing out:', error);
+      // Silent fail
     } finally {
       if (mountedRef.current) {
         setLoading(false);

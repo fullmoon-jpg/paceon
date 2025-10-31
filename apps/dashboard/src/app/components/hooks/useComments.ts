@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Comment, Post } from '../types';
+import { useToast } from '@/contexts/ToastContext';
 
 interface UseCommentsReturn {
   comments: Record<string, Comment[]>;
@@ -22,9 +23,11 @@ interface UseCommentsReturn {
 
 export const useComments = (
   currentUserId: string,
+  isAdmin: boolean, // ✅ Add isAdmin prop
   posts: Post[],
   setPosts: React.Dispatch<React.SetStateAction<Post[]>>
 ): UseCommentsReturn => {
+  const { showToast } = useToast();
   const [comments, setComments] = useState<Record<string, Comment[]>>({});
   const [activeCommentPost, setActiveCommentPost] = useState<string | null>(null);
   const [commentText, setCommentText] = useState("");
@@ -34,7 +37,6 @@ export const useComments = (
   const [updatingComment, setUpdatingComment] = useState(false);
   const [deletingComment, setDeletingComment] = useState<string | null>(null);
 
-  // Fetch comments
   const fetchComments = async (postId: string) => {
     if (comments[postId]) {
       setActiveCommentPost(activeCommentPost === postId ? null : postId);
@@ -49,17 +51,22 @@ export const useComments = (
       if (data.success) {
         setComments(prev => ({ ...prev, [postId]: data.data }));
         setActiveCommentPost(postId);
+      } else {
+        throw new Error(data.error || 'Failed to fetch comments');
       }
-    } catch (err) {
-      console.error('Error fetching comments:', err);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to fetch comments';
+      showToast('error', errorMessage);
     } finally {
       setLoadingComments(prev => ({ ...prev, [postId]: false }));
     }
   };
 
-  // Add comment
   const handleComment = async (postId: string) => {
-    if (!commentText.trim()) return;
+    if (!commentText.trim()) {
+      showToast('warning', 'Please write a comment');
+      return;
+    }
 
     try {
       const response = await fetch(`/api/posts/${postId}/comments`, {
@@ -86,22 +93,31 @@ export const useComments = (
         ));
 
         setCommentText("");
+        showToast('success', 'Comment posted!');
+      } else {
+        throw new Error(data.error || 'Failed to post comment');
       }
-    } catch (err) {
-      console.error('Error adding comment:', err);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to post comment';
+      showToast('error', errorMessage);
     }
   };
 
-  // Edit comment
   const handleEditComment = async (commentId: string, content: string) => {
-    if (!content.trim()) return;
+    if (!content.trim()) {
+      showToast('warning', 'Comment cannot be empty');
+      return;
+    }
 
     setUpdatingComment(true);
     try {
       const response = await fetch(`/api/comments/${commentId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content }),
+        body: JSON.stringify({ 
+          userId: currentUserId,
+          content 
+        }),
       });
 
       const data = await response.json();
@@ -116,25 +132,26 @@ export const useComments = (
           });
           return updatedComments;
         });
+        showToast('success', 'Comment updated!');
       } else {
         throw new Error(data.error || 'Failed to update comment');
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      throw new Error(errorMessage);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to update comment';
+      showToast('error', errorMessage);
+      throw error;
     } finally {
       setUpdatingComment(false);
     }
   };
 
-  // Delete comment
   const handleDeleteComment = async (commentId: string, postId: string) => {
     if (!confirm('Are you sure you want to delete this comment?')) return;
 
     setDeletingComment(commentId);
     try {
-      // ✅ Send userId as query parameter
-      const response = await fetch(`/api/comments/${commentId}?userId=${currentUserId}`, {
+      // ✅ Pass isAdmin di query parameter
+      const response = await fetch(`/api/comments/${commentId}?userId=${currentUserId}&isAdmin=${isAdmin}`, {
         method: 'DELETE',
       });
 
@@ -151,12 +168,13 @@ export const useComments = (
             ? { ...post, commentsCount: Math.max(0, post.commentsCount - 1) }
             : post
         ));
+        showToast('success', 'Comment deleted!');
       } else {
         throw new Error(data.error || 'Failed to delete comment');
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      alert('Error deleting comment: ' + errorMessage);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to delete comment';
+      showToast('error', errorMessage);
     } finally {
       setDeletingComment(null);
     }

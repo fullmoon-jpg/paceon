@@ -11,15 +11,13 @@ interface CreateEventModalProps {
 }
 
 export default function CreateEventModal({ onClose, onSubmit }: CreateEventModalProps) {
-  // ✅ Updated: sport → eventType, removed court
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    eventType: "tennis", // ✅ Changed from 'sport'
+    eventType: "tennis",
     venueName: "",
     venueAddress: "",
     venueCity: "",
-    // court: "", // ❌ Removed
     date: "",
     startTime: "",
     endTime: "",
@@ -30,7 +28,6 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // ✅ Updated: Event types list
   const eventTypes = [
     { value: 'tennis', label: 'Tennis' },
     { value: 'padel', label: 'Padel' },
@@ -46,7 +43,6 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Call onSubmit if provided (from parent)
     if (onSubmit) {
       try {
         await onSubmit(formData);
@@ -70,15 +66,15 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl max-w-3xl w-full my-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-3xl w-full my-8 shadow-2xl max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between z-10 rounded-t-xl">
-          <h2 className="text-xl font-bold text-gray-800">Create New Event</h2>
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between z-10 rounded-t-xl">
+          <h2 className="text-xl font-bold text-gray-800 dark:text-white">Create New Event</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <X size={24} className="text-gray-600" />
+            <X size={24} className="text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
@@ -86,13 +82,13 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
           {/* Basic Info */}
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+            <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <Calendar size={18} className="text-[#15b392]" />
               Basic Information
             </h3>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Event Title *
               </label>
               <input
@@ -102,12 +98,12 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                 value={formData.title}
                 onChange={handleChange}
                 placeholder="e.g., Morning Tennis Session"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Description
               </label>
               <textarea
@@ -116,21 +112,20 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                 onChange={handleChange}
                 rows={3}
                 placeholder="Describe your event..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent resize-none"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent resize-none"
               />
             </div>
 
-            {/* ✅ Updated: Event Type Select */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Event Type *
               </label>
               <select
-                name="eventType" // ✅ Changed from 'sport'
+                name="eventType"
                 required
                 value={formData.eventType}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
               >
                 {eventTypes.map((type) => (
                   <option key={type.value} value={type.value}>
@@ -143,13 +138,13 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
 
           {/* Venue Info */}
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+            <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <MapPin size={18} className="text-[#15b392]" />
               Venue Information
             </h3>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Venue Name *
               </label>
               <input
@@ -159,14 +154,13 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                 value={formData.venueName}
                 onChange={handleChange}
                 placeholder="e.g., MMS Arena"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
               />
             </div>
 
-            {/* ✅ Updated: Removed Court field, City takes full width */}
             <div className="grid grid-cols-1 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   City *
                 </label>
                 <input
@@ -176,15 +170,13 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                   value={formData.venueCity}
                   onChange={handleChange}
                   placeholder="e.g., Jakarta"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
                 />
               </div>
-
-              {/* ❌ Court field removed */}
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Address *
               </label>
               <input
@@ -194,20 +186,19 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                 value={formData.venueAddress}
                 onChange={handleChange}
                 placeholder="Full address"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
               />
             </div>
           </div>
-
-          {/* Date & Time */}
+                    {/* Date & Time */}
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+            <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <Clock size={18} className="text-[#15b392]" />
               Date & Time
             </h3>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Date *
               </label>
               <input
@@ -217,13 +208,13 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                 value={formData.date}
                 onChange={handleChange}
                 min={format(new Date(), 'yyyy-MM-dd')}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Start Time *
                 </label>
                 <input
@@ -232,12 +223,12 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                   required
                   value={formData.startTime}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   End Time *
                 </label>
                 <input
@@ -246,7 +237,7 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                   required
                   value={formData.endTime}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
                 />
               </div>
             </div>
@@ -254,14 +245,14 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
 
           {/* Players & Price */}
           <div className="space-y-4">
-            <h3 className="font-bold text-gray-800 flex items-center gap-2">
+            <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <Users size={18} className="text-[#15b392]" />
               Participants & Pricing
             </h3>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Max Participants *
                 </label>
                 <input
@@ -272,12 +263,12 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                   max="50"
                   value={formData.maxPlayers}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Price per Person (Rp) *
                 </label>
                 <input
@@ -288,27 +279,27 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                   step="1000"
                   value={formData.price}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
                 />
               </div>
             </div>
 
-            {/* ✅ Preview Price */}
-            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+            {/* Price Preview */}
+            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Entry Fee</span>
-                <span className="font-semibold text-gray-800">
+                <span className="text-gray-600 dark:text-gray-400">Entry Fee</span>
+                <span className="font-semibold text-gray-800 dark:text-gray-200">
                   Rp {formData.price.toLocaleString()}
                 </span>
               </div>
               <div className="flex justify-between text-sm mt-1">
-                <span className="text-gray-600">Service Fee</span>
-                <span className="font-semibold text-gray-800">Rp 10.000</span>
+                <span className="text-gray-600 dark:text-gray-400">Service Fee</span>
+                <span className="font-semibold text-gray-800 dark:text-gray-200">Rp 10.000</span>
               </div>
-              <div className="border-t border-gray-300 mt-2 pt-2">
+              <div className="border-t border-gray-300 dark:border-gray-600 mt-2 pt-2">
                 <div className="flex justify-between">
-                  <span className="font-bold text-gray-800">Total per Person</span>
-                  <span className="font-bold text-[#15b392]">
+                  <span className="font-bold text-gray-800 dark:text-white">Total per Person</span>
+                  <span className="font-bold text-[#15b392] dark:text-green-400">
                     Rp {(formData.price + 10000).toLocaleString()}
                   </span>
                 </div>
@@ -319,7 +310,7 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
           {/* Image URL (Optional) */}
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                 Image URL (Optional)
               </label>
               <input
@@ -328,21 +319,21 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
                 value={formData.image}
                 onChange={handleChange}
                 placeholder="https://example.com/image.jpg"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#15b392] focus:border-transparent"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
               />
-              <p className="text-xs text-gray-500 mt-1">
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                 Leave blank to use default image based on event type
               </p>
             </div>
           </div>
 
           {/* Submit Buttons */}
-          <div className="flex gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"
               onClick={onClose}
               disabled={isSubmitting}
-              className="flex-1 bg-gray-100 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-200 transition-colors disabled:opacity-50"
+              className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
             >
               Cancel
             </button>

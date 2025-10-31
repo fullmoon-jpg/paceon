@@ -38,7 +38,6 @@ export const usePostsData = (
   const lastCheckRef = useRef<Date>(new Date());
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Fetch liked posts
   const fetchLikedPosts = useCallback(async () => {
     try {
       const response = await fetch(`/api/posts/like?userId=${currentUserId}`);
@@ -46,12 +45,11 @@ export const usePostsData = (
       if (data.success) {
         setLikedPosts(new Set(data.data.map((p: any) => p.postId)));
       }
-    } catch (err) {
-      console.error('Error fetching liked posts:', err);
+    } catch (error) {
+      // Silent fail for liked posts
     }
   }, [currentUserId]);
 
-  // Fetch saved posts
   const fetchSavedPosts = useCallback(async () => {
     try {
       const response = await fetch(`/api/saved-posts?userId=${currentUserId}`);
@@ -59,65 +57,42 @@ export const usePostsData = (
       if (data.success) {
         setSavedPosts(new Set(data.data.map((p: any) => p.postId)));
       }
-    } catch (err) {
-      console.error('Error fetching saved posts:', err);
+    } catch (error) {
+      // Silent fail for saved posts
     }
   }, [currentUserId]);
 
-  // ✅ Fetch saved posts details with user data
   const fetchSavedPostsDetails = useCallback(async () => {
     try {
-      console.log('🔄 Fetching saved posts details...');
-      
       const response = await fetch(`/api/saved-posts?userId=${currentUserId}`);
       const data = await response.json();
       
-      if (!data.success) {
-        console.error('Failed to fetch saved posts:', data.error);
-        setPosts([]);
-        setHasMore(false);
-        return;
-      }
-
-      if (!data.data || data.data.length === 0) {
-        console.log('✅ No saved posts found');
+      if (!data.success || !data.data || data.data.length === 0) {
         setPosts([]);
         setHasMore(false);
         return;
       }
 
       const postIds = data.data.map((sp: any) => sp.postId);
-      console.log('📋 Fetching details for', postIds.length, 'saved posts');
       
-      // ✅ Fetch all posts in parallel
       const postPromises = postIds.map(async (id: string) => {
         try {
           const res = await fetch(`/api/posts/${id}`);
           const postData = await res.json();
           return postData;
-        } catch (err) {
-          console.error(`Failed to fetch post ${id}:`, err);
+        } catch (error) {
           return { success: false };
         }
       });
       
       const postsData = await Promise.all(postPromises);
       
-      // ✅ Filter valid posts and ensure user data exists
       const validPosts = postsData
-        .filter(p => {
-          if (!p.success || !p.data) {
-            console.warn('⚠️ Invalid post data:', p);
-            return false;
-          }
-          return true;
-        })
+        .filter(p => p.success && p.data)
         .map(p => {
           const post = p.data;
           
-          // ✅ Ensure user object exists with fallback
           if (!post.user || !post.user.id) {
-            console.warn('⚠️ Post missing user data, adding fallback:', post._id);
             post.user = {
               id: post.userId?.toString() || 'unknown',
               full_name: 'Unknown User',
@@ -128,18 +103,15 @@ export const usePostsData = (
           return post;
         });
       
-      console.log('✅ Loaded', validPosts.length, 'saved posts with user data');
       setPosts(validPosts);
       setHasMore(false);
       
-    } catch (err) {
-      console.error('❌ Error fetching saved posts details:', err);
+    } catch (error) {
       setPosts([]);
       setHasMore(false);
     }
   }, [currentUserId]);
 
-  // Fetch posts
   const fetchPosts = useCallback(async (pageNum = 1) => {
     try {
       if (pageNum === 1) {
@@ -173,10 +145,9 @@ export const usePostsData = (
           setPosts(prev => [...prev, ...data.data]);
         }
         
-        // ✅ Handle different response structures
         if (typeof data.hasMore === 'boolean') {
           setHasMore(data.hasMore);
-        } else if (data.pagination && typeof data.pagination.hasMore === 'boolean') {
+        } else if (data.pagination?.hasMore !== undefined) {
           setHasMore(data.pagination.hasMore);
         } else {
           setHasMore(data.data.length >= POSTS_PER_PAGE);
@@ -186,23 +157,21 @@ export const usePostsData = (
       } else {
         setError(data.error || 'Failed to fetch posts');
       }
-    } catch (err: any) {
-      console.error('Error fetching posts:', err);
-      setError(err.message || 'An error occurred');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'An error occurred';
+      setError(errorMessage);
     } finally {
       setLoading(false);
       setLoadingMore(false);
     }
   }, [activeTab, currentUserId, fetchSavedPostsDetails]);
 
-  // Load more posts
   const loadMorePosts = useCallback(() => {
     if (!loadingMore && hasMore) {
       fetchPosts(page + 1);
     }
   }, [loadingMore, hasMore, page, fetchPosts]);
 
-  // Load new posts
   const loadNewPosts = useCallback(async () => {
     setLoadingMore(true);
     try {
@@ -226,14 +195,13 @@ export const usePostsData = (
           setHasMore(data.data.length >= POSTS_PER_PAGE);
         }
       }
-    } catch (err) {
-      console.error('Error loading new posts:', err);
+    } catch (error) {
+      // Silent fail for polling
     } finally {
       setLoadingMore(false);
     }
   }, [activeTab, currentUserId]);
 
-  // Polling for new posts
   const startPolling = useCallback(() => {
     lastCheckRef.current = new Date();
 
@@ -248,15 +216,13 @@ export const usePostsData = (
         );
         const data = await response.json();
 
-        if (data.success) {
-          if (data.data && data.data.length > 0) {
-            setNewPostsCount(prev => prev + data.data.length);
-          }
+        if (data.success && data.data?.length > 0) {
+          setNewPostsCount(prev => prev + data.data.length);
           lastCheckRef.current = new Date();
         }
       } catch (error) {
-        if ((error as any).name !== "AbortError") {
-          console.error("Error polling for new posts:", error);
+        if (error instanceof Error && error.name !== 'AbortError') {
+          // Silent fail for polling errors
         }
       } finally {
         clearTimeout(timeout);
@@ -271,7 +237,6 @@ export const usePostsData = (
     }
   }, []);
 
-  // Effects
   useEffect(() => {
     fetchPosts();
     fetchSavedPosts();

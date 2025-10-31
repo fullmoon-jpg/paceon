@@ -6,7 +6,6 @@ import { supabase } from '@paceon/lib/supabase';
 import ActivityFeed from '../components';
 import { Loader2 } from 'lucide-react';
 
-// Type definitions
 type TabType = 'all' | 'yours' | 'saved';
 
 interface UserProfile {
@@ -33,40 +32,9 @@ export default function ActivityFeedPage() {
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-        console.log('=== AUTH DEBUG START ===');
-        console.log('1. Session exists:', !!session);
-        console.log('2. Session user ID:', session?.user?.id);
-        console.log('3. Session access token:', session?.access_token ? 'Present ✅' : 'Missing ❌');
-        console.log('4. Session expires at:', session?.expires_at ? new Date(session.expires_at * 1000).toISOString() : 'N/A');
-        
-        if (sessionError) {
-          console.error('❌ Session Error:', sessionError);
-          console.log('=== AUTH DEBUG END ===');
+        if (sessionError || !session?.user) {
           setLoading(false);
           return;
-        }
-
-        if (!session?.user) {
-          console.warn('⚠️ No session found');
-          console.log('=== AUTH DEBUG END ===');
-          setLoading(false);
-          return;
-        }
-
-        if (session.access_token) {
-          try {
-            const tokenParts = session.access_token.split('.');
-            if (tokenParts.length === 3) {
-              const payload = JSON.parse(atob(tokenParts[1]));
-              console.log('5. JWT Payload:', {
-                sub: payload.sub,
-                role: payload.role,
-                exp: new Date(payload.exp * 1000).toISOString()
-              });
-            }
-          } catch (e) {
-            console.error('Failed to parse JWT:', e);
-          }
         }
 
         setUser({
@@ -74,34 +42,19 @@ export default function ActivityFeedPage() {
           email: session.user.email ?? undefined,
         });
 
-        console.log('6. Fetching profile for user:', session.user.id);
-
-        const profileStart = Date.now();
-        const { data: profileData, error: profileError } = await supabase
+        const { data: profileData } = await supabase
           .from('users_profile')
           .select('id, full_name, avatar_url, role')
           .eq('id', session.user.id)
           .maybeSingle();
 
-        const profileTime = Date.now() - profileStart;
-        console.log(`7. Profile query took: ${profileTime}ms`);
-        console.log('8. Profile Data:', profileData);
-        console.log('9. Profile Error:', profileError);
-
-        const prefsStart = Date.now();
-        const { data: preferencesData, error: preferencesError } = await supabase
+        const { data: preferencesData } = await supabase
           .from('matchmaking_preferences')
           .select('position, company')
           .eq('user_id', session.user.id)
           .maybeSingle();
 
-        const prefsTime = Date.now() - prefsStart;
-        console.log(`10. Preferences query took: ${prefsTime}ms`);
-        console.log('11. Preferences Data:', preferencesData);
-        console.log('12. Preferences Error:', preferencesError);
-
         if (profileData) {
-          console.log('✅ Profile loaded successfully');
           setProfile({
             id: profileData.id,
             full_name: profileData.full_name,
@@ -111,7 +64,6 @@ export default function ActivityFeedPage() {
             company: preferencesData?.company,
           });
         } else {
-          console.warn('⚠️ No profile data found. Using fallback.');
           const userName = session.user.user_metadata?.full_name 
             || session.user.email?.split('@')[0] 
             || 'User';
@@ -125,11 +77,8 @@ export default function ActivityFeedPage() {
             company: preferencesData?.company,
           });
         }
-
-        console.log('=== AUTH DEBUG END ===');
       } catch (error) {
-        console.error('💥 Unexpected error in getUser:', error);
-        console.log('=== AUTH DEBUG END ===');
+        console.error('Error in getUser:', error);
       } finally {
         setLoading(false);
       }
@@ -139,8 +88,6 @@ export default function ActivityFeedPage() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('🔐 Auth state changed:', event);
-        
         if (session?.user) {
           setUser({
             id: session.user.id,
@@ -178,7 +125,7 @@ export default function ActivityFeedPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-[#15b392]" />
       </div>
     );
@@ -186,12 +133,12 @@ export default function ActivityFeedPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <div className="bg-white rounded-xl shadow-md p-8 max-w-md w-full text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">
+      <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-8 max-w-md w-full text-center">
+          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-4">
             Please Sign In
           </h2>
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             You need to be logged in to view the activity feed.
           </p>
           <a
@@ -208,14 +155,14 @@ export default function ActivityFeedPage() {
   const isAdmin = profile?.role === 'admin';
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      {/* Header - Will scroll away */}
-      <div className="bg-gray-100">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Header */}
+      <div className="bg-gray-50 dark:bg-transparent">
         <div className="p-4 sm:p-6 max-w-3xl mx-auto">
-          <h1 className="text-3xl text-black font-bold mb-2">Activity Feed</h1>
-          <p className="text-black">Share your sports moments with the community</p>
+          <h1 className="text-3xl text-black dark:text-white font-bold mb-2">Activity Feed</h1>
+          <p className="text-black dark:text-gray-400">Share your sports moments with the community</p>
           {isAdmin && (
-            <span className="inline-block mt-2 px-3 py-1 bg-yellow-500 text-black text-xs font-bold rounded-full">
+            <span className="inline-block mt-2 px-3 py-1 bg-yellow-500 dark:bg-yellow-600 text-black dark:text-white text-xs font-bold rounded-full">
               ADMIN
             </span>
           )}
@@ -223,18 +170,18 @@ export default function ActivityFeedPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
-        {/* ✅ Sticky Tabs */}
-        <div className="sticky top-0 z-20 bg-gray-100 pb-4 -mx-4 px-4">
-          <div className="bg-white rounded-xl shadow-md overflow-hidden">
-            <div className="flex border-b border-gray-200">
+        {/* Sticky Tabs */}
+        <div className="sticky top-0 z-20 bg-gray-50 dark:bg-gray-900 pb-4 -mx-4 px-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
+            <div className="flex border-b border-gray-200 dark:border-gray-700">
               {(['all', 'yours', 'saved'] as TabType[]).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={`flex-1 py-4 px-6 font-semibold transition-colors relative ${
                     activeTab === tab
-                      ? 'text-[#15b392] bg-gray-50'
-                      : 'text-gray-600 hover:bg-gray-50'
+                      ? 'text-[#15b392] dark:text-green-400 bg-gray-50 dark:bg-gray-700'
+                      : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700'
                   }`}
                 >
                   {tab === 'all'
@@ -243,7 +190,7 @@ export default function ActivityFeedPage() {
                     ? 'Your Posts'
                     : 'Saved Posts'}
                   {activeTab === tab && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#15b392]" />
+                    <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#15b392] dark:bg-green-400" />
                   )}
                 </button>
               ))}

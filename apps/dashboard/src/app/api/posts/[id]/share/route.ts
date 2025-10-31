@@ -21,7 +21,7 @@ export async function POST(
       );
     }
 
-    // ✅ Use atomic increment
+    // Use atomic increment
     await Post.findByIdAndUpdate(postId, { $inc: { sharesCount: 1 } });
 
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';

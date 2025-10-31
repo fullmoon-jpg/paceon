@@ -15,6 +15,7 @@ import EditPostModal from './components/EditPostModal';
 import EditCommentModal from './components/EditCommentModal';
 import ShareModal from './components/ShareModal';
 import ProfileModal from './components/ProfileModal';
+import { useToast } from '@/contexts/ToastContext';
 
 export default function ActivityFeed({ 
   currentUserId, 
@@ -25,6 +26,10 @@ export default function ActivityFeed({
   currentUserRole = "user",
   activeTab
 }: ActivityFeedProps) {
+  const { showToast } = useToast();
+
+  const isAdmin = currentUserRole === 'admin';
+
   const {
     posts,
     setPosts,
@@ -51,9 +56,9 @@ export default function ActivityFeed({
     creating,
     updating,
     deleting,
-    liking, // ✅ Add liking state
-    saving, // ✅ Add saving state
-  } = usePostActions(currentUserId, posts, setPosts, likedPosts, setLikedPosts, savedPosts, setSavedPosts);
+    liking,
+    saving,
+  } = usePostActions(currentUserId, isAdmin, posts, setPosts, likedPosts, setLikedPosts, savedPosts, setSavedPosts);
 
   const {
     comments,
@@ -72,30 +77,27 @@ export default function ActivityFeed({
     handleEditComment,
     handleDeleteComment,
     setActiveCommentPost,
-  } = useComments(currentUserId, posts, setPosts);
+  } = useComments(currentUserId, isAdmin, posts, setPosts);
 
-  // ✅ Realtime feed hook
   const { isConnected: feedConnected } = useRealtimeFeed({
     enabled: activeTab === 'all',
     currentUserId,
     onNewPost: (newPost) => {
-      console.log('📬 New post received from broadcast');
       if (newPost.userId !== currentUserId) {
         setPosts(prev => {
           const exists = prev.some(p => p._id === newPost._id);
           if (exists) return prev;
           return [newPost, ...prev];
         });
+        showToast('info', 'New post available');
       }
     },
     onUpdatePost: (postId, updates) => {
-      console.log('✏️ Post updated from broadcast:', postId);
       setPosts(prev => prev.map(p => 
         p._id === postId ? { ...p, ...updates } : p
       ));
     },
     onDeletePost: (postId) => {
-      console.log('🗑️ Post deleted from broadcast:', postId);
       setPosts(prev => prev.filter(p => p._id !== postId));
     },
   });
@@ -113,7 +115,6 @@ export default function ActivityFeed({
   } | null>(null);
 
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
-  const isAdmin = currentUserRole === 'admin';
 
   const handleCreatePostWithRefresh = async (postData: any) => {
     await handleCreatePost(postData);
@@ -135,12 +136,12 @@ export default function ActivityFeed({
 
   if (error) {
     return (
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <div className="flex items-center gap-3 text-red-600 mb-3">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+        <div className="flex items-center gap-3 text-red-600 dark:text-red-400 mb-3">
           <AlertCircle size={24} />
           <h3 className="font-bold text-lg">Error</h3>
         </div>
-        <p className="text-gray-600">{error}</p>
+        <p className="text-gray-600 dark:text-gray-400">{error}</p>
         <button
           onClick={() => fetchPosts()}
           className="mt-4 w-full py-2 bg-[#15b392] text-white rounded-lg hover:bg-[#2a6435] transition-colors"
@@ -169,10 +170,10 @@ export default function ActivityFeed({
 
       {/* Create Post Button */}
       {activeTab !== 'saved' && (
-        <div className="bg-white rounded-xl shadow-md p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-6">
           <button
             onClick={() => setShowCreatePost(true)}
-            className="w-full flex items-center gap-3 p-3 bg-gray-50 hover:bg-gray-100 rounded-xl transition-colors text-left"
+            className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-xl transition-colors text-left"
           >
             <div className="w-10 h-10 bg-gradient-to-br from-[#15b392] to-[#2a6435] rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden">
               {avatar_url ? (
@@ -181,45 +182,44 @@ export default function ActivityFeed({
                 getInitials(currentUserName)
               )}
             </div>
-            <span className="text-gray-500">What's on your mind?</span>
+            <span className="text-gray-500 dark:text-gray-400">What's on your mind?</span>
           </button>
-          <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
+          <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <button 
               onClick={() => setShowCreatePost(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <ImageIcon size={20} className="text-green-600" />
-              <span className="text-sm font-medium text-gray-700">Photo</span>
+              <ImageIcon size={20} className="text-green-600 dark:text-green-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Photo</span>
             </button>
             <button 
               onClick={() => setShowCreatePost(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <Video size={20} className="text-red-600" />
-              <span className="text-sm font-medium text-gray-700">Video</span>
+              <Video size={20} className="text-red-600 dark:text-red-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Video</span>
             </button>
             <button 
               onClick={() => setShowCreatePost(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 rounded-lg transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
             >
-              <MapPin size={20} className="text-blue-600" />
-              <span className="text-sm font-medium text-gray-700">Location</span>
+              <MapPin size={20} className="text-blue-600 dark:text-blue-400" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Location</span>
             </button>
           </div>
         </div>
       )}
-
-      {/* Posts Feed */}
+            {/* Posts Feed */}
       <div className="space-y-6">
         {posts.length === 0 && !loading && (
-          <div className="bg-white rounded-xl shadow-md p-12 text-center">
-            <Bookmark size={48} className="mx-auto mb-4 text-gray-400" />
-            <h3 className="text-xl font-bold text-gray-800 mb-2">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 text-center">
+            <Bookmark size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
               {activeTab === 'saved' && 'No Saved Posts'}
               {activeTab === 'yours' && 'No Posts Yet'}
               {activeTab === 'all' && 'No Posts'}
             </h3>
-            <p className="text-gray-600">
+            <p className="text-gray-600 dark:text-gray-400">
               {activeTab === 'saved' && 'Posts you save will appear here'}
               {activeTab === 'yours' && 'Create your first post to get started'}
               {activeTab === 'all' && 'Be the first to create a post'}
@@ -238,8 +238,8 @@ export default function ActivityFeed({
             isLiked={likedPosts.has(post._id)}
             isSaved={savedPosts.has(post._id)}
             isDeleting={deleting === post._id}
-            isLiking={liking.has(post._id)} // ✅ Pass liking state
-            isSaving={saving.has(post._id)} // ✅ Pass saving state
+            isLiking={liking.has(post._id)}
+            isSaving={saving.has(post._id)}
             onLike={() => handleLike(post._id)}
             onSave={() => handleSavePost(post._id)}
             onEdit={() => setEditingPost(post)}
@@ -269,7 +269,7 @@ export default function ActivityFeed({
           <button
             onClick={loadMorePosts}
             disabled={loadingMore}
-            className="px-6 py-3 bg-white text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors shadow-md disabled:opacity-50 flex items-center gap-2 mx-auto"
+            className="px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-md disabled:opacity-50 flex items-center gap-2 mx-auto"
           >
             {loadingMore ? (
               <>
@@ -284,7 +284,7 @@ export default function ActivityFeed({
       )}
 
       {!hasMore && posts.length > 0 && (
-        <div className="text-center mt-6 text-gray-500 text-sm">
+        <div className="text-center mt-6 text-gray-500 dark:text-gray-400 text-sm">
           You've reached the end
         </div>
       )}

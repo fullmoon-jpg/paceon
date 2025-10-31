@@ -32,14 +32,6 @@ export default function BookingCalendar({
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-  const previousMonth = () => {
-    onMonthChange(subMonths(currentMonth, 1));
-  };
-
-  const nextMonth = () => {
-    onMonthChange(addMonths(currentMonth, 1));
-  };
-
   const getEventsForDate = (date: Date) => {
     return events.filter((event) => 
       isSameDay(new Date(event.date), date)
@@ -47,41 +39,39 @@ export default function BookingCalendar({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
           {format(currentMonth, "MMMM yyyy")}
         </h2>
         <div className="flex gap-2">
           <button
-            onClick={previousMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={() => onMonthChange(subMonths(currentMonth, 1))}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <ChevronLeft size={20} className="text-gray-600" />
+            <ChevronLeft size={20} className="text-gray-600 dark:text-gray-300" />
           </button>
           <button
-            onClick={nextMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            onClick={() => onMonthChange(addMonths(currentMonth, 1))}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
           >
-            <ChevronRight size={20} className="text-gray-600" />
+            <ChevronRight size={20} className="text-gray-600 dark:text-gray-300" />
           </button>
         </div>
       </div>
 
-      {/* Calendar Grid */}
+      {/* Grid */}
       <div className="grid grid-cols-7 gap-2">
-        {/* Day Headers */}
         {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
           <div
             key={day}
-            className="text-center text-sm font-semibold text-gray-500 py-2"
+            className="text-center text-sm font-semibold text-gray-500 dark:text-gray-400 py-2"
           >
             {day}
           </div>
         ))}
 
-        {/* Calendar Days */}
         {daysInMonth.map((day) => {
           const dayEvents = getEventsForDate(day);
           const isSelected = selectedDate && isSameDay(day, selectedDate);
@@ -96,8 +86,8 @@ export default function BookingCalendar({
                 ${isSelected 
                   ? "bg-gradient-to-br from-[#15b392] to-[#2a6435] text-white shadow-md" 
                   : isCurrentDay
-                    ? "bg-blue-50 text-blue-600 border-2 border-blue-200"
-                    : "hover:bg-gray-50"
+                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-2 border-blue-200 dark:border-blue-700"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
                 }
               `}
             >

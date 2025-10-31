@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { X, ImageIcon, Loader2 } from "lucide-react";
+import { useToast } from "@/contexts/ToastContext";
 
 interface CreatePostModalProps {
   currentUserId: string;
@@ -34,6 +35,7 @@ export default function CreatePostModal({
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [location, setLocation] = useState("");
   const [sport, setSport] = useState<string>("");
+  const { showToast } = useToast();
 
   const getInitials = (name: string) => {
     return name
@@ -71,7 +73,10 @@ export default function CreatePostModal({
   };
 
   const handleSubmit = async () => {
-    if (!newPostContent.trim()) return;
+    if (!newPostContent.trim()) {
+      showToast('warning', 'Please write something before posting');
+      return;
+    }
 
     try {
       await onCreate({
@@ -81,7 +86,6 @@ export default function CreatePostModal({
         sport: sport || undefined,
       });
       
-      // Reset form
       setNewPostContent("");
       setSelectedImages([]);
       setPreviewImages([]);
@@ -90,24 +94,26 @@ export default function CreatePostModal({
       onClose();
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      alert('Error creating post: ' + errorMessage);
+      showToast('error', 'Error creating post: ' + errorMessage);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b border-gray-200 p-4 flex items-center justify-between">
-          <h3 className="text-xl font-bold text-gray-800">Create Post</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        {/* Header */}
+        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
+          <h3 className="text-xl font-bold text-gray-800 dark:text-white">Create Post</h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
           >
-            <X size={24} className="text-gray-600" />
+            <X size={24} className="text-gray-600 dark:text-gray-400" />
           </button>
         </div>
 
         <div className="p-4">
+          {/* User Info */}
           <div className="flex items-center gap-3 mb-4">
             <div className="w-12 h-12 bg-gradient-to-br from-[#15b392] to-[#2a6435] rounded-full flex items-center justify-center text-white font-bold overflow-hidden">
               {avatar_url ? (
@@ -117,10 +123,9 @@ export default function CreatePostModal({
               )}
             </div>
             <div>
-              <h4 className="font-bold text-gray-800">{currentUserName}</h4>
-              {/* Tampilkan position & company */}
+              <h4 className="font-bold text-gray-800 dark:text-white">{currentUserName}</h4>
               {(currentUserPosition || currentUserCompany) && (
-                <p className="text-sm text-gray-500">
+                <p className="text-sm text-gray-500 dark:text-gray-400">
                   {currentUserPosition && currentUserCompany 
                     ? `${currentUserPosition} at ${currentUserCompany}`
                     : currentUserPosition || currentUserCompany
@@ -130,34 +135,41 @@ export default function CreatePostModal({
             </div>
           </div>
 
+          {/* Content Textarea */}
           <textarea
             placeholder="What's happening in your sports journey?"
             value={newPostContent}
             onChange={(e) => setNewPostContent(e.target.value)}
-            className="w-full min-h-32 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#15b392] focus:border-transparent resize-none text-gray-800 mb-3"
+            className="w-full min-h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent resize-none text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-500 mb-3"
           />
 
+          {/* Location & Sport */}
           <div className="grid grid-cols-2 gap-3 mb-3">
             <input
               type="text"
               placeholder="Location (optional)"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392] text-sm"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
             />
             <select
               value={sport}
               onChange={(e) => setSport(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392] text-sm"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
             >
               <option value="">Select Sport</option>
               <option value="tennis">Tennis</option>
               <option value="padel">Padel</option>
               <option value="badminton">Badminton</option>
+              <option value="workshop">Workshop</option>
+              <option value="coffee chat">Coffee chat</option>
+              <option value="meet up">Meet up</option>
+              <option value="social">Social</option>
               <option value="other">Other</option>
             </select>
           </div>
 
+          {/* Image Previews */}
           {previewImages.length > 0 && (
             <div className="mt-4 grid grid-cols-2 gap-2">
               {previewImages.map((image, index) => (
@@ -178,15 +190,16 @@ export default function CreatePostModal({
             </div>
           )}
 
-          <div className="mt-4 p-4 border border-gray-200 rounded-xl">
-            <p className="text-sm font-semibold text-gray-700 mb-3">Add to your post</p>
+          {/* Add Media Section */}
+          <div className="mt-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-700">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Add to your post</p>
             <div className="flex gap-2">
               <button
                 onClick={() => document.getElementById("image-upload-input")?.click()}
-                className="flex-1 flex items-center justify-center gap-2 p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+                className="flex-1 flex items-center justify-center gap-2 p-3 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-lg transition-colors"
               >
-                <ImageIcon size={20} className="text-green-600" />
-                <span className="text-sm font-medium text-gray-700">Photo</span>
+                <ImageIcon size={20} className="text-green-600 dark:text-green-400" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Photo</span>
               </button>
 
               <input
@@ -200,6 +213,7 @@ export default function CreatePostModal({
             </div>
           </div>
 
+          {/* Submit Button */}
           <button
             onClick={handleSubmit}
             disabled={!newPostContent.trim() || creating}

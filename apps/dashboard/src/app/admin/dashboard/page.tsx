@@ -150,7 +150,7 @@ const AdminDashboard = () => {
     try {
       const { error: paymentError } = await supabase
         .from("payments")
-        .update({ payment_status: "success", updated_at: new Date().toISOString() })
+        .update({ payment_status: "paid", updated_at: new Date().toISOString() })
         .eq("id", paymentId);
 
       if (paymentError) throw paymentError;
@@ -391,7 +391,7 @@ const AdminDashboard = () => {
                       <td className="px-6 py-4">
                         <span
                           className={`px-3 py-1 text-xs font-semibold rounded-full ${
-                            payment.payment_status === "success"
+                            payment.payment_status === "paid"
                               ? "bg-green-100 text-green-700"
                               : payment.payment_status === "pending"
                               ? "bg-yellow-100 text-yellow-700"

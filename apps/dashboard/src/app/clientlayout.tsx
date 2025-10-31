@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import ResponsiveNavbar from "./ui/NavDashboard";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DataProvider } from "@/contexts/DataContext";
+import { ToastProvider } from "@/contexts/ToastContext";
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -27,22 +28,24 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
   return (
       <AuthProvider>
         <DataProvider>
-        {shouldShowNavbar ? (
-          // ✅ Layout WITH Navbar (Dashboard pages)
-          <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-            <ResponsiveNavbar />
-            <main className="flex-1 md:ml-20 transition-all duration-300 bg-gray-50 dark:bg-gray-900 pt-14 pb-20 md:pt-0 md:pb-0">
-              <div className="max-w-7xl mx-auto">
-                {children}
+          <ToastProvider>
+            {shouldShowNavbar ? (
+              // ✅ Layout WITH Navbar (Dashboard pages)
+              <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+                <ResponsiveNavbar />
+                <main className="flex-1 md:ml-20 transition-all duration-300 bg-gray-50 dark:bg-gray-900 pt-14 pb-20 md:pt-0 md:pb-0">
+                  <div className="max-w-7xl mx-auto">
+                    {children}
+                  </div>
+                </main>
               </div>
-            </main>
-          </div>
-        ) : (
-          // ✅ Layout WITHOUT Navbar (Auth pages)
-          <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
-            {children}
-          </main>
-        )}
+            ) : (
+              // ✅ Layout WITHOUT Navbar (Auth pages)
+              <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+                {children}
+              </main>
+            )}
+          </ToastProvider>
         </DataProvider>
       </AuthProvider>
   );

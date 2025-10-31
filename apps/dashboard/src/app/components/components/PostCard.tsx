@@ -1,5 +1,4 @@
 // src/components/ActivityFeed/PostCard.tsx
-
 "use client";
 
 import { useState } from "react";
@@ -39,7 +38,6 @@ interface PostCardProps {
   onDelete: () => void;
   onShare: () => void;
   onViewProfile: (profile: { userId: string; userName: string; userAvatar?: string }) => void;
-  // Comments props
   comments: Comment[];
   activeCommentPost: string | null;
   commentText: string;
@@ -90,7 +88,6 @@ export default function PostCard({
   const [localLiking, setLocalLiking] = useState(false);
   const router = useRouter();
 
-  // ✅ Navigate to single post page
   const handleViewPost = () => {
     router.push(`/activityfeed/post/${post._id}`);
   };
@@ -99,10 +96,7 @@ export default function PostCard({
     e.preventDefault();
     e.stopPropagation();
     
-    if (localLiking || isLiking) {
-      console.log('🛑 BLOCKED by local guard');
-      return;
-    }
+    if (localLiking || isLiking) return;
     
     setLocalLiking(true);
     onLike();
@@ -132,7 +126,7 @@ export default function PostCard({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md overflow-hidden">
       {/* Post Header */}
       <div className="p-4 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -155,7 +149,7 @@ export default function PostCard({
                   userName: post.user?.full_name || 'Unknown User',
                   userAvatar: post.user?.avatar_url,
                 })}
-                className="font-bold text-gray-800 hover:underline cursor-pointer text-left"
+                className="font-bold text-gray-800 dark:text-white hover:underline cursor-pointer text-left"
               >
                 {post.user?.full_name || 'Unknown User'}
               </button>
@@ -165,7 +159,7 @@ export default function PostCard({
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <span>{format(new Date(post.createdAt), "MMM dd 'at' HH:mm")}</span>
               {post.location && (
                 <>
@@ -182,22 +176,21 @@ export default function PostCard({
         
         {/* Post Menu */}
         <div className="flex items-center gap-2">
-          {/* ✅ View Post Button - Always visible */}
           <button
             onClick={handleViewPost}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
             title="View post"
           >
-            <ExternalLink size={18} className="text-gray-600" />
+            <ExternalLink size={18} className="text-gray-600 dark:text-gray-400" />
           </button>
 
           {(canEditPost || canDeletePost) && (
             <div className="relative">
               <button
                 onClick={() => setOpenDropdown(openDropdown === post._id ? null : post._id)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
               >
-                <MoreVertical size={20} className="text-gray-600" />
+                <MoreVertical size={20} className="text-gray-600 dark:text-gray-400" />
               </button>
               
               {openDropdown === post._id && (
@@ -206,14 +199,14 @@ export default function PostCard({
                     className="fixed inset-0 z-10" 
                     onClick={() => setOpenDropdown(null)}
                   />
-                  <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[150px]">
+                  <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-20 min-w-[150px]">
                     {canEditPost && post.userId === currentUserId && (
                       <button
                         onClick={() => {
                           onEdit();
                           setOpenDropdown(null);
                         }}
-                        className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2 text-gray-700"
+                        className="w-full px-4 py-2 text-left hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center gap-2 text-gray-700 dark:text-gray-300"
                       >
                         <Edit2 size={16} />
                         Edit Post
@@ -226,7 +219,7 @@ export default function PostCard({
                           setOpenDropdown(null);
                         }}
                         disabled={isDeleting}
-                        className="w-full px-4 py-2 text-left hover:bg-red-50 flex items-center gap-2 text-red-600 disabled:opacity-50"
+                        className="w-full px-4 py-2 text-left hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2 text-red-600 dark:text-red-400 disabled:opacity-50"
                       >
                         {isDeleting ? (
                           <>
@@ -249,12 +242,12 @@ export default function PostCard({
         </div>
       </div>
 
-      {/* Post Content - NOT CLICKABLE */}
+      {/* Post Content */}
       <div className="px-4 pb-3">
-        <p className="text-gray-800 whitespace-pre-wrap">{post.content}</p>
+        <p className="text-gray-800 dark:text-gray-200 whitespace-pre-wrap">{post.content}</p>
       </div>
 
-      {/* Post Images - NOT CLICKABLE */}
+      {/* Post Images */}
       {post.mediaUrls && post.mediaUrls.length > 0 && (
         <div className={`grid ${post.mediaUrls.length === 1 ? 'grid-cols-1' : 'grid-cols-2'} gap-1`}>
           {post.mediaUrls.map((image, index) => (
@@ -268,8 +261,8 @@ export default function PostCard({
         </div>
       )}
 
-      {/* Post Stats - NOT CLICKABLE */}
-      <div className="px-4 py-3 flex items-center justify-between text-sm text-gray-600 border-t border-gray-100">
+      {/* Post Stats */}
+      <div className="px-4 py-3 flex items-center justify-between text-sm text-gray-600 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700">
         <span className="flex items-center gap-1">
           <Heart size={16} className="text-red-500 fill-red-500" />
           {post.likesCount} {post.likesCount === 1 ? 'like' : 'likes'}
@@ -279,18 +272,17 @@ export default function PostCard({
           <span>{post.sharesCount} {post.sharesCount === 1 ? 'share' : 'shares'}</span>
         </div>
       </div>
-
-      {/* Post Actions */}
-      <div className="px-4 py-2 border-t border-gray-200 flex items-center justify-around">
+            {/* Post Actions */}
+      <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-around">
         <button
           onClick={onLike}
           disabled={isLiking}
           className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors relative ${
-            isLiked ? 'text-red-500' : 'text-gray-600'
+            isLiked ? 'text-red-500' : 'text-gray-600 dark:text-gray-400'
           } ${
             isLiking 
               ? 'opacity-50 cursor-not-allowed' 
-              : 'hover:bg-gray-100'
+              : 'hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
           title={isLiking ? 'Processing...' : isLiked ? 'Unlike' : 'Like'}
         >
@@ -304,10 +296,9 @@ export default function PostCard({
           </span>
         </button>
 
-        {/* ✅ Comment button tetap toggle inline comments */}
         <button
           onClick={() => fetchComments(post._id)}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
         >
           <MessageCircle size={20} />
           <span className="font-medium">Comment</span>
@@ -315,7 +306,7 @@ export default function PostCard({
 
         <button 
           onClick={onShare}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-600"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-600 dark:text-gray-400"
         >
           <Share2 size={20} />
           <span className="font-medium">Share</span>
@@ -325,11 +316,11 @@ export default function PostCard({
           onClick={onSave}
           disabled={isSaving}
           className={`p-2 rounded-lg transition-colors relative ${
-            isSaved ? 'text-[#15b392]' : 'text-gray-600'
+            isSaved ? 'text-[#15b392] dark:text-green-400' : 'text-gray-600 dark:text-gray-400'
           } ${
             isSaving 
               ? 'opacity-50 cursor-not-allowed' 
-              : 'hover:bg-gray-100'
+              : 'hover:bg-gray-100 dark:hover:bg-gray-700'
           }`}
           title={
             isSaving 
@@ -342,14 +333,14 @@ export default function PostCard({
           {isSaving ? (
             <Loader2 size={20} className="animate-spin" />
           ) : (
-            <Bookmark size={20} className={isSaved ? 'fill-[#15b392]' : ''} />
+            <Bookmark size={20} className={isSaved ? 'fill-[#15b392] dark:fill-green-400' : ''} />
           )}
         </button>
       </div>
 
       {/* Comments Section */}
       {activeCommentPost === post._id && (
-        <div className="border-t border-gray-200 bg-gray-50">
+        <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700">
           {loadingComments ? (
             <div className="p-4 flex justify-center">
               <Loader2 className="w-6 h-6 animate-spin text-[#15b392]" />
@@ -373,7 +364,7 @@ export default function PostCard({
                         )}
                       </div>
                       <div className="flex-1">
-                        <div className="bg-white rounded-lg p-3">
+                        <div className="bg-white dark:bg-gray-600 rounded-lg p-3">
                           <div className="flex items-center justify-between mb-1">
                             <button
                               onClick={() => onViewProfile({
@@ -381,21 +372,21 @@ export default function PostCard({
                                 userName: comment.user?.full_name || 'Unknown User',
                                 userAvatar: comment.user?.avatar_url,
                               })}
-                              className="font-semibold text-sm text-gray-800 hover:underline cursor-pointer"
+                              className="font-semibold text-sm text-gray-800 dark:text-white hover:underline cursor-pointer"
                             >
                               {comment.user?.full_name || 'Unknown User'}
                             </button>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
                                 {format(new Date(comment.createdAt), "MMM dd 'at' HH:mm")}
                               </span>
                               {(canEditComment(comment) || canDeleteComment(comment)) && (
                                 <div className="relative">
                                   <button
                                     onClick={() => setOpenDropdown(openDropdown === comment._id ? null : comment._id)}
-                                    className="p-1 hover:bg-gray-100 rounded"
+                                    className="p-1 hover:bg-gray-100 dark:hover:bg-gray-500 rounded"
                                   >
-                                    <MoreVertical size={14} className="text-gray-500" />
+                                    <MoreVertical size={14} className="text-gray-500 dark:text-gray-400" />
                                   </button>
                                   
                                   {openDropdown === comment._id && (
@@ -404,7 +395,7 @@ export default function PostCard({
                                         className="fixed inset-0 z-10" 
                                         onClick={() => setOpenDropdown(null)}
                                       />
-                                      <div className="absolute right-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[120px]">
+                                      <div className="absolute right-0 top-full mt-1 bg-white dark:bg-gray-700 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600 py-1 z-20 min-w-[120px]">
                                         {canEditComment(comment) && comment.userId === currentUserId && (
                                           <button
                                             onClick={() => {
@@ -412,7 +403,7 @@ export default function PostCard({
                                               setEditCommentText(comment.content);
                                               setOpenDropdown(null);
                                             }}
-                                            className="w-full px-3 py-1.5 text-left hover:bg-gray-50 flex items-center gap-2 text-sm text-gray-700"
+                                            className="w-full px-3 py-1.5 text-left hover:bg-gray-50 dark:hover:bg-gray-600 flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300"
                                           >
                                             <Edit2 size={14} />
                                             Edit
@@ -425,7 +416,7 @@ export default function PostCard({
                                               setOpenDropdown(null);
                                             }}
                                             disabled={deletingComment === comment._id}
-                                            className="w-full px-3 py-1.5 text-left hover:bg-red-50 flex items-center gap-2 text-sm text-red-600 disabled:opacity-50"
+                                            className="w-full px-3 py-1.5 text-left hover:bg-red-50 dark:hover:bg-red-900/30 flex items-center gap-2 text-sm text-red-600 dark:text-red-400 disabled:opacity-50"
                                           >
                                             {deletingComment === comment._id ? (
                                               <>
@@ -447,7 +438,7 @@ export default function PostCard({
                               )}
                             </div>
                           </div>
-                          <p className="text-sm text-gray-700">{comment.content}</p>
+                          <p className="text-sm text-gray-700 dark:text-gray-200">{comment.content}</p>
                         </div>
                       </div>
                     </div>
@@ -471,7 +462,7 @@ export default function PostCard({
                     value={commentText}
                     onChange={(e) => setCommentText(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleComment(post._id)}
-                    className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#15b392] focus:border-transparent text-sm"
+                    className="flex-1 px-4 py-2 bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-full focus:outline-none focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                   />
                   <button
                     onClick={() => handleComment(post._id)}

@@ -27,14 +27,12 @@ const ResponsiveNavbar: React.FC = () => {
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
-  // ✅ Request notification permission on mount
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(console.error);
     }
   }, []);
 
-  // ✅ Add timeout for loading state
   useEffect(() => {
     if (!authLoading) return;
 
@@ -46,7 +44,6 @@ const ResponsiveNavbar: React.FC = () => {
     return () => clearTimeout(timeout);
   }, [authLoading, router]);
 
-  // ✅ Memoize logout handler
   const handleLogout = useCallback(async () => {
     try {
       await signOut();
@@ -56,7 +53,6 @@ const ResponsiveNavbar: React.FC = () => {
     }
   }, [signOut, router]);
 
-  // ✅ Memoize menu items
   const menuItems = useMemo(
     () => [
       { id: "dashboard", icon: Home, label: "Dashboard", path: "/" },
@@ -74,7 +70,6 @@ const ResponsiveNavbar: React.FC = () => {
     [unreadCount]
   );
 
-  // ✅ Memoize getInitials
   const getInitials = useCallback((name: string) => {
     if (!name) return '?';
     return name
@@ -85,21 +80,19 @@ const ResponsiveNavbar: React.FC = () => {
       .substring(0, 2);
   }, []);
 
-  // ✅ Memoize expand handlers
   const handleMouseEnter = useCallback(() => setIsExpanded(true), []);
   const handleMouseLeave = useCallback(() => setIsExpanded(false), []);
 
-  // ✅ Loading state
   if (authLoading) {
     return (
       <>
         {/* Desktop Loading */}
-        <div className="hidden md:flex fixed left-0 top-0 h-screen w-20 bg-gradient-to-b from-[#15b392] via-[#2a6435] to-[#15b392] shadow-2xl flex-col items-center justify-center z-50">
+        <div className="hidden md:flex fixed left-0 top-0 h-screen w-20 bg-gradient-to-b from-[#15b392] via-[#2a6435] to-[#15b392] dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 shadow-2xl flex-col items-center justify-center z-50">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
           <p className="text-white text-xs">Loading...</p>
         </div>
         {/* Mobile Loading */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-2 z-50">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 z-50">
           <div className="flex justify-center">
             <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#15b392]"></div>
           </div>
@@ -112,14 +105,14 @@ const ResponsiveNavbar: React.FC = () => {
     <>
       {/* ===== DESKTOP SIDE NAVBAR ===== */}
       <div
-        className={`hidden md:flex fixed left-0 top-0 h-screen bg-gradient-to-b from-[#15b392] via-[#2a6435] to-[#15b392] shadow-2xl flex-col z-50 transition-all duration-300 ${
+        className={`hidden md:flex fixed left-0 top-0 h-screen bg-gradient-to-b from-[#15b392] via-[#2a6435] to-[#15b392] dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 shadow-2xl flex-col z-50 transition-all duration-300 ${
           isExpanded ? "w-72" : "w-20"
         }`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         {/* Logo Section */}
-        <div className="px-6 py-8 border-b border-white/20 flex items-center justify-center">
+        <div className="px-6 py-8 border-b border-white/20 dark:border-white/10 flex items-center justify-center">
           {isExpanded ? (
             <div
               className="text-2xl font-bold font-brand tracking-tight text-white cursor-pointer"
@@ -140,12 +133,12 @@ const ResponsiveNavbar: React.FC = () => {
 
         {/* Profile Section */}
         <div
-          className={`px-6 py-6 border-b border-white/20 ${
+          className={`px-6 py-6 border-b border-white/20 dark:border-white/10 ${
             isExpanded ? "" : "flex justify-center"
           }`}
         >
           <div className={`flex items-center ${isExpanded ? "space-x-4" : ""}`}>
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/30 flex-shrink-0 relative">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/30 dark:border-white/20 flex-shrink-0 relative">
               {profile?.avatar_url ? (
                 <img
                   src={profile.avatar_url}
@@ -197,8 +190,8 @@ const ResponsiveNavbar: React.FC = () => {
                     prefetch={true}
                     className={`flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200 ${
                       isActive
-                        ? "bg-white text-[#15b392] shadow-lg"
-                        : "text-white hover:bg-white/10"
+                        ? "bg-white dark:bg-gray-700 text-[#15b392] dark:text-green-400 shadow-lg"
+                        : "text-white hover:bg-white/10 dark:hover:bg-white/5"
                     } ${isExpanded ? "" : "justify-center"}`}
                   >
                     <div className="relative">
@@ -232,8 +225,8 @@ const ResponsiveNavbar: React.FC = () => {
                 prefetch={true}
                 className={`flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200 ${
                   pathname === "/settings"
-                    ? "bg-white text-[#15b392] shadow-lg"
-                    : "text-white hover:bg-white/10"
+                    ? "bg-white dark:bg-gray-700 text-[#15b392] dark:text-green-400 shadow-lg"
+                    : "text-white hover:bg-white/10 dark:hover:bg-white/5"
                 } ${isExpanded ? "" : "justify-center"}`}
               >
                 <Settings className="w-5 h-5" />
@@ -242,10 +235,9 @@ const ResponsiveNavbar: React.FC = () => {
             </li>
           </ul>
         </nav>
-
-        {/* Affirmation Cube */}
+                {/* Affirmation Cube */}
         <div
-          className={`px-4 py-4 border-t border-white/20 ${
+          className={`px-4 py-4 border-t border-white/20 dark:border-white/10 ${
             isExpanded ? "px-6" : "flex justify-center"
           }`}
         >
@@ -264,14 +256,14 @@ const ResponsiveNavbar: React.FC = () => {
 
         {/* Logout */}
         <div
-          className={`px-4 py-4 border-t border-white/20 ${
+          className={`px-4 py-4 border-t border-white/20 dark:border-white/10 ${
             isExpanded ? "px-6" : "flex justify-center"
           }`}
         >
           <button
             onClick={handleLogout}
             aria-label="Logout"
-            className={`flex items-center justify-center bg-red-500/20 rounded-xl text-white font-medium hover:bg-red-500/30 transition-all duration-200 ${
+            className={`flex items-center justify-center bg-red-500/20 dark:bg-red-500/30 rounded-xl text-white font-medium hover:bg-red-500/30 dark:hover:bg-red-500/40 transition-all duration-200 ${
               isExpanded ? "w-full px-4 py-3" : "w-12 h-12"
             }`}
           >
@@ -282,7 +274,7 @@ const ResponsiveNavbar: React.FC = () => {
       </div>
 
       {/* ===== MOBILE TOP BAR ===== */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white z-50 shadow-lg">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-gradient-to-r from-[#15b392] to-[#2a6435] dark:from-gray-800 dark:to-gray-900 text-white z-50 shadow-lg">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <img
@@ -294,7 +286,7 @@ const ResponsiveNavbar: React.FC = () => {
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-2 hover:bg-white/10 dark:hover:bg-white/5 rounded-lg transition-colors"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -305,13 +297,13 @@ const ResponsiveNavbar: React.FC = () => {
       {isMobileMenuOpen && (
         <div className="md:hidden fixed inset-0 bg-black/60 z-40" onClick={() => setIsMobileMenuOpen(false)}>
           <div 
-            className="fixed top-[56px] right-0 w-64 h-[calc(100vh-56px)] bg-white shadow-2xl overflow-y-auto"
+            className="fixed top-[56px] right-0 w-64 h-[calc(100vh-56px)] bg-white dark:bg-gray-800 shadow-2xl overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Profile Section */}
-            <div className="p-4 border-b border-gray-200 bg-gradient-to-r from-[#15b392] to-[#2a6435]">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-[#15b392] to-[#2a6435] dark:from-gray-700 dark:to-gray-800">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white dark:border-white/30">
                   {profile?.avatar_url ? (
                     <img
                       src={profile.avatar_url}
@@ -344,10 +336,10 @@ const ResponsiveNavbar: React.FC = () => {
                   <Link
                     href="/settings"
                     onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                   >
-                    <Settings className="w-5 h-5 text-gray-600" />
-                    <span className="font-medium text-gray-800">Settings</span>
+                    <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
+                    <span className="font-medium text-gray-800 dark:text-gray-200">Settings</span>
                   </Link>
                 </li>
                 <li>
@@ -366,7 +358,7 @@ const ResponsiveNavbar: React.FC = () => {
                       setIsMobileMenuOpen(false);
                       handleLogout();
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                   >
                     <LogOut className="w-5 h-5" />
                     <span className="font-medium">Logout</span>
@@ -379,7 +371,7 @@ const ResponsiveNavbar: React.FC = () => {
       )}
 
       {/* ===== MOBILE BOTTOM NAVIGATION ===== */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-2 py-2 z-50 safe-area-bottom">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-2 z-50 safe-area-bottom">
         <div className="flex items-center justify-around">
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
@@ -390,8 +382,8 @@ const ResponsiveNavbar: React.FC = () => {
                 aria-label={item.label}
                 className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 ${
                   isActive
-                    ? "text-[#15b392]"
-                    : "text-gray-600"
+                    ? "text-[#15b392] dark:text-green-400"
+                    : "text-gray-600 dark:text-gray-400"
                 }`}
               >
                 <div className="relative">
@@ -402,7 +394,7 @@ const ResponsiveNavbar: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <span className={`text-xs mt-1 font-medium ${isActive ? 'text-[#15b392]' : 'text-gray-600'}`}>
+                <span className={`text-xs mt-1 font-medium ${isActive ? 'text-[#15b392] dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`}>
                   {item.label}
                 </span>
               </Link>
@@ -412,8 +404,8 @@ const ResponsiveNavbar: React.FC = () => {
       </div>
 
       {/* ===== SPACER FOR MOBILE ===== */}
-      <div className="md:hidden h-[56px]" /> {/* Top spacer */}
-      <div className="md:hidden h-[72px]" /> {/* Bottom spacer */}
+      <div className="md:hidden h-[56px]" />
+      <div className="md:hidden h-[72px]" />
     </>
   );
 };
