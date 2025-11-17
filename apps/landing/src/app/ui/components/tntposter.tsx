@@ -29,7 +29,7 @@ const TalkNTalesPosterAndDescription = () => {
 
   const experiences = [
     {
-      title: "Mini Talks How: Creating Connections That Matter",
+      title: "Mini Talk Show",
       description: "Sit together with fellow founders and listen to inspiring leaders share real stories about networking in both personal and business life. You walk away with simple and practical tips you can use right away."
     },
     {

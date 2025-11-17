@@ -67,7 +67,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
     },
     {
       question: "Is there a registration fee?",
-      answer: "Yes, there's an investment fee of Rp 325.000 to join this event. Seats are limited to only 60 participants."
+      answer: "Yes, there is an investment fee, and the details will be sent to your email once you are selected to join the event."
     },
     {
       question: "What should I prepare?",
@@ -79,7 +79,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
     },
     {
       question: "Can I bring a friend?",
-      answer: "Of course! Just make sure they're also Gen-Z business founders. They must register individually because seats are limited and we need accurate attendance data."
+      answer: "Of course! Just make sure they are also Gen-Z business founders. Each must register individually, as seats are limited."
     },
     {
       question: "When will I get the confirmation?",
@@ -253,8 +253,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                 </p>
                 <div className="bg-green-100 border-2 border-green-300 rounded-xl p-4 mb-6">
                   <p className="font-body text-sm text-[#15803d] leading-relaxed">
-                    <strong>Next Steps:</strong><br/>
-                    Payment invoice will be sent between Dec 1-10, 2025
+                    Announcement and investment fee details on your email at 8-11 November 2025.
                   </p>
                 </div>
                 <button
@@ -552,7 +551,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                 Any More Question?
               </h4>
               <p className="font-body text-sm text-[#3f3e3d]/70 mb-4">
-                Contact us on Contact Page
+                Click the button below!
               </p>
               <Link
                 href="/contact"

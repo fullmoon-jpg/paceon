@@ -157,7 +157,7 @@ export default function Navbar() {
           <div className="flex flex-col gap-4 pb-4 bg-white/95 backdrop-blur-sm rounded-lg px-4 py-4 shadow-lg">
             {/* Mobile Navigation Links */}
             <button
-              onClick={() => handleNavigation('/talk-n-tales')}
+              onClick={() => handleNavigation('/Talk-n-Tales')}
               className="logo-underline relative font-semibold text-gray-900 text-left text-base py-2"
               style={{ fontFamily: 'Outfit, Arial, Helvetica, sans-serif' }}
             >
