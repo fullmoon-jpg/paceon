@@ -59,7 +59,7 @@ const TalkNTalesPosterAndDescription = () => {
           
           {/* Left: Poster */}
           <div className="w-full">
-            <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl sticky top-8">
+            <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl top-8">
               <Image
                 src="/images/poster-tnt.png"
                 alt="Talk n Tales Event Poster"
