@@ -21,7 +21,7 @@ const outfit = localFont({
 export const metadata: Metadata = {
   title: "PACE.ON | Next-Gen Fun Networking & Collaboration Space",
   description:
-    "Ready? Set? Go? With PACE.ON you can play padel, tennis, and meet like-minded people while staying active. Sports + networking = win-win!",
+    "PACE.ON is a next-generation networking and collaboration space for Gen-Z founders. We create authentic connections through relax and fun activities. Designed to help early-stage founders build meaningful relationships, share experiences, and collaborate.",
   keywords: [
     "PACE.ON",
     "Networking",

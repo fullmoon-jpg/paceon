@@ -33,6 +33,7 @@
     "sharp": "^0.34.4"
   },
   "devDependencies": {
+    "@types/nodemailer": "^7.0.3",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "concurrently": "^9.2.1",
