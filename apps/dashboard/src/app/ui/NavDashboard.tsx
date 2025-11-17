@@ -37,7 +37,7 @@ const ResponsiveNavbar: React.FC = () => {
     if (!authLoading) return;
 
     const timeout = setTimeout(() => {
-      console.error('⚠️ Auth loading timeout - redirecting to login');
+      console.error('Auth loading timeout - redirecting to login');
       router.push('/auth/login');
     }, 30000);
 
@@ -89,7 +89,7 @@ const ResponsiveNavbar: React.FC = () => {
         {/* Desktop Loading */}
         <div className="hidden md:flex fixed left-0 top-0 h-screen w-20 bg-gradient-to-b from-[#15b392] via-[#2a6435] to-[#15b392] dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 shadow-2xl flex-col items-center justify-center z-50">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
-          <p className="text-white text-xs">Loading...</p>
+          <p className="text-white text-xs">Loading</p>
         </div>
         {/* Mobile Loading */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 z-50">
@@ -105,7 +105,7 @@ const ResponsiveNavbar: React.FC = () => {
     <>
       {/* ===== DESKTOP SIDE NAVBAR ===== */}
       <div
-        className={`hidden md:flex fixed left-0 top-0 h-screen bg-gradient-to-b from-[#15b392] via-[#2a6435] to-[#15b392] dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 shadow-2xl flex-col z-50 transition-all duration-300 ${
+        className={`hidden md:flex fixed left-0 top-0 h-screen bg-[#7ba9ff] dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 shadow-2xl flex-col z-50 transition-all duration-300 ${
           isExpanded ? "w-72" : "w-20"
         }`}
         onMouseEnter={handleMouseEnter}
@@ -115,19 +115,28 @@ const ResponsiveNavbar: React.FC = () => {
         <div className="px-6 py-8 border-b border-white/20 dark:border-white/10 flex items-center justify-center">
           {isExpanded ? (
             <div
-              className="text-2xl font-bold font-brand tracking-tight text-white cursor-pointer"
+              className="text-3xl font-brand tracking-tight text-[#f4f4ef] cursor-pointer"
               onClick={() => router.push("/")}
             >
-              PACE.ON
+              PACE ON
             </div>
           ) : (
-            <img
-              src="/images/logo-paceon.png"
-              alt="PACE.ON Logo"
-              className="w-10 h-10 object-contain cursor-pointer"
-              onClick={() => router.push("/")}
-              loading="eager"
-            />
+            <>
+              <img
+                src="/images/dark-logo.png"
+                alt="PACE.ON Logo"
+                className="w-10 h-10 object-contain cursor-pointer dark:hidden"
+                onClick={() => router.push("/")}
+                loading="eager"
+              />
+              <img
+                src="/images/light-logo.png"
+                alt="PACE.ON Logo"
+                className="w-10 h-10 object-contain cursor-pointer hidden dark:block"
+                onClick={() => router.push("/")}
+                loading="eager"
+              />
+            </>
           )}
         </div>
 
@@ -159,17 +168,17 @@ const ResponsiveNavbar: React.FC = () => {
 
               {isConnected && (
                 <div
-                  className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-white rounded-full"
+                  className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-[#f4f4ef] rounded-full"
                   title="Connected to real-time notifications"
                 />
               )}
             </div>
             {isExpanded && (
               <div className="flex-1 min-w-0">
-                <p className="text-white font-semibold text-sm truncate">
+                <p className="text-[#f4f4ef] font-brand text-sm truncate">
                   {profile?.full_name || "Loading..."}
                 </p>
-                <p className="text-white/70 text-xs truncate">
+                <p className="text-[#f4f4ef] text-xs truncate">
                   {profile?.email || ""}
                 </p>
               </div>
@@ -190,8 +199,8 @@ const ResponsiveNavbar: React.FC = () => {
                     prefetch={true}
                     className={`flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200 ${
                       isActive
-                        ? "bg-white dark:bg-gray-700 text-[#15b392] dark:text-green-400 shadow-lg"
-                        : "text-white hover:bg-white/10 dark:hover:bg-white/5"
+                        ? "bg-[#f4f4ef] dark:bg-gray-700 text-[#21c36e] dark:text-green-400 shadow-lg"
+                        : "text-[#f4f4ef] hover:bg-white/10 dark:hover:bg-white/5"
                     } ${isExpanded ? "" : "justify-center"}`}
                   >
                     <div className="relative">
@@ -199,7 +208,7 @@ const ResponsiveNavbar: React.FC = () => {
                       {!isExpanded &&
                         item.badge !== undefined &&
                         item.badge > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-[#f4f4ef] text-xs w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
                             {item.badge > 9 ? "9+" : item.badge}
                           </span>
                         )}
@@ -245,7 +254,7 @@ const ResponsiveNavbar: React.FC = () => {
             href="/affirmation-cube"
             aria-label="Affirmation Cube"
             prefetch={false}
-            className={`flex items-center justify-center bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl text-white font-medium hover:shadow-lg transition-all duration-200 hover:scale-105 ${
+            className={`flex items-center justify-center bg-gradient-to-r from-[#f47149] to-[#d33181] rounded-xl text-white font-medium hover:shadow-lg transition-all duration-200 hover:scale-105 ${
               isExpanded ? "w-full px-4 py-3" : "w-12 h-12"
             }`}
           >
@@ -263,7 +272,7 @@ const ResponsiveNavbar: React.FC = () => {
           <button
             onClick={handleLogout}
             aria-label="Logout"
-            className={`flex items-center justify-center bg-red-500/20 dark:bg-red-500/30 rounded-xl text-white font-medium hover:bg-red-500/30 dark:hover:bg-red-500/40 transition-all duration-200 ${
+            className={`flex items-center justify-center bg-[#d33181]/50 dark:bg-red-500/30 rounded-xl text-white font-medium hover:bg-red-500/30 dark:hover:bg-red-500/40 transition-all duration-200 ${
               isExpanded ? "w-full px-4 py-3" : "w-12 h-12"
             }`}
           >

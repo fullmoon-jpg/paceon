@@ -157,7 +157,7 @@ export default function CreatePostModal({
               onChange={(e) => setSport(e.target.value)}
               className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
             >
-              <option value="">Select Sport</option>
+              <option value="">Select Type of Event</option>
               <option value="tennis">Tennis</option>
               <option value="padel">Padel</option>
               <option value="badminton">Badminton</option>

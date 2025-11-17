@@ -1,17 +1,33 @@
 // src/app/booking/components/CreateEventModal.tsx
 "use client";
 
-import { useState } from "react";
-import { X, Calendar, Clock, MapPin, Users, DollarSign } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Calendar, Clock, MapPin, Users } from "lucide-react";
 import { format } from "date-fns";
+import { getEventImage } from "@/lib/eventImages";
+
+interface EventFormData {
+  title: string;
+  description: string;
+  eventType: string;
+  venueName: string;
+  venueAddress: string;
+  venueCity: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  maxPlayers: number;
+  price: number;
+  image: string;
+}
 
 interface CreateEventModalProps {
   onClose: () => void;
-  onSubmit?: (eventData: any) => void;
+  onSubmit?: (eventData: EventFormData) => void | Promise<void>;
 }
 
 export default function CreateEventModal({ onClose, onSubmit }: CreateEventModalProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<EventFormData>({
     title: "",
     description: "",
     eventType: "tennis",
@@ -23,7 +39,7 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
     endTime: "",
     maxPlayers: 4,
     price: 50000,
-    image: "https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&q=80",
+    image: getEventImage("tennis"),
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -38,6 +54,13 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
     { value: 'social', label: 'Social Event' },
     { value: 'other', label: 'Other' },
   ];
+
+  useEffect(() => {
+    setFormData((prev) => ({
+      ...prev,
+      image: getEventImage(prev.eventType),
+    }));
+  }, [formData.eventType]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +90,6 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
       <div className="bg-white dark:bg-gray-800 rounded-xl max-w-3xl w-full my-8 shadow-2xl max-h-[90vh] overflow-y-auto">
-        {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between z-10 rounded-t-xl">
           <h2 className="text-xl font-bold text-gray-800 dark:text-white">Create New Event</h2>
           <button
@@ -78,9 +100,7 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-6">
-          {/* Basic Info */}
           <div className="space-y-4">
             <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <Calendar size={18} className="text-[#15b392]" />
@@ -136,7 +156,6 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
             </div>
           </div>
 
-          {/* Venue Info */}
           <div className="space-y-4">
             <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <MapPin size={18} className="text-[#15b392]" />
@@ -158,21 +177,19 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  City *
-                </label>
-                <input
-                  type="text"
-                  name="venueCity"
-                  required
-                  value={formData.venueCity}
-                  onChange={handleChange}
-                  placeholder="e.g., Jakarta"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                City *
+              </label>
+              <input
+                type="text"
+                name="venueCity"
+                required
+                value={formData.venueCity}
+                onChange={handleChange}
+                placeholder="e.g., Jakarta"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
+              />
             </div>
 
             <div>
@@ -190,7 +207,7 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
               />
             </div>
           </div>
-                    {/* Date & Time */}
+
           <div className="space-y-4">
             <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <Clock size={18} className="text-[#15b392]" />
@@ -243,7 +260,6 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
             </div>
           </div>
 
-          {/* Players & Price */}
           <div className="space-y-4">
             <h3 className="font-bold text-gray-800 dark:text-white flex items-center gap-2">
               <Users size={18} className="text-[#15b392]" />
@@ -284,7 +300,6 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
               </div>
             </div>
 
-            {/* Price Preview */}
             <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 border border-gray-200 dark:border-gray-600">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Entry Fee</span>
@@ -307,27 +322,6 @@ export default function CreateEventModal({ onClose, onSubmit }: CreateEventModal
             </div>
           </div>
 
-          {/* Image URL (Optional) */}
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                Image URL (Optional)
-              </label>
-              <input
-                type="url"
-                name="image"
-                value={formData.image}
-                onChange={handleChange}
-                placeholder="https://example.com/image.jpg"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent"
-              />
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Leave blank to use default image based on event type
-              </p>
-            </div>
-          </div>
-
-          {/* Submit Buttons */}
           <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
             <button
               type="button"

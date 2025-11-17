@@ -1,4 +1,3 @@
-// src/app/api/saved-posts/check/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@paceon/lib/mongodb';
 import SavedPost from '@/lib/models/SavedPost';
@@ -24,9 +23,10 @@ export async function GET(request: NextRequest) {
       success: true,
       data: { isSaved: !!savedPost },
     });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

@@ -1,221 +1,217 @@
-"use client"
-import React, { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { getDashboardUrl } from "@paceon/config/constants";
-import { Menu, X, ChevronDown } from 'lucide-react';
+'use client';
 
-const PaceNavbar = () => {
-    const router = useRouter();
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement | null>(null);
-    const menuRef = useRef<HTMLDivElement | null>(null);
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
-    const handleGetStarted = () => {
-        window.open(getDashboardUrl('/auth/sign-up'), '_blank', 'noopener,noreferrer');
-        setIsMenuOpen(false);
-        setIsDropdownOpen(false);
+export default function Navbar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const [scrolled, setScrolled] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Check if we're on homepage
+  const isHomePage = pathname === '/';
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 100) {
+        setScrolled(true);
+      } else {
+        setScrolled(false);
+      }
     };
 
-    const handleLogoClick = () => {
-        router.push('/');
-        setIsMenuOpen(false);
-        setIsDropdownOpen(false);
+    window.addEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
     };
+  }, []);
 
-    const handleHouseRules = () => {
-        router.push('/house-rules');
-        setIsMenuOpen(false);
-        setIsDropdownOpen(false);
-    };
+  const handleNavigation = (path: string) => {
+    router.push(path);
+    setIsMenuOpen(false);
+  };
 
-    const handleContact = () => {
-        router.push('/contact');
-        setIsMenuOpen(false);
-        setIsDropdownOpen(false);
-    };
+  const handleLogoClick = () => {
+    router.push('/');
+    setIsMenuOpen(false);
+  };
 
-    const toggleMenu = () => {
-        setIsMenuOpen(!isMenuOpen);
-        if (isDropdownOpen) setIsDropdownOpen(false);
-    };
+  const handleLogin = () => {
+    window.open('https://app.paceon.id', '_blank', 'noopener,noreferrer');
+    setIsMenuOpen(false);
+  };
 
-    const toggleDropdown = () => {
-        setIsDropdownOpen(!isDropdownOpen);
-    };
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
-    // Close dropdown when clicking outside
-    useEffect(() => {
-        const handleClickOutside = (e: MouseEvent) => {
-            const target = e.target as Node;
-            if (dropdownRef.current && !dropdownRef.current.contains(target)) {
-                setIsDropdownOpen(false);
-            }
-            if (
-                menuRef.current &&
-                !menuRef.current.contains(target) &&
-                !(e.target as HTMLElement).closest('.menu-button')
-            ) {
-                setIsMenuOpen(false);
-            }
-        };
+  return (
+    <nav
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${
+        isHomePage 
+          ? (scrolled ? 'bg-[#f4f4ef] shadow-md' : 'bg-transparent')
+          : 'bg-[#f4f4ef] shadow-md'
+      }`}
+    >
+      <div className="max-w-9xl px-4 sm:px-6 lg:px-28 py-4">
+        <div className="flex items-center justify-between">
+          {/* Logo - PACE ON */}
+          <button
+            onClick={handleLogoClick}
+            className={`font-brand text-2xl sm:text-3xl font-brand transition-colors duration-300 logo-underline ${
+              isHomePage && !scrolled ? 'text-[#5F0101]' : 'text-[#5F0101]'
+            }`}
+          >
+            PACE <span className='text-[#FB6F7A]'>ON</span>
+          </button>
 
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
-
-    // Close menu on ESC key
-    useEffect(() => {
-        const handleEscKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') {
-                setIsMenuOpen(false);
-                setIsDropdownOpen(false);
-            }
-        };
-
-        document.addEventListener('keydown', handleEscKey);
-        return () => document.removeEventListener('keydown', handleEscKey);
-    }, []);
-
-    return (
-        <>
-        <style jsx>{`
-            .logo-underline::after {
-                content: '';
-                position: absolute;
-                bottom: -3px;
-                left: 0;
-                width: 0;
-                height: 3px;
-                background: linear-gradient(90deg, #b43892, #352a64);
-                transition: width 0.3s ease;
-            }
-            .logo-underline:hover::after {
-                width: 100%;
-            }
-
-            .purple-fill::before {
-                content: '';
-                position: absolute;
-                bottom: 0;
-                left: 0;
-                width: 100%;
-                height: 0;
-                background: linear-gradient(135deg, #b43892, #352a64, #b43892);
-                transition: height 0.4s ease;
-                border-radius: 9999px;
-                z-index: -1;
-            }
-            .purple-fill:hover::before {
-                height: 100%;
-            }
-
-            .dropdown-enter {
-                opacity: 0;
-                transform: translateY(-10px);
-                transition: all 0.2s ease-out;
-            }
-            
-            .dropdown-enter-active {
-                opacity: 1;
-                transform: translateY(0);
-            }
-
-            @media (max-width: 640px) {
-                .logo-text {
-                    font-size: 1.5rem;
-                }
-            }
-        `}</style>
-
-        {/* Navbar */}
-        <nav className="flex justify-between items-center px-4 sm:px-16 md:px-24 lg:px-40 py-4 bg-white backdrop-blur-lg border-b border-white/20 sticky top-0 z-50 shadow-sm">
-            
-            {/* Logo */}
-            <div 
-                onClick={handleLogoClick}
-                className="logo-underline logo-text relative bg-clip-text text-transparent bg-gradient-to-r from-[#15b392] to-[#2a6435] text-xl sm:text-2xl md:text-3xl lg:text-3xl font-bold font-brand tracking-tight cursor-pointer"
+          {/* Desktop Navigation Links */}
+          <div className="hidden lg:flex items-center gap-8 text-xl">
+            <button
+              onClick={() => handleNavigation('/Talk-n-Tales')}
+              className={`logo-underline relative font-semibold transition-colors duration-300 ${
+                isHomePage && !scrolled ? 'text-[#f4f4ef]' : 'text-gray-900'
+              }`}
+              style={{ fontFamily: 'Outfit, Arial, Helvetica, sans-serif' }}
             >
-                PACE.ON
-            </div>
+              Talk n Tales
+            </button>
 
-            {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center space-x-6">
-                <button
-                    onClick={handleHouseRules}
-                    className="text-[#2a6435] hover:text-[#b43892] text-lg transition-colors font-medium"
-                >
-                    House Rules
-                </button>
+            <button
+              onClick={() => handleNavigation('/house-rules')}
+              className={`logo-underline relative font-bold transition-colors duration-300 ${
+                isHomePage && !scrolled ? 'text-[#f4f4ef]' : 'text-gray-900'
+              }`}
+              style={{ fontFamily: 'Outfit, Arial, Helvetica, sans-serif' }}
+            >
+              House Rules
+            </button>
 
-                <button
-                    onClick={handleContact}
-                    className="text-[#2a6435] hover:text-[#b43892] text-lg transition-colors font-medium"
-                >
-                    Contact
-                </button>
+            <button
+              onClick={() => handleNavigation('/contact')}
+              className={`logo-underline relative font-bold transition-colors duration-300 ${
+                isHomePage && !scrolled ? 'text-[#f4f4ef]' : 'text-gray-900'
+              }`}
+              style={{ fontFamily: 'Outfit, Arial, Helvetica, sans-serif' }}
+            >
+              Contact
+            </button>
 
-                <button
-                    onClick={handleGetStarted}
-                    className="purple-fill relative overflow-hidden bg-gradient-to-r from-[#15b392] via-[#2a6435] to-[#15b392] text-white font-semibold px-6 py-3 text-base rounded-full transition-all duration-300 hover:transform hover:-translate-y-0.5 hover:scale-105 hover:shadow-lg hover:shadow-purple-600/40 active:transform active:translate-y-0 active:scale-100 focus:outline-none focus:ring-2 focus:ring-green-400/50 shadow-md shadow-green-400/40"
-                >
-                    Get Started
-                </button>
-            </div>
+            {/* Login Button - External link */}
+            <button
+              onClick={handleLogin}
+              className="green-fill px-6 py-2 rounded-full font-bold bg-[#FB6F7A] text-[#f4f4ef] transition-all duration-300"
+              style={{ fontFamily: 'Outfit, Arial, Helvetica, sans-serif' }}
+            >
+              LOGIN
+            </button>
+          </div>
 
-            {/* Mobile/Tablet Dropdown */}
-            <div className="md:hidden relative" ref={dropdownRef}>
-                <button
-                    onClick={toggleDropdown}
-                    className="menu-button flex items-center space-x-2 p-2 text-[#2a6435] hover:text-[#15b392] transition-colors focus:outline-none"
-                    aria-label="Toggle menu"
-                >
-                    <Menu size={24} />
-                    <ChevronDown 
-                        size={18} 
-                        className={`transform transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} 
-                    />
-                </button>
-
-                {/* Dropdown Menu */}
-                {isDropdownOpen && (
-                    <div className={`absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50 ${isDropdownOpen ? 'dropdown-enter-active' : 'dropdown-enter'}`}>
-                        <button
-                            onClick={handleHouseRules}
-                            className="w-full text-left px-4 py-3 text-[#2a6435] hover:bg-green-50 hover:text-[#15b392] transition-colors font-medium"
-                        >
-                            House Rules
-                        </button>
-                        
-                        <button
-                            onClick={handleContact}
-                            className="w-full text-left px-4 py-3 text-[#2a6435] hover:bg-green-50 hover:text-[#15b392] transition-colors font-medium"
-                        >
-                            Contact
-                        </button>
-                        
-                        <div className="border-t border-gray-100 my-2"></div>
-                        
-                        <button
-                            onClick={handleGetStarted}
-                            className="w-full mx-2 green-fill relative overflow-hidden bg-gradient-to-r from-[#15b392] via-[#2a6435] to-[#15b392] text-white font-semibold px-4 py-3 text-sm rounded-lg transition-all duration-300 hover:transform hover:scale-105 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-green-400/50"
-                        >
-                            Get Started
-                        </button>
-                    </div>
-                )}
-            </div>
-
-            {/* Overlay untuk mobile dropdown */}
-            {isDropdownOpen && (
-                <div 
-                    className="md:hidden fixed inset-0 bg-transparent z-40"
-                    onClick={() => setIsDropdownOpen(false)}
+          {/* Hamburger Menu Button - Mobile */}
+          <button
+            onClick={toggleMenu}
+            className={`lg:hidden transition-colors duration-300 ${
+              isHomePage && !scrolled && !isMenuOpen ? 'text-[#f4f4ef]' : 'text-gray-900'
+            }`}
+            aria-label="Toggle menu"
+          >
+            {isMenuOpen ? (
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
                 />
+              </svg>
+            ) : (
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
             )}
-        </nav>
-        </>
-    );
-};
+          </button>
+        </div>
 
-export default PaceNavbar;
+        {/* Mobile Menu Dropdown */}
+        <div
+          className={`lg:hidden overflow-hidden transition-all duration-300 ease-in-out ${
+            isMenuOpen ? 'max-h-96 opacity-100 mt-4' : 'max-h-0 opacity-0'
+          }`}
+        >
+          <div className="flex flex-col gap-4 pb-4 bg-white/95 backdrop-blur-sm rounded-lg px-4 py-4 shadow-lg">
+            {/* Mobile Navigation Links */}
+            <button
+              onClick={() => handleNavigation('/talk-n-tales')}
+              className="logo-underline relative font-semibold text-gray-900 text-left text-base py-2"
+              style={{ fontFamily: 'Outfit, Arial, Helvetica, sans-serif' }}
+            >
+              Talk n Tales
+            </button>
+
+            <button
+              onClick={() => handleNavigation('/house-rules')}
+              className="logo-underline relative font-semibold text-gray-900 text-left text-base py-2"
+              style={{ fontFamily: 'Outfit, Arial, Helvetica, sans-serif' }}
+            >
+              House Rules
+            </button>
+
+            <button
+              onClick={() => handleNavigation('/contact')}
+              className="logo-underline relative font-semibold text-gray-900 text-left text-base py-2"
+              style={{ fontFamily: 'Outfit, Arial, Helvetica, sans-serif' }}
+            >
+              Contact
+            </button>
+
+            {/* Mobile Login Button - External link */}
+            <button
+              onClick={handleLogin}
+              className="green-fill px-6 py-2.5 rounded-full font-bold bg-[#D33181] text-white hover:bg-[#b42870] mt-2 transition-all duration-300"
+              style={{ fontFamily: 'Outfit, Arial, Helvetica, sans-serif' }}
+            >
+              LOGIN
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .logo-underline {
+          position: relative;
+        }
+
+        .logo-underline::after {
+          content: '';
+          position: absolute;
+          bottom: -3px;
+          left: 0;
+          width: 0;
+          height: 3px;
+          background: #21C36E;
+          transition: width 0.3s ease;
+        }
+
+        .logo-underline:hover::after {
+          width: 100%;
+        }
+      `}</style>
+    </nav>
+  );
+}

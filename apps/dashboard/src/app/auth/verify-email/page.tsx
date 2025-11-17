@@ -57,7 +57,7 @@ export default function VerifyEmailPage() {
 
         {/* Description */}
         <p className="text-gray-600 mb-2">
-          We've sent a confirmation email to:
+          We&apos;ve sent a confirmation email to:
         </p>
         <p className="text-[#1f4381] font-semibold mb-6">
           {userEmail || "your email"}
@@ -68,7 +68,7 @@ export default function VerifyEmailPage() {
           <div className="flex items-start gap-3">
             <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-gray-700">
-              <p className="font-medium text-blue-900 mb-1">What's next?</p>
+              <p className="font-medium text-blue-900 mb-1">What&apos;s next?</p>
               <ul className="space-y-1 text-xs">
                 <li>• Click the confirmation link in your email</li>
                 <li>• Or continue to complete your profile</li>
@@ -100,7 +100,7 @@ export default function VerifyEmailPage() {
 
         {/* Footer */}
         <p className="text-xs text-gray-500 mt-6">
-          Didn't receive the email?{" "}
+          Didn&apos;t receive the email?{" "}
           <button className="text-[#2a6435] hover:underline font-medium">
             Resend
           </button>

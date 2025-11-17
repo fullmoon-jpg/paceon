@@ -2,11 +2,26 @@ import { useState, useCallback, useRef } from 'react';
 import { Post } from '../types';
 import { useToast } from '@/contexts/ToastContext';
 
+interface PostCreateData {
+  content: string;
+  mediaFiles: File[];
+  location?: string;
+  sport?: string;
+}
+
+interface PostEditData {
+  content?: string;
+  mediaFiles?: File[];
+  location?: string;
+  sport?: string;
+  [key: string]: unknown;
+}
+
 interface UsePostActionsReturn {
   handleLike: (postId: string) => Promise<void>;
   handleSavePost: (postId: string) => Promise<void>;
-  handleCreatePost: (postData: any) => Promise<void>;
-  handleEditPost: (postId: string, updates: any) => Promise<void>;
+  handleCreatePost: (postData: PostCreateData) => Promise<void>;
+  handleEditPost: (postId: string, updates: PostEditData) => Promise<void>;
   handleDeletePost: (postId: string) => Promise<void>;
   creating: boolean;
   updating: string | null;
@@ -17,7 +32,7 @@ interface UsePostActionsReturn {
 
 export const usePostActions = (
   currentUserId: string,
-  isAdmin: boolean, // ✅ Add isAdmin
+  isAdmin: boolean,
   posts: Post[],
   setPosts: React.Dispatch<React.SetStateAction<Post[]>>,
   likedPosts: Set<string>,
@@ -40,7 +55,6 @@ export const usePostActions = (
 
     const isCurrentlyLiked = likedPosts.has(postId);
     const currentPost = posts.find(p => p._id === postId);
-    
     if (!currentPost) return;
 
     const originalLikesCount = currentPost.likesCount;
@@ -108,10 +122,8 @@ export const usePostActions = (
           post._id === postId ? { ...post, likesCount: data.data.likesCount } : post
         )
       );
-
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') return;
-      
       const errorMessage = error instanceof Error ? error.message : 'Failed to like post';
       showToast('error', errorMessage);
     } finally {
@@ -172,7 +184,7 @@ export const usePostActions = (
     }
   }, [currentUserId, savedPosts, setSavedPosts, showToast]);
 
-  const handleCreatePost = useCallback(async (postData: any) => {
+  const handleCreatePost = useCallback(async (postData: PostCreateData) => {
     setCreating(true);
     try {
       const formData = new FormData();
@@ -207,7 +219,7 @@ export const usePostActions = (
     }
   }, [currentUserId, setPosts, showToast]);
 
-  const handleEditPost = useCallback(async (postId: string, updates: any) => {
+  const handleEditPost = useCallback(async (postId: string, updates: PostEditData) => {
     setUpdating(postId);
     try {
       const response = await fetch(`/api/posts/${postId}`, {
@@ -241,7 +253,6 @@ export const usePostActions = (
 
     setDeleting(postId);
     try {
-      // ✅ Pass isAdmin status
       const response = await fetch(`/api/posts/${postId}?isAdmin=${isAdmin}`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },

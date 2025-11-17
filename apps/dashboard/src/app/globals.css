@@ -2,13 +2,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #f4f4ef;
   --foreground: #171717;
 }
 
 
 html.dark {
-  --background: #0a0a0a;
+  --background: #3f3eed;
   --foreground: #ededed;
 }
 
@@ -19,24 +19,127 @@ html.dark {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-open-sans: 'Open Sans', Arial, Helvetica, sans-serif;
-  --font-batangas: 'batangas', Arial, Helvetica, sans-serif;
-  --font-braggadocio: 'braggadocio', 'Arial Black', sans-serif;
+  --font-soulmaze: 'Soulmaze', Arial, Helvetica, sans-serif;
+  --font-outfit: 'Outfit', Arial, Helvetica, sans-serif;
 }
 
-/* Batangas Font Family */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+/* Soulmaze Font Family - Brand */
 @font-face {
-  font-family: 'batangas';
-  src: url('../../../../packages/lib/font/Batangas-Bold.otf') format('opentype'); /* ✅ FIX: format('otf') → format('opentype') */
+  font-family: 'Soulmaze';
+  src: url('../../../../packages/lib/font/Soulmaze.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Soulmaze';
+  src: url('../../../../packages/lib/font/Soulmaze-Brush.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
-/* bragga Font Family */
 @font-face {
-  font-family: 'braggadocio';
-  src: url('../../../../packages/lib/font/braggadocio.woff2') format('woff2');
+  font-family: 'Soulmaze';
+  src: url('../../../../packages/lib/font/Soulmaze-italic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Soulmaze';
+  src: url('../../../../packages/lib/font/Soulmaze-Outline.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Soulmaze';
+  src: url('../../../../packages/lib/font/Soulmaze-Outline-italic.otf') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Outfit Font Family - Body */
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Thin.otf') format('opentype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-ExtraLight.otf') format('opentype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Bold.otf') format('opentype');
   font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-ExtraBold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Black.otf') format('opentype');
+  font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
@@ -46,11 +149,11 @@ html.dark {
 }
 
 .font-brand {
-  font-family: var(--font-braggadocio), 'Arial Black', sans-serif;
+  font-family: var(--font-soulmaze), Arial, Helvetica, sans-serif;
 }
 
 .font-body {
-  font-family: var(--font-batangas), Arial, Helvetica, sans-serif;
+  font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
 }
 
 .green-fill {

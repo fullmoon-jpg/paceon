@@ -1,7 +1,6 @@
-// src/app/profile/page.tsx
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import {
   Calendar,
@@ -21,6 +20,7 @@ import {
 import { supabase } from "@paceon/lib/supabase";
 import { useDataCache } from "@/contexts/DataContext";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { format } from "date-fns";
 
 interface UserProfile {
   id: string;
@@ -56,6 +56,19 @@ interface MatchmakingPreferences {
   completed_at: string | null;
 }
 
+interface Rating {
+  id: string;
+  reviewer_id: string;
+  reviewer_name: string;
+  reviewer_avatar: string | null;
+  reviewer_position: string | null;
+  reviewer_company: string | null;
+  event_name: string;
+  rating: number;
+  feedback: string | null;
+  created_at: string;
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const { fetchWithCache, invalidateCache } = useDataCache();
@@ -63,9 +76,16 @@ export default function ProfilePage() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [userStats, setUserStats] = useState<UserStatistics | null>(null);
   const [matchmakingData, setMatchmakingData] = useState<MatchmakingPreferences | null>(null);
-  const [activeTab, setActiveTab] = useState<"profile" | "interests">("profile");
+  const [ratings, setRatings] = useState<Rating[]>([]);
+  const [activeTab, setActiveTab] = useState<"profile" | "ratings">("profile");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
+
+  const averageRating = useMemo(() => {
+    if (ratings.length === 0) return 0;
+    const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
+    return sum / ratings.length;
+  }, [ratings]);
 
   const fetchAllUserData = useCallback(
     async (forceRefresh = false) => {
@@ -82,7 +102,7 @@ export default function ProfilePage() {
 
         setCurrentUserId(user.id);
 
-        const [profile, stats, matchmaking] = await Promise.all([
+        const [profile, stats, matchmaking, ratingsResponse] = await Promise.all([
           fetchWithCache<UserProfile | null>(
             `profile-${user.id}`,
             async () => {
@@ -122,11 +142,79 @@ export default function ProfilePage() {
             },
             forceRefresh ? 0 : undefined
           ),
+          supabase
+            .from('affirmation_cube')
+            .select(`
+              id,
+              reviewer_id,
+              rating,
+              feedback,
+              created_at,
+              event_id
+            `)
+            .eq('reviewee_id', user.id)
+            .order('created_at', { ascending: false })
         ]);
 
         setUserProfile(profile);
         setUserStats(stats);
         setMatchmakingData(matchmaking);
+
+        // Process ratings
+        if (ratingsResponse.data && ratingsResponse.data.length > 0) {
+          const reviewerIds = [...new Set(ratingsResponse.data.map((r: Record<string, unknown>) => r.reviewer_id as string))];
+          const eventIds = [...new Set(ratingsResponse.data.map((r: Record<string, unknown>) => r.event_id as string))];
+          
+          const [reviewerProfiles, reviewerPreferences, events] = await Promise.all([
+            supabase
+              .from('users_profile')
+              .select('id, full_name, avatar_url')
+              .in('id', reviewerIds),
+            supabase
+              .from('matchmaking_preferences')
+              .select('user_id, position, company')
+              .in('user_id', reviewerIds),
+            supabase
+              .from('events')
+              .select('id, title')
+              .in('id', eventIds)
+          ]);
+
+          const reviewerProfileMap = new Map(
+            (reviewerProfiles.data || []).map((p: { id: string; full_name: string; avatar_url: string | null }) => [p.id, p])
+          );
+
+          const reviewerPrefMap = new Map(
+            (reviewerPreferences.data || []).map((p: { user_id: string; position: string | null; company: string | null }) => [p.user_id, p])
+          );
+
+          const eventMap = new Map(
+            (events.data || []).map((e: { id: string; title: string }) => [e.id, e])
+          );
+
+          const ratingsData = ratingsResponse.data.map((r: Record<string, unknown>) => {
+            const reviewerId = r.reviewer_id as string;
+            const eventId = r.event_id as string;
+            const reviewerProfile = reviewerProfileMap.get(reviewerId);
+            const reviewerPref = reviewerPrefMap.get(reviewerId);
+            const event = eventMap.get(eventId);
+
+            return {
+              id: r.id as string,
+              reviewer_id: reviewerId,
+              reviewer_name: reviewerProfile?.full_name || 'Unknown User',
+              reviewer_avatar: reviewerProfile?.avatar_url || null,
+              reviewer_position: reviewerPref?.position || null,
+              reviewer_company: reviewerPref?.company || null,
+              event_name: event?.title || 'Unknown Event',
+              rating: r.rating as number,
+              feedback: r.feedback as string | null,
+              created_at: r.created_at as string,
+            };
+          });
+
+          setRatings(ratingsData);
+        }
       } catch (err) {
         // Silent fail
       } finally {
@@ -249,6 +337,13 @@ export default function ProfilePage() {
                   ? `${matchmakingData.position_duration} years in role`
                   : "N/A"}
               </p>
+              {ratings.length > 0 && (
+                <div className="flex items-center gap-1 mt-2 justify-center md:justify-start">
+                  <Star size={18} className="text-yellow-300 fill-yellow-300" />
+                  <span className="font-bold">{averageRating.toFixed(1)}</span>
+                  <span className="text-white/80 text-sm">({ratings.length} ratings)</span>
+                </div>
+              )}
               {matchmakingData?.linkedin_url && (
                 <a
                   href={
@@ -342,98 +437,174 @@ export default function ProfilePage() {
               Profile Info
             </button>
             <button
-              onClick={() => setActiveTab("interests")}
+              onClick={() => setActiveTab("ratings")}
               className={`flex-1 py-2 sm:py-3 px-4 rounded-lg font-medium transition-all ${
-                activeTab === "interests"
+                activeTab === "ratings"
                   ? "bg-[#15b392] text-white shadow-md"
                   : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
               }`}
             >
-              Interests
+              Ratings ({ratings.length})
             </button>
           </div>
         </div>
 
         {/* Profile Information */}
         {activeTab === "profile" && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
-            <h3 className="font-bold text-gray-900 dark:text-white text-lg sm:text-xl mb-6 flex items-center gap-2">
-              <User className="text-[#15b392]" size={24} />
-              Profile Information
-            </h3>
+          <div className="space-y-4 sm:space-y-6">
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
+              <h3 className="font-bold text-gray-900 dark:text-white text-lg sm:text-xl mb-6 flex items-center gap-2">
+                <User className="text-[#15b392]" size={24} />
+                Profile Information
+              </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-              <InfoItem icon={<User size={16} />} label="Full Name" value={userProfile?.full_name} />
-              <InfoItem
-                icon={<User size={16} />}
-                label="Username"
-                value={userProfile?.username ? `@${userProfile.username}` : null}
-              />
-              <InfoItem icon={<Mail size={16} />} label="Email" value={userProfile?.email} />
-              <InfoItem icon={<Phone size={16} />} label="Phone" value={userProfile?.phone} />
-              <InfoItem icon={<Briefcase size={16} />} label="Company" value={matchmakingData?.company} />
-              <InfoItem icon={<Briefcase size={16} />} label="Position" value={matchmakingData?.position} />
-              <InfoItem
-                icon={<Calendar size={16} />}
-                label="Years in Role"
-                value={
-                  matchmakingData?.position_duration ? `${matchmakingData.position_duration} years` : null
-                }
-              />
-              <InfoItem
-                icon={<MapPin size={16} />}
-                label="Location"
-                value={matchmakingData?.location || userProfile?.location}
-              />
-              <InfoItem icon={<Target size={16} />} label="Networking Goal" value={matchmakingData?.goal} />
-              <InfoItem
-                icon={<Users size={16} />}
-                label="Networking Style"
-                value={matchmakingData?.networking_style}
-              />
-              <InfoItem icon={<Heart size={16} />} label="Hobby" value={matchmakingData?.hobby} />
-              <InfoItem icon={<Brain size={16} />} label="Personality" value={matchmakingData?.personality} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <InfoItem icon={<User size={16} />} label="Full Name" value={userProfile?.full_name} />
+                <InfoItem
+                  icon={<User size={16} />}
+                  label="Username"
+                  value={userProfile?.username ? `@${userProfile.username}` : null}
+                />
+                <InfoItem icon={<Mail size={16} />} label="Email" value={userProfile?.email} />
+                <InfoItem icon={<Phone size={16} />} label="Phone" value={userProfile?.phone} />
+                <InfoItem icon={<Briefcase size={16} />} label="Company" value={matchmakingData?.company} />
+                <InfoItem icon={<Briefcase size={16} />} label="Position" value={matchmakingData?.position} />
+                <InfoItem
+                  icon={<Calendar size={16} />}
+                  label="Years in Role"
+                  value={
+                    matchmakingData?.position_duration ? `${matchmakingData.position_duration} years` : null
+                  }
+                />
+                <InfoItem
+                  icon={<MapPin size={16} />}
+                  label="Location"
+                  value={matchmakingData?.location || userProfile?.location}
+                />
+                <InfoItem icon={<Target size={16} />} label="Networking Goal" value={matchmakingData?.goal} />
+                <InfoItem
+                  icon={<Users size={16} />}
+                  label="Networking Style"
+                  value={matchmakingData?.networking_style}
+                />
+                <InfoItem icon={<Heart size={16} />} label="Hobby" value={matchmakingData?.hobby} />
+                <InfoItem icon={<Brain size={16} />} label="Personality" value={matchmakingData?.personality} />
 
-              {userProfile?.bio && (
-                <div className="space-y-1 sm:col-span-2">
-                  <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
-                    <User size={16} />
-                    Bio
+                {userProfile?.bio && (
+                  <div className="space-y-1 sm:col-span-2">
+                    <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                      <User size={16} />
+                      Bio
+                    </p>
+                    <p className="text-gray-900 dark:text-white font-medium">{userProfile.bio}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Passionate Topics */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
+              <h3 className="font-bold text-gray-900 dark:text-white text-lg sm:text-xl mb-4 flex items-center gap-2">
+                <Star className="text-[#15b392]" size={24} />
+                Passionate Topics
+              </h3>
+
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                {matchmakingData?.passionate_topics && matchmakingData.passionate_topics.length > 0 ? (
+                  matchmakingData.passionate_topics.map((topic: string, i: number) => (
+                    <span
+                      key={i}
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white text-sm rounded-full font-medium shadow-md"
+                    >
+                      {topic}
+                    </span>
+                  ))
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400 text-center py-4 w-full text-sm">
+                    No topics added yet
                   </p>
-                  <p className="text-gray-900 dark:text-white font-medium">{userProfile.bio}</p>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Interests Tab */}
-        {activeTab === "interests" && (
+        {/* Ratings Tab */}
+        {activeTab === "ratings" && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
-            <h3 className="font-bold text-gray-900 dark:text-white text-lg sm:text-xl mb-6 flex items-center gap-2">
-              <Star className="text-[#15b392]" size={24} />
-              Passionate Topics
-            </h3>
-
-            <div className="flex flex-wrap gap-2 sm:gap-3">
-              {matchmakingData?.passionate_topics && matchmakingData.passionate_topics.length > 0 ? (
-                matchmakingData.passionate_topics.map((topic: string, i: number) => (
-                  <span
-                    key={i}
-                    className="px-4 py-2 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white text-sm sm:text-base rounded-full font-medium shadow-md hover:shadow-lg transition-shadow"
-                  >
-                    {topic}
-                  </span>
-                ))
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400 text-center py-8 w-full">
-                  No topics added yet
+            {ratings.length === 0 ? (
+              <div className="text-center py-12">
+                <Star size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+                <p className="text-gray-600 dark:text-gray-400">No ratings yet</p>
+                <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
+                  Ratings will appear here after you attend events
                 </p>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4">
+                {ratings.map((rating) => (
+                  <RatingCard key={rating.id} rating={rating} />
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// Rating Card Component - Simplified version
+function RatingCard({ rating }: { rating: Rating }) {
+  return (
+    <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow">
+      <div className="flex items-start gap-3 mb-3">
+        {rating.reviewer_avatar ? (
+          <img
+            src={rating.reviewer_avatar}
+            alt={rating.reviewer_name}
+            className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover flex-shrink-0"
+          />
+        ) : (
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#15b392] flex items-center justify-center text-white font-bold flex-shrink-0">
+            {rating.reviewer_name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-sm sm:text-base text-gray-800 dark:text-white truncate">
+            {rating.reviewer_name}
+          </h4>
+          {(rating.reviewer_position || rating.reviewer_company) && (
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+              {rating.reviewer_position && rating.reviewer_company
+                ? `${rating.reviewer_position} at ${rating.reviewer_company}`
+                : rating.reviewer_position || rating.reviewer_company
+              }
+            </p>
+          )}
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+            {rating.event_name}
+          </p>
+        </div>
+        <div className="flex items-center gap-1 flex-shrink-0">
+          <Star size={16} className="text-yellow-500 fill-yellow-500 sm:w-5 sm:h-5" />
+          <span className="font-bold text-base sm:text-lg text-gray-800 dark:text-white">
+            {rating.rating}
+          </span>
+        </div>
+      </div>
+
+      {rating.feedback && (
+        <div className="bg-white dark:bg-gray-600 p-3 rounded-lg">
+          <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 italic">
+            &quot;{rating.feedback}&quot;
+          </p>
+        </div>
+      )}
+
+      <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 text-right">
+        {format(new Date(rating.created_at), 'MMM dd, yyyy')}
+      </p>
     </div>
   );
 }

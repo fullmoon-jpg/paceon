@@ -1,206 +1,141 @@
 "use client"
-import React from 'react';
-import { useRouter } from 'next/navigation';
-import { Mail, Phone, Linkedin, Instagram, ArrowUp } from 'lucide-react';
-import { getDashboardUrl } from '@paceon/config/constants';
+import React from "react";
+import Link from "next/link";
+import { Phone, Instagram, Linkedin } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 
-const PaceOnFooter: React.FC = () => {
-    const router = useRouter();
+const Footer = () => {
+  return (
+    <footer className="w-full bg-[#3f3e3d] text-white py-12 sm:py-16">
+      <div className="w-full px-6 sm:px-8 lg:px-28">
+        {/* Top Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+          
+          {/* Left: Contact Button + Info */}
+          <div>
+            <Link 
+              href="/contact"
+              className="inline-flex items-center gap-2 yellow-fill bg-white text-black px-6 py-3 rounded-full font-brand transition-colors mb-6"
+            >
+              <Phone className="w-5 h-5" />
+              Contact
+            </Link>
 
-    const scrollToTop = (): void => {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const handleGetStarted = (): void => {
-        window.open(getDashboardUrl('/auth/sign-up'), '_blank', 'noopener,noreferrer');
-    };
-
-    const handleLogin = (): void => {
-        window.open(getDashboardUrl('/auth/login'), '_blank', 'noopener,noreferrer');
-    };
-
-    const handleHouseRules = () => {
-        router.push('/house-rules');
-    }
-
-    const handleContact = () => {
-        router.push('/contact');
-    }
-
-    // Navigation handlers untuk cross-page navigation
-    const handleAboutUs = (): void => {
-        // Cek apakah sudah di home page atau belum
-        if (window.location.pathname === '/') {
-            // Kalo di home, scroll ke section about
-            const aboutSection = document.getElementById('about-us');
-            if (aboutSection) {
-                aboutSection.scrollIntoView({ behavior: 'smooth' });
-            }
-        } else {
-            // Kalo di page lain, redirect ke home dengan hash
-            router.push('/#about-us');
-        }
-    };
-
-    const handleUserFlow = (): void => {
-        if (window.location.pathname === '/') {
-            const userFlowSection = document.getElementById('user-flow');
-            if (userFlowSection) {
-                userFlowSection.scrollIntoView({ behavior: 'smooth' });
-            }
-        } else {
-            router.push('/#user-flow');
-        }
-    };
-
-    const handleHome = (): void => {
-        if (window.location.pathname === '/') {
-            scrollToTop();
-        } else {
-            router.push('/');
-        }
-    };
-
-    const menuItems = [
-        { name: "About Us", action: handleAboutUs },
-        { name: "User Flow", action: handleUserFlow },
-        { name: "House Rulse", action: handleHouseRules },
-    ];
-
-    const quickLinks = [
-        { name: "Home", action: handleHome },
-        { name: "Sign Up", action: handleGetStarted },
-        { name: "Login", action: handleLogin },
-        { name: "Contact", action: handleContact },
-    ];
-
-    return (
-        <footer className="bg-white border-t-4 border-gray-100 py-12 px-10 md:px-20 lg:px-20">
-            <div className="max-w-6xl mx-auto">
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-12">
-                
-                    {/* Left Section - Logo & Description */}
-                    <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-4">
-                            <img 
-                                src="/images/logo-paceon.png"
-                                alt="PACE.ON Logo"
-                                className="w-16 h-16 object-contain"
-                            />
-                            <h3 className="text-3xl lg:text-4xl font-brand font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#15b392] to-[#2a6435]">
-                                PACE.ON
-                            </h3>
-                        </div>
-                        <p className="text-black text-base lg:text-lg max-w-md leading-relaxed mb-6">
-                            Stay moving, stay growing, and keep the PACE ON.
-                        </p>
-                        <p className="text-gray-700 text-sm max-w-md leading-relaxed">
-                            Connect with founders and professionals through sports. Move your body, stay active, and build meaningful relationships that last.
-                        </p>
-                        
-                        {/* Social Media */}
-                        <div className="mt-8">
-                            <h4 className="text-black font-semibold mb-4 text-lg">Connect With Us</h4>
-                            <div className="flex gap-3">
-                                <a 
-                                    href="mailto:hi@paceon.id" 
-                                    className="w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-gray-600 hover:bg-red-500 hover:text-white hover:border-red-500 hover:scale-105 transition-all duration-200"
-                                    aria-label="Email us"
-                                >
-                                    <Mail size={20} />
-                                </a>
-                                <a 
-                                    href="https://wa.me/628558451534" 
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-gray-600 hover:bg-green-500 hover:text-white hover:border-green-500 hover:scale-105 transition-all duration-200"
-                                    aria-label="WhatsApp us"
-                                >
-                                    <Phone size={20} />
-                                </a>
-                                <a 
-                                    href="https://www.linkedin.com/company/pace-on/" 
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-gray-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 hover:scale-105 transition-all duration-200"
-                                    aria-label="LinkedIn"
-                                >
-                                    <Linkedin size={20} />
-                                </a>
-                                <a 
-                                    href="https://www.instagram.com/paceon.id" 
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="w-12 h-12 border-2 border-gray-300 rounded-lg flex items-center justify-center text-gray-600 hover:bg-pink-500 hover:text-white hover:border-pink-500 hover:scale-105 transition-all duration-200"
-                                    aria-label="Instagram"
-                                >
-                                    <Instagram size={20} />
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Right Section - Navigation */}
-                    <div className="flex flex-col lg:-mt-20 lg:flex-row gap-12 lg:gap-20">
-                        {/* PACE.ON Links */}
-                        <div>
-                            <h4 className="text-black font-semibold mb-6 text-lg">Explore</h4>
-                            <ul className="space-y-3">
-                                {menuItems.map((item, idx) => (
-                                    <li key={idx}>
-                                        <button
-                                            onClick={item.action}
-                                            className="text-gray-700 hover:text-[#15b392] transition-colors text-base font-open-sans font-bold text-left"
-                                        >
-                                            {item.name}
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-
-                        {/* Quick Links */}
-                        <div>
-                            <h4 className="text-black font-semibold mb-6 text-lg">Quick Actions</h4>
-                            <ul className="space-y-3">
-                                {quickLinks.map((item, idx) => (
-                                    <li key={idx}>
-                                        <button
-                                            onClick={item.action}
-                                            className="text-gray-700 hover:text-[#15b392] transition-colors text-base font-open-sans font-bold text-left"
-                                        >
-                                            {item.name}
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Bottom Section */}
-                <div className="flex flex-col sm:flex-row justify-between items-center mt-16 pt-8 border-t border-gray-200">
-                    <div className="text-center sm:text-left">
-                        <p className="text-black text-sm mb-2">
-                            © 2025 PACE ON | All Rights Reserved.
-                        </p>
-                        <p className="text-gray-700 text-xs">
-                            Made with ❤️ for sports networking community
-                        </p>
-                    </div>
-                    
-                    {/* Scroll to Top Button */}
-                    <button
-                        onClick={scrollToTop}
-                        className="mt-6 sm:mt-0 w-10 h-10 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white rounded-full flex items-center justify-center hover:from-[#2a6435] hover:to-[#15b392] hover:scale-110 transition-all duration-200 shadow-lg"
-                        aria-label="Scroll to top"
-                    >
-                        <ArrowUp size={18} />
-                    </button>
-                </div>
+            <div className="mt-8">
+              <h3 className="font-brand text-3xl mb-3">
+                PACE ON
+              </h3>
+              <p className="font-body text-white/80 mb-2">
+                Keep The Pace On
+              </p>
+              <p className="font-body text-white/80">
+                (+62) 855-8451-534
+              </p>
             </div>
-        </footer>
-    );
+          </div>
+
+          {/* Right: Nav Links + Social */}
+          <div className="flex flex-col items-start md:items-end">
+            {/* Navigation Links */}
+            <nav className="flex gap-6 mb-6">
+              <Link 
+                href="/"
+                className="font-semibold font-outfit sm:text-md text-md md:text-xl lg:text-xl text-white hover:text-white/70 transition-colors"
+              >
+                Home
+              </Link>
+              <Link 
+                href="/house-rules"
+                className="font-semibold font-outfit sm:text-md text-md md:text-xl lg:text-xl text-white hover:text-white/70 transition-colors"
+              >
+                House Rules
+              </Link>
+              <Link 
+                href="/Talk-n-Tales"
+                className="font-semibold font-outfit sm:text-md text-md md:text-xl lg:text-xl text-white hover:text-white/70 transition-colors"
+              >
+                Talk n Tales
+              </Link>
+              <Link 
+                href="https://www.app.paceon.id"
+                className="font-semibold font-outfit sm:text-md text-md md:text-xl lg:text-xl text-white hover:text-white/70 transition-colors"
+              >
+                Dashboard
+              </Link>
+            </nav>
+
+            {/* Social Media Icons */}
+            <div className="flex gap-3">
+              <Link 
+                href="https://instagram.com/paceon.id"
+                target="_blank"
+                className="w-12 h-12 border-2 border-white rounded-lg flex items-center justify-center hover:bg-white hover:text-black transition-colors"
+              >
+                <Instagram className="w-6 h-6" />
+              </Link>
+              <Link 
+                href="https://wa.me/+628558451534"
+                target="_blank"
+                className="w-12 h-12 border-2 border-white rounded-lg flex items-center justify-center hover:bg-white hover:text-black transition-colors"
+              >
+                <FaWhatsapp className="w-6 h-6" />
+              </Link>
+              <Link 
+                href="https://linkedin.com/company/pace-on"
+                target="_blank"
+                className="w-12 h-12 border-2 border-white rounded-lg flex items-center justify-center hover:bg-white hover:text-black transition-colors"
+              >
+                <Linkedin className="w-6 h-6" />
+              </Link>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Divider */}
+        <div className="w-full h-px bg-white/20 mb-8" />
+
+        {/* Bottom Section */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          
+          {/* Copyright */}
+          <p className="font-body text-sm text-white/70">
+            © 2025 PACEON. All rights reserved.
+          </p>
+
+          {/* Email + Back to Top */}
+          <div className="flex items-center gap-6">
+            <Link 
+              href="mailto:hi@paceon.id"
+              className="font-brand text-2xl sm:text-3xl md:text-4xl text-white hover:text-white/70 transition-colors"
+            >
+              HI@PACEON.ID
+            </Link>
+
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+            >
+              <svg 
+                className="w-5 h-5 text-white" 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                  strokeWidth={2} 
+                  d="M5 10l7-7m0 0l7 7m-7-7v18" 
+                />
+              </svg>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </footer>
+  );
 };
 
-export default PaceOnFooter;
+export default Footer;

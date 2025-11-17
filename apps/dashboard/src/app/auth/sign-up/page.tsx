@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { FaGoogle, FaEye, FaEyeSlash } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { supabase } from "@paceon/lib/supabase";
+import { AuthError } from "@supabase/supabase-js";
 
 export default function SignUpPage() {
     const router = useRouter();
@@ -113,15 +114,17 @@ export default function SignUpPage() {
                 router.replace("/auth/verify-email");
             }, 2000);
             
-        } catch (err: any) {
+        } catch (err) {
             console.error("❌ Signup error:", err);
 
-            if (err.message.includes("already registered") || err.message.includes("User already registered")) {
+            const authError = err as AuthError;
+
+            if (authError.message.includes("already registered") || authError.message.includes("User already registered")) {
                 setError("Email is already registered. Use another email or login.");
-            } else if (err.message.includes("Password")) {
+            } else if (authError.message.includes("Password")) {
                 setError("Password is too weak.");
             } else {
-                setError(err.message || "An error occurred. Please try again.");
+                setError(authError.message || "An error occurred. Please try again.");
             }
         } finally {
             setLoading(false);
@@ -151,9 +154,10 @@ export default function SignUpPage() {
 
             console.log("✅ Redirecting to Google...");
             
-        } catch (err: any) {
+        } catch (err) {
             console.error("❌ Google signup failed:", err);
-            setError("Google signup failed. Please try again.");
+            const authError = err as AuthError;
+            setError(authError.message || "Google signup failed. Please try again.");
             setLoading(false);
         }
     };

@@ -1,4 +1,3 @@
-// src/components/ActivityFeed/index.tsx
 "use client";
 
 import { useState } from "react";
@@ -16,6 +15,7 @@ import EditCommentModal from './components/EditCommentModal';
 import ShareModal from './components/ShareModal';
 import ProfileModal from './components/ProfileModal';
 import { useToast } from '@/contexts/ToastContext';
+import { Post } from "./types";
 
 export default function ActivityFeed({ 
   currentUserId, 
@@ -103,7 +103,7 @@ export default function ActivityFeed({
   });
 
   const [showCreatePost, setShowCreatePost] = useState(false);
-  const [editingPost, setEditingPost] = useState<any>(null);
+  const [editingPost, setEditingPost] = useState<Post | null>(null); // Ini sudah diganti
   const [sharePostId, setSharePostId] = useState<string | null>(null);
   const [viewingProfile, setViewingProfile] = useState<{
     userId: string;
@@ -116,7 +116,7 @@ export default function ActivityFeed({
 
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
-  const handleCreatePostWithRefresh = async (postData: any) => {
+  const handleCreatePostWithRefresh = async (postData: Parameters<typeof handleCreatePost>[0]) => {
     await handleCreatePost(postData);
     setProfileRefreshKey(prev => prev + 1);
   };
@@ -182,7 +182,7 @@ export default function ActivityFeed({
                 getInitials(currentUserName)
               )}
             </div>
-            <span className="text-gray-500 dark:text-gray-400">What's on your mind?</span>
+            <span className="text-gray-500 dark:text-gray-400">What&apos;s on your mind?</span>
           </button>
           <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
             <button 
@@ -209,7 +209,8 @@ export default function ActivityFeed({
           </div>
         </div>
       )}
-            {/* Posts Feed */}
+
+      {/* Posts Feed */}
       <div className="space-y-6">
         {posts.length === 0 && !loading && (
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 text-center">
@@ -226,7 +227,6 @@ export default function ActivityFeed({
             </p>
           </div>
         )}
-        
         {posts.map((post) => (
           <PostCard
             key={post._id}
@@ -285,7 +285,7 @@ export default function ActivityFeed({
 
       {!hasMore && posts.length > 0 && (
         <div className="text-center mt-6 text-gray-500 dark:text-gray-400 text-sm">
-          You've reached the end
+          You&apos;ve reached the end
         </div>
       )}
 

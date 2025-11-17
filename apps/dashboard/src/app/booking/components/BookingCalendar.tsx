@@ -13,10 +13,15 @@ import {
 } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+interface Event {
+  date: string | Date;
+  [key: string]: unknown;
+}
+
 interface BookingCalendarProps {
   currentMonth: Date;
   selectedDate: Date | null;
-  events: any[];
+  events: Event[];
   onMonthChange: (date: Date) => void;
   onDateSelect: (date: Date) => void;
 }

@@ -1,22 +1,20 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useRef, useEffect, useState, ReactNode } from "react";
 import { useInView } from "framer-motion";
 
 interface FadeInSectionProps {
   children: ReactNode;
   delay?: number;
-  id: string; // kasih ID unik biar bisa disimpen di sessionStorage
+  id: string;
 }
 
 export default function FadeInSection({ children, delay = 0, id }: FadeInSectionProps) {
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.2 });
   const [alreadyAnimated, setAlreadyAnimated] = useState(false);
 
   useEffect(() => {
-    // cek apakah section ini udah pernah animasi
     const done = sessionStorage.getItem(`animated-${id}`);
     if (done) {
       setAlreadyAnimated(true);
@@ -30,14 +28,18 @@ export default function FadeInSection({ children, delay = 0, id }: FadeInSection
     }
   }, [isInView, alreadyAnimated, id]);
 
+  const shouldAnimate = !alreadyAnimated && isInView;
+
   return (
-    <motion.div
+    <div
       ref={ref}
-      initial={{ opacity: 0, y: 40 }}
-      animate={alreadyAnimated ? { opacity: 1, y: 0 } : isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-      transition={{ duration: 0.8, ease: "easeOut", delay }}
+      style={{
+        transform: shouldAnimate || alreadyAnimated ? 'translateY(0)' : 'translateY(40px)',
+        transition: `transform 0.8s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s`,
+        willChange: 'transform'
+      }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

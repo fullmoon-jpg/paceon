@@ -68,104 +68,108 @@ const HouseRulesPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
-      {/* Header Section with Background Image */}
-      <div className="relative overflow-hidden min-h-[70vh] flex items-center">
-        {/* Background Image with Overlay */}
-        <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-          style={{
-            backgroundImage: `url('/images/house-rules-hero.webp')`
-          }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-r from-[#15b392]/80 via-[#2a6435]/75 to-[#15b392]/80"></div>
-          <div className="absolute inset-0 bg-black/20"></div>
-        </div>
-        
-        {/* Content */}
-        <div className="relative max-w-4xl mx-auto px-6 py-16 text-center text-white z-10">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-white/20 backdrop-blur-lg rounded-full mb-6">
-            <Shield className="w-10 h-10 text-white" />
+    <div className="min-h-screen bg-[#f4f4ef]">
+      {/* Header Section - Blue Solid Color */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#007AA6] to-[#1a5f7a] py-20 sm:py-28">
+        <div className="relative max-w-4xl mx-auto px-6 sm:px-8 lg:px-28 text-center text-white z-10">
+          <div className="inline-block mb-6 transform -skew-y-1">
+            <div className="bg-[#F0C946] px-12 py-4">
+              <h1 className="font-brand text-4xl sm:text-5xl md:text-6xl text-[#3f3e3d] transform skew-y-1">
+                HOUSE RULES
+              </h1>
+            </div>
           </div>
-          <h1 className="text-4xl uppercase md:text-6xl font-bold mb-6 tracking-tight drop-shadow-lg">
-            House Rules
-          </h1>
-          <p className="text-xl md:text-2xl text-white/80 mb-4 font-medium drop-shadow-md">
-            PACE.ON Community Guidelines
+          <p className="font-body text-lg sm:text-xl text-white/90 mb-3">
+            PACE ON Community Guidelines
           </p>
-          <p className="text-lg font-open-sans font-bold text-white/60 max-w-2xl mx-auto leading-relaxed drop-shadow-sm">
+          <p className="font-body text-base text-white/70 max-w-2xl mx-auto leading-relaxed">
             Creating a safe, inclusive, and enjoyable environment for everyone to connect, play, and grow together
           </p>
         </div>
-        
-        {/* Decorative wave */}
-        <div className="absolute bottom-0 w-full h-16 z-10">
-          <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="w-full h-full">
-            <path d="M1200 120L0 16.48V120z" className="fill-current text-green-50"></path>
-          </svg>
-        </div>
       </div>
 
-      {/* Rules Section */}
-      <div className="max-w-6xl mx-auto px-6 py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-[#1f4381] mb-4">
-            Our Community Standards
-          </h2>
-          <p className="text-lg font-open-sans font-bold text-black max-w-2xl mx-auto">
-            These guidelines ensure everyone has a positive and meaningful experience at PACE.ON events
-          </p>
-        </div>
-
-        {/* Blog Content */}
-        <div className="max-w-4xl mx-auto">
-          <article className="bg-white rounded-2xl shadow-xl overflow-hidden">
-            {/* Blog Header */}
-            <div className="p-8 border-b border-gray-100">
-              <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                <span className="bg-[#2a6435] text-white px-3 py-1 rounded-full font-medium">Community Guidelines</span>
-                <span>•</span>
-                <span className='font-open-sans font-bold'>Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
-              </div>
-              <h2 className="text-2xl font-bold text-black mb-4">
-                Building a Better Community Together
+      {/* Rules Section - Side by Side Layout */}
+      <div className="w-full px-6 sm:px-8 lg:px-28 py-16 sm:py-20 md:py-24 lg:py-28">
+        
+        {/* Grid Layout - Sidebar Left, Content Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16">
+          
+          {/* Left Sidebar - Sticky Title (Hidden on mobile) */}
+          <div className="hidden lg:block lg:col-span-4">
+            <div className="sticky top-24">
+              <h2 className="font-brand text-3xl text-[#3f3e3d] mb-4">
+                Our Community Standards
               </h2>
-              <p className="text-lg font-open-sans text-black leading-relaxed">
-                At PACE ON, we believe that great connections happen when everyone feels welcome, respected, and valued. 
-                These house rules aren&apos;t just guidelines—they&apos;re the foundation of our community culture that makes 
-                every event memorable and meaningful for all participants.
+              <p className="font-body text-base text-[#3f3e3d]/80 leading-relaxed">
+                These guidelines ensure everyone has a positive and meaningful experience at PACE ON events
               </p>
             </div>
+          </div>
 
-            {/* Blog Content Static */}
-            <div className="p-8 prose prose-lg max-w-none">
-              <div className="space-y-8">
+          {/* Mobile Title (Shown only on mobile) */}
+          <div className="lg:hidden text-center mb-8">
+            <h2 className="font-brand text-3xl text-[#3f3e3d] mb-4">
+              Our Community Standards
+            </h2>
+            <p className="font-body text-base text-[#3f3e3d]/80">
+              These guidelines ensure everyone has a positive and meaningful experience at PACE ON events
+            </p>
+          </div>
+
+          {/* Right Content - Scrollable Rules */}
+          <div className="lg:col-span-8">
+            <div className="border-2 border-[#3f3e3d]/10 rounded-3xl p-6 sm:p-8 lg:p-10 bg-white/50">
+              {/* Header Info */}
+              <div className="pb-8 border-b-2 border-[#3f3e3d]/10">
+                <div className="flex flex-wrap items-center gap-3 text-sm text-[#3f3e3d]/70 mb-4">
+                  <span className="bg-[#007AA6] text-white px-4 py-1.5 rounded-full font-body font-medium">
+                    Community Guidelines
+                  </span>
+                  <span>•</span>
+                  <span className='font-body'>
+                    Last updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </div>
+                <h3 className="font-brand text-2xl sm:text-3xl text-[#3f3e3d] mb-4">
+                  Building a Better Community Together
+                </h3>
+                <p className="font-body text-base sm:text-lg text-[#3f3e3d]/80 leading-relaxed">
+                  At PACE ON, we believe that great connections happen when everyone feels welcome, respected, and valued. 
+                  These house rules aren&apos;t just guidelines—they&apos;re the foundation of our community culture that makes 
+                  every event memorable and meaningful for all participants.
+                </p>
+              </div>
+
+              {/* Rules List */}
+              <div className="py-8 space-y-8">
                 {rules.map((rule) => (
                   <div 
                     key={rule.id} 
-                    className="rule-item border-l-4 border-[#2a6435] pl-6 py-2"
+                    className="border-l-4 border-[#007AA6] pl-6 py-2"
                   >
                     <div className="flex items-start gap-4 mb-3">
-                      <div className="flex-shrink-0 w-8 h-8 md:w-10 md:h-10 lg:w-10 lg:h-10 bg-[#e04d31] rounded-lg flex items-center justify-center text-white shadow-md">
-                        <span className="text-sm font-bold">{rule.id}</span>
+                      <div className="flex-shrink-0 w-10 h-10 bg-[#F47a49] rounded-xl flex items-center justify-center text-white shadow-md">
+                        <span className="font-brand text-base">{rule.id}</span>
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-xl font-open-sans font-bold text-black mb-2">
+                        <h4 className="font-brand text-lg sm:text-xl text-[#3f3e3d] mb-2">
                           {rule.title}
-                        </h3>
+                        </h4>
+                        <p className="font-body text-[#3f3e3d]/80 leading-relaxed text-base">
+                          {rule.description}
+                        </p>
                       </div>
                     </div>
-                    <p className="text-black font-open-sans leading-relaxed text-lg ml-14">
-                      {rule.description}
-                    </p>
                   </div>
                 ))}
               </div>
 
-              {/* Additional Context Section */}
-              <div className="mt-12 pt-8 border-t border-gray-200">
-                <h3 className="text-2xl font-bold text-black mb-4">Why These Rules Matter</h3>
-                <div className="space-y-4 text-black font-open-sans leading-relaxed">
+              {/* Additional Context */}
+              <div className="pt-8 border-t-2 border-[#3f3e3d]/10">
+                <h3 className="font-brand text-2xl text-[#3f3e3d] mb-4">
+                  Why These Rules Matter
+                </h3>
+                <div className="space-y-4 font-body text-[#3f3e3d]/80 leading-relaxed">
                   <p>
                     These guidelines aren&apos;t about restricting your experience, they&apos;re about enhancing it. When everyone 
                     follows these simple principles, we create an environment where authentic connections flourish, 
@@ -178,12 +182,12 @@ const HouseRulesPage = () => {
                     through shared experiences and mutual respect.
                   </p>
 
-                  <div className="bg-green-50 border font-batangas border-green-200 rounded-lg p-6 my-6">
-                    <h4 className="text-lg font-semibold text-green-800 mb-3 flex items-center gap-2">
-                      <Heart className="w-5 h-5" />
+                  <div className="bg-[#FB6F7A]/10 border-2 border-[#FB6F7A]/20 rounded-2xl p-6 my-6">
+                    <h4 className="font-brand text-lg text-[#3f3e3d] mb-3 flex items-center gap-2">
+                      <Heart className="w-5 h-5 text-[#FB6F7A]" />
                       Remember
                     </h4>
-                    <p className="text-green-700">
+                    <p className="font-body text-[#3f3e3d]/80">
                       Every person you meet at PACE ON has something valuable to offer. Approach each interaction with 
                       curiosity, kindness, and an open mind. You never know which conversation might lead to your next 
                       great friendship, collaboration, or opportunity.
@@ -198,21 +202,24 @@ const HouseRulesPage = () => {
               </div>
 
               {/* Contact Section */}
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <h3 className="text-xl font-bold text-black mb-4">Questions or Concerns?</h3>
-                <p className="text-black font-open-sans leading-relaxed">
+              <div className="mt-8 pt-6 border-t-2 border-[#3f3e3d]/10">
+                <h3 className="font-brand text-xl text-[#3f3e3d] mb-4">
+                  Questions or Concerns?
+                </h3>
+                <p className="font-body text-[#3f3e3d]/80 leading-relaxed">
                   If you have any questions about these guidelines or want to report a concern during an event, 
                   please don&apos;t hesitate to reach out to our moderators or contact us directly. 
                   We&apos;re here to ensure everyone has an amazing experience.
                 </p>
               </div>
             </div>
-          </article>
+          </div>
+
         </div>
 
-        {/* Additional Info */}
+        {/* Footer Note */}
         <div className="mt-12 text-center">
-          <div className="inline-flex items-center gap-2 text-black  font-open-sans font-bold text-sm">
+          <div className="inline-flex items-center gap-2 text-[#3f3e3d]/70 font-body text-sm">
             <Shield className="w-4 h-4" />
             <span>These rules apply to all PACE ON activities and online interactions</span>
           </div>

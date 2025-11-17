@@ -1,5 +1,4 @@
-// src/lib/notifications.ts
-import { supabaseAdmin } from '../../../../packages/lib/supabase';
+import { supabaseAdmin } from '@paceon/lib/supabase';
 
 export type NotificationType = 'system' | 'social';
 
@@ -15,16 +14,20 @@ export type NotificationCategory =
   | 'connection_added'
   | 'post_mention';
 
+interface Metadata {
+  [key: string]: unknown;
+}
+
 interface CreateNotificationParams {
   userId: string;
   type: NotificationType;
   category: NotificationCategory;
   title: string;
   message: string;
-  metadata?: Record<string, any>;
-  actorId?: string;
-  relatedEntityType?: string;
-  relatedEntityId?: string;
+  metadata?: Metadata;
+  actorId?: string | null;
+  relatedEntityType?: string | null;
+  relatedEntityId?: string | null;
 }
 
 /**
@@ -39,21 +42,18 @@ export async function createNotification(params: CreateNotificationParams) {
       p_title: params.title,
       p_message: params.message,
       p_metadata: params.metadata || {},
-      p_actor_id: params.actorId || null,
-      p_related_entity_type: params.relatedEntityType || null,
-      p_related_entity_id: params.relatedEntityId || null,
+      p_actor_id: params.actorId ?? null,
+      p_related_entity_type: params.relatedEntityType ?? null,
+      p_related_entity_id: params.relatedEntityId ?? null,
     });
 
     if (error) {
-      console.error('❌ Error creating notification:', error);
       return { success: false, error };
     }
 
-    console.log('✅ Notification created:', data);
     return { success: true, notificationId: data };
-  } catch (error) {
-    console.error('❌ Exception creating notification:', error);
-    return { success: false, error };
+  } catch {
+    return { success: false, error: new Error('Exception creating notification') };
   }
 }
 
@@ -85,9 +85,8 @@ export async function getUserNotifications(userId: string, limit = 20, unreadOnl
     if (error) throw error;
 
     return { success: true, data };
-  } catch (error) {
-    console.error('❌ Error fetching notifications:', error);
-    return { success: false, error };
+  } catch {
+    return { success: false, error: new Error('Error fetching notifications') };
   }
 }
 
@@ -107,9 +106,8 @@ export async function markNotificationAsRead(notificationId: string) {
     if (error) throw error;
 
     return { success: true };
-  } catch (error) {
-    console.error('❌ Error marking notification as read:', error);
-    return { success: false, error };
+  } catch {
+    return { success: false, error: new Error('Error marking notification as read') };
   }
 }
 
@@ -130,9 +128,8 @@ export async function markAllNotificationsAsRead(userId: string) {
     if (error) throw error;
 
     return { success: true };
-  } catch (error) {
-    console.error('❌ Error marking all as read:', error);
-    return { success: false, error };
+  } catch {
+    return { success: false, error: new Error('Error marking all as read') };
   }
 }
 
@@ -149,19 +146,18 @@ export async function getUnreadCount(userId: string) {
 
     if (error) throw error;
 
-    return { success: true, count: count || 0 };
-  } catch (error) {
-    console.error('❌ Error getting unread count:', error);
+    return { success: true, count: count ?? 0 };
+  } catch {
     return { success: false, count: 0 };
   }
 }
+
 
 // ============================================
 // SOCIAL NOTIFICATION HELPERS
 // ============================================
 
 export async function notifyPostLike(postAuthorId: string, actorId: string, actorName: string, postId: string) {
-  // Jangan notif kalau user like post sendiri
   if (postAuthorId === actorId) return;
 
   return createNotification({
@@ -173,12 +169,11 @@ export async function notifyPostLike(postAuthorId: string, actorId: string, acto
     actorId,
     relatedEntityType: 'post',
     relatedEntityId: postId,
-    metadata: { postId }
+    metadata: { postId },
   });
 }
 
 export async function notifyPostComment(postAuthorId: string, actorId: string, actorName: string, postId: string, commentText: string) {
-  // Jangan notif kalau user comment post sendiri
   if (postAuthorId === actorId) return;
 
   return createNotification({
@@ -190,7 +185,7 @@ export async function notifyPostComment(postAuthorId: string, actorId: string, a
     actorId,
     relatedEntityType: 'post',
     relatedEntityId: postId,
-    metadata: { postId, commentText }
+    metadata: { postId, commentText },
   });
 }
 
@@ -204,7 +199,7 @@ export async function notifyNewConnection(userId: string, actorId: string, actor
     actorId,
     relatedEntityType: 'user',
     relatedEntityId: actorId,
-    metadata: { connectedUserId: actorId }
+    metadata: { connectedUserId: actorId },
   });
 }
 
@@ -217,9 +212,9 @@ export async function notifyWelcome(userId: string, userName: string) {
     userId,
     type: 'system',
     category: 'welcome',
-    title: 'Welcome to PACE.ON! 🎉',
+    title: 'Welcome to PACE.ON!',
     message: `Hi ${userName}! We're excited to have you here. Start by completing your profile and exploring events.`,
-    metadata: { userName }
+    metadata: { userName },
   });
 }
 
@@ -228,11 +223,11 @@ export async function notifyBookingSuccess(userId: string, eventName: string, ev
     userId,
     type: 'system',
     category: 'booking_success',
-    title: 'Event Booking Confirmed ✅',
+    title: 'Event Booking Confirmed',
     message: `Your booking for "${eventName}" has been confirmed!`,
     relatedEntityType: 'event',
     relatedEntityId: eventId,
-    metadata: { eventName, eventId }
+    metadata: { eventName, eventId },
   });
 }
 
@@ -245,6 +240,6 @@ export async function notifyGameReminder(userId: string, eventName: string, even
     message: `Your event "${eventName}" starts ${timeUntil}. Don't forget to attend!`,
     relatedEntityType: 'event',
     relatedEntityId: eventId,
-    metadata: { eventName, eventId, timeUntil }
+    metadata: { eventName, eventId, timeUntil },
   });
 }

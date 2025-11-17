@@ -1,7 +1,10 @@
-// src/lib/utils/broadcast.ts
 import { supabase } from '@paceon/lib/supabase';
 
-export async function broadcastFeedUpdate(event: string, payload: any) {
+interface BroadcastPayload {
+  [key: string]: unknown;
+}
+
+export async function broadcastFeedUpdate(event: string, payload: BroadcastPayload) {
   try {
     const channel = supabase.channel('feed-updates');
     
@@ -11,10 +14,8 @@ export async function broadcastFeedUpdate(event: string, payload: any) {
       payload,
     });
 
-    console.log(`✅ Broadcasted ${event}`);
     return true;
-  } catch (error) {
-    console.error(`❌ Broadcast failed for ${event}:`, error);
+  } catch {
     return false;
   }
 }

@@ -1,0 +1,36 @@
+import TalkNTalesHero from '../ui/components/tnthero';
+import TalkNTalesPosterAndDescription from '../ui/components/tntposter';
+import TalkNTalesRegistrationAndFAQ from '../ui/components/tntform';
+import Footer from '../ui/footer';
+import FadeInSection from '@paceon/ui/FadeIn';
+
+export const metadata = {
+  title: "Talk n Tales - PACE ON",
+  description: "An open mic and networking night where ideas meet stories. Limited seats — save yours now.",
+};
+
+export default function TalkNTalesPage() {
+  return (
+    <>
+      <section id="hero-section" className="relative z-10">
+          <TalkNTalesHero />
+      </section>
+
+      <section id="poster-section" className="relative z-10 bg-[#f4f4ef]">
+        <FadeInSection id="Talk n Tales Poster" delay={0.2}>
+          <TalkNTalesPosterAndDescription />
+        </FadeInSection>
+      </section>
+
+      <section id="registration-section" className="relative z-10">
+        <FadeInSection id="Talk n Tales Registration" delay={0.6}>
+          <TalkNTalesRegistrationAndFAQ />
+        </FadeInSection>
+      </section>
+
+      <section id="footer-section" className="relative z-10">
+          <Footer />
+      </section>
+    </>
+  );
+}

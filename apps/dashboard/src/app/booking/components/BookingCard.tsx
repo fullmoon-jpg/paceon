@@ -3,9 +3,25 @@
 
 import { Calendar, Clock, MapPin, Users } from "lucide-react";
 import { format } from "date-fns";
+import Image from "next/image";
+
+interface Event {
+  id: string;
+  title: string;
+  event_type: string;
+  image: string;
+  date: string | Date;
+  time: string;
+  venueName: string;
+  venueCity: string;
+  currentPlayers: number;
+  maxPlayers: number;
+  price: number;
+  [key: string]: unknown;
+}
 
 interface BookingCardProps {
-  event: any;
+  event: Event;
   onClick: () => void;
 }
 
@@ -40,10 +56,12 @@ export default function BookingCard({ event, onClick }: BookingCardProps) {
     >
       {/* Image */}
       <div className="relative h-40 overflow-hidden">
-        <img
+        <Image
           src={event.image}
           alt={event.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+          fill
+          className="object-cover group-hover:scale-110 transition-transform duration-300"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         

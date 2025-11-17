@@ -1,72 +1,200 @@
-"use client"
-import { React } from "next/dist/server/route-modules/app-page/vendored/rsc/entrypoints";
+"use client";
+import React, { useState, useEffect, memo } from "react";
+import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
-import { getDashboardUrl } from "@paceon/config/constants";
+import { useRouter } from "next/navigation";
 
-const PaceOnCTASection: React.FC = () => {
+interface CTASectionProps {
+  backgroundColor?: string;
+  dashboardUrl?: string;
+}
 
-    const handleGetStarted = (): void => {
-            // Option 1: Redirect di window yang sama (smooth transition)
-            // window.location.href = getDashboardUrl('/auth/sign-up');
-            // Option 2: Redirect ke window yang berbeda
-            window.open(getDashboardUrl('/auth/sign-up'), '_blank', 'noopener,noreferrer');
-    };
+const CTASection = memo(({ 
+  backgroundColor = "#f4f4ef",
+  dashboardUrl = "https://app.paceon.id"
+}: CTASectionProps) => {
+  const router = useRouter();
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
-    return (
-        <div className="w-full py-20 px-8 md:px-16 lg:px-24 bg-gray-50">
-            <div className="max-w-8xl mx-auto">
-                {/* Header */}
-                <div className="text-center mb-8">
-                    <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#1f4381] uppercase tracking-wide">
-                        Ready to take on a life-changing experience?
-                    </h2>
+  useEffect(() => {
+    const hasSeenCTA = sessionStorage.getItem('cta_viewed');
+    if (!hasSeenCTA) {
+      setShouldAnimate(true);
+      sessionStorage.setItem('cta_viewed', 'true');
+    }
+  }, []);
+
+  const handleDashboardClick = () => {
+    window.open(dashboardUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleTalkNTalesClick = () => {
+    router.push('/talk-n-tales');
+  };
+
+  const fadeInVariant = {
+    hidden: shouldAnimate ? { opacity: 0, y: 20 } : { opacity: 1, y: 0 },
+    visible: { opacity: 1, y: 0 }
+  };
+
+  return (
+    <section 
+      className="max-w-9xl py-16 sm:py-20 md:py-24 lg:py-28"
+      style={{ backgroundColor }}
+      aria-labelledby="cta-heading"
+    >
+      <div className="w-full px-6 sm:px-8 lg:px-28">
+        {/* First CTA Block */}
+        <motion.div
+          variants={fadeInVariant}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: shouldAnimate ? 0.6 : 0 }}
+          className="mb-12 sm:mb-16"
+        >
+          {/* Flex Container - centered alignment */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8">
+            {/* Left: Text Content */}
+            <div className="flex-1">
+              {/* Header with yellow background */}
+              <div className="inline-block mb-6 sm:mb-8">
+                <div className="relative">
+                  <div 
+                    className="absolute inset-0 -skew-x-2"
+                    style={{ 
+                      backgroundColor: '#F0C946',
+                      transform: 'skew(-2deg)',
+                      zIndex: 0
+                    }}
+                    aria-hidden="true"
+                  />
+                  
+                  <h2 
+                    id="cta-heading"
+                    className="relative font-brand text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-[#3f3e3d] px-4 py-2 sm:px-6 sm:py-3"
+                    style={{ zIndex: 1 }}
+                  >
+                    Ready to Pace On?
+                  </h2>
                 </div>
+              </div>
 
-                {/* CTA Card */}
-                <div className="relative overflow-hidden rounded-2xl shadow-2xl">
-                    <img
-                        src="/images/CTA-image.webp"
-                        alt="A man is ready for receive the ball"
-                        className="h-80 w-full object-cover"
-                    />
-                <div className="absolute inset-0 bg-black/40"></div>
-
-                {/* Content */}
-                <div className="absolute inset-0 flex items-center justify-start pl-8 md:pl-16">
-                    <div className="text-white max-w-4xl">
-                        <h3 className="text-2xl sm:text-2xl md:text-3xl lg:text-4xl font-bold mb-2">
-                            Life opens new doors only when you choose to move.
-                        </h3>
-                        <p className="text-md sm:text-md md:text-xl lg:text-2xl font-open-sans font-bold mb-5 text-gray-200">
-                            Hit the button and start with the easiest way to step up!
-                        </p>
-
-                    {/* CTA Button */}
-                        <button
-                            onClick={handleGetStarted}
-                            className="inline-flex items-center px-8 py-4 green-fill bg-[#f7ba44] text-black font-bold text-lg rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
-                        >
-                            Get Started
-                            <ArrowRight className="ml-2 w-5 h-5" />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Decorative Elements */}
-                <div className="absolute top-4 right-4 w-20 h-20 bg-[#e3b2b5] rounded-full opacity-20"></div>
-                    <div className="absolute bottom-4 right-8 w-12 h-12 bg-[#e33530] rounded-full opacity-30"></div>
-                    <div className="absolute top-1/2 right-1/4 w-16 h-16 bg-[#f7ba44] rounded-full opacity-15"></div>
-                </div>
-
-                {/* Additional Info */}
-                <div className="text-center mt-8">
-                    <p className="text-black text-xl">
-                        Keep the Pace On
-                    </p>
-                </div>
+              <motion.h3
+                variants={fadeInVariant}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.1 : 0 }}
+                className="font-brand text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[#3f3e3d] leading-tight max-w-3xl"
+              >
+                Join the fun networking movement built for Gen-Z decision makers.
+              </motion.h3>
             </div>
-        </div>
-    );
-};
 
-export default PaceOnCTASection;
+            {/* Right: Button - self center for vertical alignment */}
+            <div className="flex-shrink-0 self-center pt-0 sm:pt-0 md:pt-0 lg:pt-14">
+              <motion.button
+                variants={fadeInVariant}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.2 : 0 }}
+                onClick={handleDashboardClick}
+                className="group relative inline-flex items-center gap-3 bg-[#4169E1] pink-fill text-white font-bold text-sm sm:text-base lg:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95"
+                aria-label="Go to your dashboard"
+                type="button"
+              >
+                <span className="uppercase tracking-wide whitespace-nowrap">Go to Your Dashboard</span>
+                <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#3f3e3d] flex items-center justify-center transition-transform duration-300 group-hover:translate-x-1">
+                  <ArrowRight 
+                    className="w-4 h-4 sm:w-5 sm:h-5 text-white" 
+                    aria-hidden="true"
+                  />
+                </div>
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* Divider Line */}
+        <motion.div
+          variants={fadeInVariant}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.3 : 0 }}
+          className="w-full h-px bg-[#3f3e3d] mb-12 sm:mb-16"
+          aria-hidden="true"
+        />
+
+        {/* Second CTA Block */}
+        <motion.div
+          variants={fadeInVariant}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.4 : 0 }}
+        >
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 lg:gap-8">
+            {/* Left: Text Content */}
+            <div className="flex-1">
+              <h3 className="font-brand text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[#3f3e3d] mb-4 sm:mb-6 uppercase">
+                Upcoming Event — Talk n Tales
+              </h3>
+
+              <motion.p
+                variants={fadeInVariant}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.5 : 0 }}
+                className="font-body text-sm sm:text-base lg:text-lg text-[#3f3e3d]/80 mb-2 leading-relaxed"
+              >
+                An open mic and networking night where ideas meet stories. 60 Seats Available. Save yours now!
+              </motion.p>
+
+              <motion.p
+                variants={fadeInVariant}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.6 : 0 }}
+                className="font-body text-sm sm:text-base text-[#3f3e3d] font-semibold"
+              >
+                Part talkshow, part hangout. 100% PACE ON energy.
+              </motion.p>
+            </div>
+
+            {/* Right: Button - self center for vertical alignment */}
+            <div className="flex-shrink-0 self-center">
+              <motion.button
+                variants={fadeInVariant}
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.7 : 0 }}
+                onClick={handleTalkNTalesClick}
+                className="group relative inline-flex items-center gap-3 bg-[#FB6F7A] green-fill text-white font-bold text-sm sm:text-base lg:text-lg px-6 sm:px-8 py-3 sm:py-4 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95"
+                aria-label="Register for Talk n Tales event"
+                type="button"
+              >
+                <span className="uppercase tracking-wide whitespace-nowrap">Save Your Seat</span>
+                <div className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-[#3f3e3d] flex items-center justify-center transition-transform duration-300 group-hover:translate-x-1">
+                  <ArrowRight 
+                    className="w-4 h-4 sm:w-5 sm:h-5 text-white" 
+                    aria-hidden="true"
+                  />
+                </div>
+              </motion.button>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+});
+
+CTASection.displayName = 'CTASection';
+
+export default CTASection;

@@ -1,4 +1,3 @@
-// src/hooks/useAuth.ts
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '@paceon/lib/supabase';
 import { User } from '@supabase/supabase-js';
@@ -45,9 +44,7 @@ export function useAuth(): UseAuthReturn {
       }
     }
 
-    if (fetchingRef.current) {
-      return;
-    }
+    if (fetchingRef.current) return;
 
     fetchingRef.current = true;
     abortControllerRef.current?.abort();
@@ -99,20 +96,20 @@ export function useAuth(): UseAuthReturn {
             });
         }
       }
-    } catch (err: any) {
-      if (err.name === 'AbortError') return;
+    } catch (err: unknown) {
+      if ((err as { name?: string })?.name === 'AbortError') return;
       
       if (mountedRef.current) {
         const { data: { user: authUser } } = await supabase.auth.getUser();
         const fallbackProfile: Profile = {
           id: userId,
-          full_name: authUser?.user_metadata?.full_name || 
-                     authUser?.user_metadata?.name || 
+          full_name: authUser?.user_metadata?.full_name ||
+                     authUser?.user_metadata?.name ||
                      authUser?.email?.split('@')[0] || 'User',
           avatar_url: authUser?.user_metadata?.avatar_url || null,
           email: authUser?.email,
-          username: authUser?.user_metadata?.preferred_username || 
-                    authUser?.email?.split('@')[0],
+          username: authUser?.user_metadata?.preferred_username ||
+                   authUser?.email?.split('@')[0],
         };
         
         setProfile(fallbackProfile);
@@ -144,7 +141,7 @@ export function useAuth(): UseAuthReturn {
           setProfile(null);
           setLoading(false);
         }
-      } catch (err) {
+      } catch {
         if (mountedRef.current) {
           setLoading(false);
         }
@@ -184,9 +181,8 @@ export function useAuth(): UseAuthReturn {
             }
             break;
             
-          case 'TOKEN_REFRESHED':
-            break;
-            
+          // case 'TOKEN_REFRESHED': break;
+
           default:
             if (currentUser && !profile) {
               await fetchProfile(currentUser.id);
@@ -223,7 +219,7 @@ export function useAuth(): UseAuthReturn {
       initializedRef.current = false;
       await supabase.auth.signOut();
       
-    } catch (error) {
+    } catch {
       // Silent fail
     } finally {
       if (mountedRef.current) {

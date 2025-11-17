@@ -3,6 +3,20 @@ import connectDB from '@paceon/lib/mongodb';
 import Comment from '@/lib/models/Comment';
 import Post from '@/lib/models/Posts';
 
+interface CommentDocument {
+  _id: string;
+  userId: string;
+  postId: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface PatchRequestBody {
+  userId: string;
+  content: string;
+}
+
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -15,7 +29,7 @@ export async function DELETE(
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
-    const isAdmin = searchParams.get('isAdmin') === 'true'; // ✅ Get isAdmin from query
+    const isAdmin = searchParams.get('isAdmin') === 'true';
 
     if (!userId) {
       return NextResponse.json(
@@ -24,7 +38,7 @@ export async function DELETE(
       );
     }
 
-    const comment = await Comment.findById(commentId);
+    const comment = await Comment.findById(commentId) as CommentDocument | null;
 
     if (!comment) {
       return NextResponse.json(
@@ -33,7 +47,6 @@ export async function DELETE(
       );
     }
 
-    // ✅ Check ownership OR admin
     const isOwner = comment.userId === userId;
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -57,10 +70,10 @@ export async function DELETE(
       message: 'Comment deleted successfully',
     });
 
-  } catch (error: any) {
-    console.error('DELETE /api/comments/[id] error:', error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
@@ -75,7 +88,7 @@ export async function PATCH(
 
     const resolvedParams = await params;
     const commentId = resolvedParams.id;
-    const body = await request.json();
+    const body = await request.json() as PatchRequestBody;
     const { userId, content } = body;
 
     if (!userId || !content) {
@@ -85,7 +98,7 @@ export async function PATCH(
       );
     }
 
-    const comment = await Comment.findById(commentId);
+    const comment = await Comment.findById(commentId) as CommentDocument | null;
 
     if (!comment) {
       return NextResponse.json(
@@ -105,7 +118,7 @@ export async function PATCH(
       commentId,
       { content, updatedAt: new Date() },
       { new: true }
-    );
+    ) as CommentDocument | null;
 
     return NextResponse.json({
       success: true,
@@ -113,10 +126,10 @@ export async function PATCH(
       data: updatedComment,
     });
 
-  } catch (error: any) {
-    console.error('PATCH /api/comments/[id] error:', error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

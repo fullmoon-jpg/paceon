@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash, FaCheckCircle } from "react-icons/fa";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@paceon/lib/supabase";
+import { AuthError } from "@supabase/supabase-js";
 
 export default function ResetPasswordForm() {
     const router = useRouter();
@@ -47,7 +48,7 @@ export default function ResetPasswordForm() {
                 } else {
                     throw new Error("No user found");
                 }
-            } catch (err: any) {
+            } catch (err) {
                 console.error("Verification error:", err);
                 setError("Invalid or expired reset link.");
             } finally {
@@ -92,9 +93,10 @@ export default function ResetPasswordForm() {
             await supabase.auth.signOut();
             
             setTimeout(() => router.replace("/auth/login"), 3000);
-        } catch (err: any) {
+        } catch (err) {
             console.error("Reset error:", err);
-            setError(err.message || "Failed to reset password. Please try again.");
+            const authError = err as AuthError;
+            setError(authError.message || "Failed to reset password. Please try again.");
         } finally {
             setLoading(false);
         }

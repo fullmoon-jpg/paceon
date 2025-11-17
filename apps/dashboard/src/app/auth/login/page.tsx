@@ -4,6 +4,11 @@ import React, { useState } from "react";
 import { FaGoogle, FaEye, FaEyeSlash, FaTimes } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { supabase } from "@paceon/lib/supabase";
+import { AuthError } from "@supabase/supabase-js";
+
+interface UserProfile {
+  role: string;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -53,22 +58,24 @@ export default function LoginPage() {
         .eq('id', data.user.id)
         .single();
 
-      const role = profile?.role || 'user';
+      const role = (profile as UserProfile | null)?.role || 'user';
 
       if (role === "admin") {
         router.push("/admin/dashbord");
       } else {
         router.push("/");
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error("Login error:", err);
 
-      if (err.message?.includes("Invalid login credentials")) {
+      const authError = err as AuthError;
+      
+      if (authError.message?.includes("Invalid login credentials")) {
         setError("Wrong email or password. Please check again.");
-      } else if (err.message?.includes("Email not confirmed")) {
+      } else if (authError.message?.includes("Email not confirmed")) {
         setError("Please confirm your email first. Check your inbox.");
       } else {
-        setError(err.message || "An error occurred. Please try again.");
+        setError(authError.message || "An error occurred. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -93,9 +100,10 @@ export default function LoginPage() {
       });
 
       if (error) throw error;
-    } catch (err: any) {
+    } catch (err) {
       console.error("Google login failed:", err);
-      setError("Google login failed. Please try again.");
+      const authError = err as AuthError;
+      setError(authError.message || "Google login failed. Please try again.");
       setLoading(false);
     }
   };
@@ -134,9 +142,10 @@ export default function LoginPage() {
         setResetMessage("");
       }, 3000);
 
-    } catch (err: any) {
+    } catch (err) {
       console.error("Password reset error:", err);
-      setResetError(err.message || "An error occurred. Please try again.");
+      const authError = err as AuthError;
+      setResetError(authError.message || "An error occurred. Please try again.");
     } finally {
       setResetLoading(false);
     }

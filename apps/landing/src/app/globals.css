@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600;700&display=swap');
 @import "tailwindcss";
 
-
 :root {
   --background: #ffffff;
   --foreground: #171717;
@@ -13,8 +12,8 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-open-sans: 'Open Sans', Arial, Helvetica, sans-serif;
-  --font-batangas: 'batangas', Arial, Helvetica, sans-serif;
-  --font-braggadocio: 'braggadocio', 'Arial Black', sans-serif;
+  --font-soulmaze: 'Soulmaze', Arial, Helvetica, sans-serif;
+  --font-outfit: 'Outfit', Arial, Helvetica, sans-serif;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -24,20 +23,116 @@
   }
 }
 
-/* Batangas Font Family */
+/* Soulmaze Font Family - Brand */
 @font-face {
-  font-family: 'batangas';
-  src: url('../../../../packages/lib/font/Batangas-Bold.otf') format('otf');
+  font-family: 'Soulmaze';
+  src: url('../../../../packages/lib/font/Soulmaze.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Soulmaze';
+  src: url('../../../../packages/lib/font/Soulmaze-Brush.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 
-/* bragga Font Family */
 @font-face {
-  font-family: 'braggadocio';
-  src: url('../../../../packages/lib/font/braggadocio.woff2') format('woff2');
+  font-family: 'Soulmaze';
+  src: url('../../../../packages/lib/font/Soulmaze-italic.otf') format('opentype');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Soulmaze';
+  src: url('../../../../packages/lib/font/Soulmaze-Outline.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Soulmaze';
+  src: url('../../../../packages/lib/font/Soulmaze-Outline-italic.otf') format('opentype');
+  font-weight: 300;
+  font-style: italic;
+  font-display: swap;
+}
+
+/* Outfit Font Family - Body */
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Thin.otf') format('opentype');
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-ExtraLight.otf') format('opentype');
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Regular.otf') format('opentype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Medium.otf') format('opentype');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-SemiBold.otf') format('opentype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Bold.otf') format('opentype');
   font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-ExtraBold.otf') format('opentype');
+  font-weight: 800;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Outfit';
+  src: url('../../../../packages/lib/font/Outfit-Black.otf') format('opentype');
+  font-weight: 900;
   font-style: normal;
   font-display: swap;
 }
@@ -47,16 +142,44 @@
 }
 
 .font-brand {
-  font-family: var(--font-braggadocio), 'Arial Black', sans-serif;
+  font-family: var(--font-soulmaze), Arial, Helvetica, sans-serif;
 }
 
 .font-body {
-  font-family: var(--font-batangas), Arial, Helvetica, sans-serif;
+  font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
+}
+
+/* Pink Fill Effect - Updated */
+.pink-fill {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.pink-fill::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background: #D33181;
+  transition: height 0.4s ease;
+  z-index: -1;
+}
+
+.pink-fill:hover::before {
+  height: 100%;
+}
+
+.pink-fill:hover {
+  color: white !important;
 }
 
 .green-fill {
   position: relative;
   overflow: hidden;
+  z-index: 1;
 }
 
 .green-fill::before {
@@ -66,9 +189,8 @@
   left: 0;
   width: 100%;
   height: 0;
-  background: linear-gradient(135deg, #15b392, #2a6435, #15b392);
+  background: #21C36E;
   transition: height 0.4s ease;
-  border-radius: 9999px;
   z-index: -1;
 }
 
@@ -80,6 +202,61 @@
   color: white !important;
 }
 
+.yellow-fill {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.yellow-fill::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0;
+  background: #F0C946;
+  transition: height 0.4s ease;
+  z-index: -1;
+}
+
+.yellow-fill:hover::before {
+  height: 100%;
+}
+
+.yellow-fill:hover {
+  color: black !important;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hero-fade-in {
+  animation: fadeInUp 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.animation-delay-200 {
+  animation-delay: 0.2s;
+  opacity: 0; /* Start hidden for delayed animation */
+}
+
+/* Disable animations on reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .hero-fade-in,
+  .animate-pulse {
+    animation: none;
+    opacity: 1;
+  }
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -87,5 +264,5 @@ html {
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-outfit), Arial, Helvetica, sans-serif;
 }

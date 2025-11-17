@@ -1,5 +1,4 @@
-// src/app/booking/components/EventDetailModal.tsx - FULL REPLACEMENT
-
+// src/app/booking/components/EventDetailModal.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -12,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { supabase } from "@paceon/lib/supabase";
+import Image from "next/image";
 
 interface BookingEvent {
   id: number | string;
@@ -49,22 +49,32 @@ interface EventDetailModalProps {
   onJoin: () => void;
 }
 
+interface PlayerRow {
+  booking_id: number;
+  full_name: string | null;
+  avatar_url: string | null;
+  user_position: string | null;
+  company: string | null;
+  networking_score: number | null;
+  email: string | null;
+}
+
 export default function EventDetailModal({ 
   event, 
   onClose,
   onJoin 
 }: EventDetailModalProps) {
-  if (!event) return null;
-
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([]);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
 
-  const isFull = event.currentPlayers >= event.maxPlayers;
-  const availableSlots = event.maxPlayers - event.currentPlayers;
+  const isFull = event ? event.currentPlayers >= event.maxPlayers : false;
+  const availableSlots = event ? event.maxPlayers - event.currentPlayers : 0;
 
   useEffect(() => {
+    if (!event) return;
+
     const fetchRegisteredPlayers = async () => {
       setLoadingPlayers(true);
       try {
@@ -84,24 +94,24 @@ export default function EventDetailModal({
           return;
         }
 
-        const players: RegisteredPlayer[] = data.map((row: any) => {
-          const getInitials = (name: string) => {
-            if (!name) return '??';
-            const names = name.trim().split(' ');
-            if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
-            return (names[0][0] + names[names.length - 1][0]).toUpperCase();
-          };
+        const getInitials = (name: string) => {
+          if (!name) return '??';
+          const names = name.trim().split(' ');
+          if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
+          return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+        };
 
+        const players: RegisteredPlayer[] = (data as PlayerRow[]).map((row) => {
           return {
             id: row.booking_id,
             name: row.full_name || 'Anonymous Player',
             avatar: getInitials(row.full_name || '??'),
-            avatarUrl: row.avatar_url || null,
+            avatarUrl: row.avatar_url || undefined,
             position: row.user_position || 'Not specified',
             company: row.company || 'Not specified',
             networkingScore: row.networking_score || 0,
             email: row.email || '',
-            joinedDate: null,
+            joinedDate: undefined,
           };
         });
 
@@ -115,7 +125,7 @@ export default function EventDetailModal({
     };
 
     fetchRegisteredPlayers();
-  }, [event.id]);
+  }, [event]);
 
   const getServicesForEventType = (eventType: string) => {
     const sportServices = [
@@ -142,29 +152,16 @@ export default function EventDetailModal({
     return sportServices;
   };
 
-  const ourServices = getServicesForEventType(event.event_type);
-
-  const rules = [
-    "Arrive 10 minutes before the scheduled start time",
-    event.event_type === 'coffee_chat' || event.event_type === 'meetup' 
-      ? "Business casual attire recommended" 
-      : "Proper attire required",
-    `Maximum ${event.maxPlayers} participants per session`,
-    "Cancellation allowed up to 2 hours before start time",
-    "Respect other participants and maintain etiquette",
-    "Follow all venue safety guidelines and staff instructions",
-    "Photography policy: Ask for consent before taking photos",
-  ];
-
   const confirmBooking = async () => {
     setIsBooking(true);
     setShowConfirmModal(false);
     
     try {
       await onJoin();
-    } catch (error: any) {
+    } catch (error) {
       console.error('Booking error:', error);
-      alert(error.message || 'Failed to complete booking. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Failed to complete booking. Please try again.';
+      alert(errorMessage);
     } finally {
       setIsBooking(false);
     }
@@ -181,14 +178,29 @@ export default function EventDetailModal({
     other: { badge: "bg-gray-500" },
   };
 
-  const colors = eventTypeColors[event.event_type] || eventTypeColors.other;
-
   const formatEventType = (eventType: string): string => {
     return eventType
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
   };
+
+  if (!event) return null;
+
+  const colors = eventTypeColors[event.event_type] || eventTypeColors.other;
+  const ourServices = getServicesForEventType(event.event_type);
+  
+  const rules = [
+    "Arrive 10 minutes before the scheduled start time",
+    event.event_type === 'coffee_chat' || event.event_type === 'meetup' 
+      ? "Business casual attire recommended" 
+      : "Proper attire required",
+    `Maximum ${event.maxPlayers} participants per session`,
+    "Cancellation allowed up to 2 hours before start time",
+    "Respect other participants and maintain etiquette",
+    "Follow all venue safety guidelines and staff instructions",
+    "Photography policy: Ask for consent before taking photos",
+  ];
 
   return (
     <>
@@ -213,10 +225,12 @@ export default function EventDetailModal({
                 {/* Event Image & Info */}
                 <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden">
                   <div className="relative h-48">
-                    <img
+                    <Image
                       src={event.image}
                       alt={event.title}
-                      className="w-full h-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 66vw"
                     />
                     <div className="absolute top-3 right-3 flex gap-2">
                       <span className={`${colors.badge} text-white px-3 py-1 rounded-full text-sm font-semibold uppercase`}>
@@ -347,11 +361,15 @@ export default function EventDetailModal({
                           <div key={player.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 hover:border-[#15b392] transition-colors">
                             <div className="flex items-start gap-3">
                               {player.avatarUrl ? (
-                                <img
-                                  src={player.avatarUrl}
-                                  alt={player.name}
-                                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
-                                />
+                                <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
+                                  <Image
+                                    src={player.avatarUrl}
+                                    alt={player.name}
+                                    fill
+                                    className="object-cover"
+                                    sizes="48px"
+                                  />
+                                </div>
                               ) : (
                                 <div className="w-12 h-12 bg-gradient-to-br from-[#15b392] to-[#2a6435] rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                                   {player.avatar}

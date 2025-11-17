@@ -4,6 +4,15 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@paceon/lib/supabase';
 
+interface ProfileData {
+    id: string;
+    role: string;
+}
+
+interface PreferencesData {
+    completed_at: string | null;
+}
+
 export default function CallbackPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -54,8 +63,8 @@ export default function CallbackPage() {
                         .maybeSingle()
                 ]);
 
-                const profileData = profileResult.status === 'fulfilled' ? profileResult.value.data : null;
-                const preferencesData = preferencesResult.status === 'fulfilled' ? preferencesResult.value.data : null;
+                const profileData = profileResult.status === 'fulfilled' ? profileResult.value.data as ProfileData | null : null;
+                const preferencesData = preferencesResult.status === 'fulfilled' ? preferencesResult.value.data as PreferencesData | null : null;
 
                 const hasProfile = !!profileData;
                 const hasCompletedMatchmaking = !!preferencesData?.completed_at;
@@ -71,8 +80,9 @@ export default function CallbackPage() {
                     router.replace('/auth/sign-up/matchmakingform?complete=true');
                 }
 
-            } catch (err: any) {
-                setError(err.message);
+            } catch (err) {
+                const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+                setError(errorMessage);
                 setTimeout(() => router.replace('/auth/login?error=callback_failed'), 2000);
             }
         };

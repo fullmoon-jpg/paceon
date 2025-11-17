@@ -15,7 +15,7 @@ export async function GET(
     const resolvedParams = await params;
     const postId = resolvedParams.id;
 
-    // ✅ Get all comments for this post
+    // Get all comments for this post
     const comments = await Comment.find({ postId })
       .sort({ createdAt: -1 })
       .lean();
@@ -27,10 +27,10 @@ export async function GET(
       });
     }
 
-    // ✅ Get unique user IDs
+    // Get unique user IDs
     const userIds = [...new Set(comments.map(c => c.userId))];
 
-    // ✅ Fetch all user profiles from Supabase
+    // Fetch all user profiles from Supabase
     const { data: userProfiles, error: userError } = await supabaseAdmin
       .from('users_profile')
       .select('id, full_name, avatar_url')
@@ -40,12 +40,12 @@ export async function GET(
       console.error('Error fetching user profiles:', userError);
     }
 
-    // ✅ Create user lookup map
+    // Create user lookup map
     const userMap = new Map(
       (userProfiles || []).map(user => [user.id, user])
     );
 
-    // ✅ Combine comments with user data
+    // Combine comments with user data
     const commentsWithUsers = comments.map(comment => ({
       ...comment,
       _id: comment._id.toString(),
@@ -98,18 +98,18 @@ export async function POST(
       );
     }
 
-    // ✅ Create comment
+    // Create comment
     const comment = await Comment.create({
       userId,
       postId,
       content: content.trim(),
     });
 
-    // ✅ Increment comment count
+    // Increment comment count
     post.commentsCount = (post.commentsCount || 0) + 1;
     await post.save();
 
-    // ✅ Fetch user profile
+    // Fetch user profile
     const { data: userProfile } = await supabaseAdmin
       .from('users_profile')
       .select('id, full_name, avatar_url')
@@ -126,7 +126,7 @@ export async function POST(
       },
     };
 
-    // ✅ Create notification (if not self-comment)
+    // Create notification (if not self-comment)
     const postOwnerId = post.userId.toString();
     if (userId !== postOwnerId) {
       try {

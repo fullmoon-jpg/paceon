@@ -1,4 +1,3 @@
-// src/components/ActivityFeed/hooks/useRealtimeFeed.ts
 import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@paceon/lib/supabase';
 
@@ -6,7 +5,7 @@ interface Post {
   _id: string;
   userId: string;
   content: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface UseRealtimeFeedReturn {
@@ -23,6 +22,31 @@ interface UseRealtimeFeedOptions {
   onNewComment?: (postId: string, commentsCount: number) => void;
 }
 
+interface BroadcastPayload<T> {
+  payload: T;
+}
+
+interface NewPostPayload extends Post {}
+
+interface UpdatePostPayload {
+  postId: string;
+  updates: Partial<Post>;
+}
+
+interface DeletePostPayload {
+  postId: string;
+}
+
+interface NewLikePayload {
+  postId: string;
+  likesCount: number;
+}
+
+interface NewCommentPayload {
+  postId: string;
+  commentsCount: number;
+}
+
 export function useRealtimeFeed({
   enabled,
   currentUserId,
@@ -33,16 +57,20 @@ export function useRealtimeFeed({
   onNewComment,
 }: UseRealtimeFeedOptions): UseRealtimeFeedReturn {
   const [isConnected, setIsConnected] = useState(false);
-  const channelRef = useRef<any>(null);
+  const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const mountedRef = useRef(true);
-  const handlersRef = useRef({ onNewPost, onUpdatePost, onDeletePost, onNewLike, onNewComment });
+  const handlersRef = useRef({
+    onNewPost,
+    onUpdatePost,
+    onDeletePost,
+    onNewLike,
+    onNewComment,
+  });
 
-  // ✅ Update handlers ref without triggering re-render
   useEffect(() => {
     handlersRef.current = { onNewPost, onUpdatePost, onDeletePost, onNewLike, onNewComment };
   }, [onNewPost, onUpdatePost, onDeletePost, onNewLike, onNewComment]);
 
-  // ✅ Main effect - STABLE dependencies
   useEffect(() => {
     mountedRef.current = true;
 
@@ -51,41 +79,38 @@ export function useRealtimeFeed({
       return;
     }
 
-    console.log('🔌 Setting up realtime feed...');
-
     const channel = supabase.channel('feed-updates');
 
     channel
-      .on('broadcast', { event: 'new_post' }, (payload) => {
+      .on('broadcast', { event: 'new_post' }, (payload: BroadcastPayload<NewPostPayload>) => {
         if (mountedRef.current && payload.payload) {
           handlersRef.current.onNewPost?.(payload.payload);
         }
       })
-      .on('broadcast', { event: 'update_post' }, (payload) => {
+      .on('broadcast', { event: 'update_post' }, (payload: BroadcastPayload<UpdatePostPayload>) => {
         if (mountedRef.current && payload.payload) {
           const { postId, updates } = payload.payload;
           handlersRef.current.onUpdatePost?.(postId, updates);
         }
       })
-      .on('broadcast', { event: 'delete_post' }, (payload) => {
+      .on('broadcast', { event: 'delete_post' }, (payload: BroadcastPayload<DeletePostPayload>) => {
         if (mountedRef.current && payload.payload) {
           handlersRef.current.onDeletePost?.(payload.payload.postId);
         }
       })
-      .on('broadcast', { event: 'new_like' }, (payload) => {
+      .on('broadcast', { event: 'new_like' }, (payload: BroadcastPayload<NewLikePayload>) => {
         if (mountedRef.current && payload.payload) {
           const { postId, likesCount } = payload.payload;
           handlersRef.current.onNewLike?.(postId, likesCount);
         }
       })
-      .on('broadcast', { event: 'new_comment' }, (payload) => {
+      .on('broadcast', { event: 'new_comment' }, (payload: BroadcastPayload<NewCommentPayload>) => {
         if (mountedRef.current && payload.payload) {
           const { postId, commentsCount } = payload.payload;
           handlersRef.current.onNewComment?.(postId, commentsCount);
         }
       })
       .subscribe((status) => {
-        console.log('📡 Feed channel status:', status);
         if (mountedRef.current) {
           setIsConnected(status === 'SUBSCRIBED');
         }
@@ -95,13 +120,12 @@ export function useRealtimeFeed({
 
     return () => {
       mountedRef.current = false;
-      console.log('🔌 Cleaning up realtime feed...');
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
         channelRef.current = null;
       }
     };
-  }, [enabled, currentUserId]); // ✅ Only these 2 dependencies
+  }, [enabled, currentUserId]);
 
   return { isConnected };
 }

@@ -1,151 +1,152 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Play, Pause } from "lucide-react";
 
 const HeroSection = () => {
-    const [isPlaying, setIsPlaying] = useState(true);
-    const [scrollY, setScrollY] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [shouldAnimate, setShouldAnimate] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-    useEffect(() => {
-        const handleScroll = () => setScrollY(window.scrollY);
-        window.addEventListener("scroll", handleScroll);
-        return () => window.removeEventListener("scroll", handleScroll);
-    }, []);
+  // Check if hero has been seen before in this session
+  useEffect(() => {
+    const hasSeenHero = sessionStorage.getItem('hero_viewed');
+    if (!hasSeenHero) {
+      setShouldAnimate(true);
+      sessionStorage.setItem('hero_viewed', 'true');
+    }
+  }, []);
 
-    const scrollProgress = Math.min(scrollY / 500, 1);
-    const scale = 1 - scrollProgress * 0.1;
-    const borderRadius = scrollProgress * 32;
-
-    const toggleVideo = () => {
-        const videos = document.querySelectorAll("video");
-        videos.forEach((video) => {
-        if (isPlaying) video.pause();
-        else video.play();
-        });
-        setIsPlaying(!isPlaying);
+  // Lazy load video & auto pause on scroll
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+    
+    const options = {
+      root: null,
+      rootMargin: "0px",
+      threshold: 0.5,
     };
 
-    // 🔇 Auto mute
-    useEffect(() => {
-        const videos = document.querySelectorAll("video");
-        videos.forEach((video) => {
-        (video as HTMLVideoElement).muted = scrollY > window.innerHeight - 100;
-        });
-    }, [scrollY]);
+    const callback: IntersectionObserverCallback = (entries) => {
+      entries.forEach((entry) => {
+        const video = entry.target as HTMLVideoElement;
+        if (entry.isIntersecting) {
+          if (isPlaying) {
+            video.play().catch(() => {
+              // Autoplay blocked, ignore
+            });
+          }
+        } else {
+          video.pause();
+        }
+      });
+    };
 
-    return (
-        <div className="w-full">
-            {/* Title */}
-            <div className="w-full py-10 md:py-10 lg:py-14 flex flex-col items-center px-4 sm:px-8 md:px-16 lg:px-24 bg-white">
-                <div className="max-w-8xl">
-                    <h1 className="text-balance text-3xl md:text-4xl lg:text-5xl xl:text-5xl items-center font-bold text-[#1f4381] leading-tight">
-                        Networking Through Sports for Founders & Professionals
-                    </h1>
-                </div>
-            </div>
+    const observer = new IntersectionObserver(callback, options);
+    observer.observe(videoElement);
 
-            {/* Hero Video */}
-            <div className="relative w-full h-screen overflow-hidden">
-                <div
-                className="absolute top-0 left-0 w-full h-full transition-transform duration-300 ease-out"
-                style={{
-                    transform: `scale(${scale})`,
-                    borderRadius: `${borderRadius}px`,
-                    transformOrigin: "center center",
-                }}
-                >
-                {/* Video Large */}
-                <video
-                    className="hidden lg:block w-full h-full object-cover"
-                    id="Comming-soon VIdeo Dekstop"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    style={{
-                    borderRadius: `${borderRadius}px`,
-                    }}
-                >
-                    <source src="/video/commingsoon-vid.webm" type="video/webm" />
-                </video>
+    return () => {
+      observer.disconnect();
+    };
+  }, [isPlaying]);
 
-                {/* Video Medium */}
-                <video
-                    className="hidden md:block lg:hidden w-full h-full object-cover"
-                    id="Comming-soon VIdeo Tab"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    style={{
-                    borderRadius: `${borderRadius}px`,
-                    }}
-                >
-                    <source src="/video/commingsoon-tab.webm" type="video/webm" />
-                </video>
+  const toggleVideo = () => {
+    const videoElement = videoRef.current;
+    if (!videoElement) return;
+    
+    if (isPlaying) {
+      videoElement.pause();
+    } else {
+      videoElement.play().catch(() => {
+        // Handle error silently
+      });
+    }
+    setIsPlaying(!isPlaying);
+  };
 
-                {/* Video Small */}
-                <video
-                    className="block md:hidden w-full h-full object-cover"
-                    id="Comming-soon VIdeo Mobile"
-                    autoPlay
-                    muted
-                    loop
-                    playsInline
-                    style={{
-                    borderRadius: `${borderRadius}px`,
-                    }}
-                >
-                    <source src="/video/commingsoon-mobile.webm" type="video/webm" />
-                </video>
-                </div>
+  return (
+    <section 
+      className="w-full min-h-screen relative flex flex-col"
+      aria-label="Hero section"
+    >
+      {/* Hero Container */}
+      <div className="relative w-full h-screen overflow-hidden">
+        {/* Video Background - Preload metadata only */}
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-cover bg-black"
+          id="hero-video"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata" // Only load metadata initially
+          poster="/images/hero-poster.jpg" // Add poster image
+        >
+          <source src="/video/hero-vid.webm" type="video/webm" />
+          <source src="/video/hero-vid.mp4" type="video/mp4" /> {/* Fallback */}
+        </video>
 
-                {/* Overlay */}
-                <div
-                className="absolute inset-0 bg-transparent bg-opacity-30 transition-all duration-300 ease-out"
-                style={{
-                    transform: `scale(${scale})`,
-                    borderRadius: `${borderRadius}px`,
-                    transformOrigin: "center center",
-                }}
-                ></div>
+        {/* Dark Overlay */}
+        <div className="absolute inset-0 bg-black/50" />
 
-                {/* Controls */}
-                <div
-                className="absolute inset-0 transition-all duration-300 ease-out"
-                style={{
-                    transform: `scale(${scale})`,
-                    borderRadius: `${borderRadius}px`,
-                    transformOrigin: "center center",
-                }}
-                >
-                {/* Play / Pause */}
-                <div className="absolute bottom-8 right-8">
-                    <button
-                    onClick={toggleVideo}
-                    className="w-12 h-12 bg-white backdrop-blur-sm rounded-full flex items-center justify-center text-black hover:bg-blue-600 transition-all duration-300 border border-black"
-                    >
-                    {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-1" />}
-                    </button>
-                </div>
+        {/* Hero Content - Conditional animation */}
+        <div className="absolute inset-x-0 bottom-0 pb-12 sm:pb-16 md:pb-20 lg:pb-24">
+          <div className="max-w-7xl px-6 sm:px-8 lg:px-28">
+            {/* H1 with Different Text Colors */}
+            <h1 
+              className={`font-brand text-xl sm:text-2xl md:text-3xl lg:text-4xl xl:text-5xl leading-tight text-left mb-3 sm:mb-4 ${
+                shouldAnimate ? 'hero-fade-in' : 'opacity-100'
+              }`}
+            >
+              <span className="text-[#f47a49]">FUN NETWORKING</span>{" "}
+              <span className="text-[#f4f4ef]">&</span>{" "}
+              <span className="text-[#FB6F7A]">COLLABORATION SPACE</span>{" "}
+              <span className="text-[#f4f4ef]">FOR GEN-Z FOUNDERS & DECISION MAKERS</span>
+            </h1>
 
-                {/* Scroll Indicator */}
-                <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2">
-                    <div className="flex flex-col items-center text-white/60">
-                    <span className="text-sm mb-2">Scroll</span>
-                    <div className="w-6 h-10 border-2 border-white/30 rounded-full flex justify-center">
-                        <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-bounce"></div>
-                    </div>
-                    </div>
-                </div>
-                </div>
-
-                {/* Decorative */}
-                <div className="absolute top-20 right-20 w-32 h-32 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse"></div>
-                <div className="absolute bottom-32 left-20 w-24 h-24 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-2xl animate-pulse delay-1000"></div>
-            </div>
+            {/* Description - Conditional animation */}
+            <p 
+              className={`text-[#f4f4ef]/80 text-xs sm:text-sm md:text-base lg:text-lg max-w-2xl leading-relaxed text-left font-body ${
+                shouldAnimate ? 'hero-fade-in animation-delay-200' : 'opacity-100'
+              }`}
+            >
+              Meet Gen-Z founders & decision makers who believe connections should feel
+              natural, not transactional. We turn casual hangs into real opportunities.
+            </p>
+          </div>
         </div>
-    );
+
+        {/* Play/Pause Button */}
+        <button
+          onClick={toggleVideo}
+          className="absolute bottom-6 right-6 sm:bottom-8 sm:right-8 z-20 w-12 h-12 sm:w-14 sm:h-14 bg-[#f4f4ef]/90 backdrop-blur-sm rounded-full flex items-center justify-center text-black hover:bg-white hover:scale-110 active:scale-95 transition-all duration-300 shadow-lg"
+          aria-label={isPlaying ? "Pause video" : "Play video"}
+          type="button"
+        >
+          {isPlaying ? (
+            <Pause size={20} className="sm:w-6 sm:h-6" aria-hidden="true" />
+          ) : (
+            <Play size={20} className="ml-1 sm:w-6 sm:h-6" aria-hidden="true" />
+          )}
+        </button>
+
+        {/* Decorative Gradients - Only animate on first visit */}
+        <div 
+          className={`absolute top-20 right-10 sm:right-20 w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-r from-blue-400/20 to-purple-400/20 rounded-full blur-3xl ${
+            shouldAnimate ? 'animate-pulse' : ''
+          }`}
+          aria-hidden="true"
+        />
+        <div 
+          className={`absolute bottom-32 left-10 sm:left-20 w-20 h-20 sm:w-24 sm:h-24 bg-gradient-to-r from-purple-400/20 to-pink-400/20 rounded-full blur-2xl ${
+            shouldAnimate ? 'animate-pulse' : ''
+          }`}
+          aria-hidden="true"
+        />
+      </div>
+    </section>
+  );
 };
 
 export default HeroSection;

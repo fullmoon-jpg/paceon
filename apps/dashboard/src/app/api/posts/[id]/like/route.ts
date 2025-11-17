@@ -1,16 +1,41 @@
-// src/app/api/posts/[id]/like/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@paceon/lib/mongodb';
 import Post from '@/lib/models/Posts';
 import Like from '@/lib/models/Like';
 import { supabaseAdmin } from '@paceon/lib/supabase';
 
-const rateLimitMap = new Map<string, { 
-  lastRequest: number; 
+interface RateLimitEntry {
+  lastRequest: number;
   processing: boolean;
   requestCount: number;
   resetTime: number;
-}>();
+}
+
+interface PostDocument {
+  _id: string;
+  userId: string;
+  content: string;
+  likesCount: number;
+  save: () => Promise<void>;
+}
+
+interface LikeDocument {
+  _id: string;
+  userId: string;
+  targetType: string;
+  targetId: string;
+}
+
+interface RequestBody {
+  userId: string;
+  action: 'like' | 'unlike';
+}
+
+interface MongoError extends Error {
+  code?: number;
+}
+
+const rateLimitMap = new Map<string, RateLimitEntry>();
 
 const RATE_LIMIT_MS = 1000;
 const MAX_REQUESTS_PER_MINUTE = 10;
@@ -102,7 +127,7 @@ export async function POST(
     const resolvedParams = await params;
     postId = resolvedParams.id;
     
-    const body = await request.json();
+    const body = await request.json() as RequestBody;
     userId = body.userId;
     const clientAction = body.action;
 
@@ -121,7 +146,7 @@ export async function POST(
       );
     }
 
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId) as PostDocument | null;
 
     if (!post) {
       cleanupRateLimit(userId, postId);
@@ -135,7 +160,7 @@ export async function POST(
       userId,
       targetType: 'post',
       targetId: postId,
-    });
+    }) as LikeDocument | null;
 
     const isCurrentlyLiked = !!existingLike;
     const postOwnerId = post.userId.toString();
@@ -199,8 +224,9 @@ export async function POST(
               // Silent fail
             }
           }
-        } catch (error: any) {
-          if (error.code === 11000) {
+        } catch (error) {
+          const mongoError = error as MongoError;
+          if (mongoError.code === 11000) {
             actionPerformed = 'no-change';
             
             const actualCount = await Like.countDocuments({
@@ -234,7 +260,7 @@ export async function POST(
       userId,
       targetType: 'post',
       targetId: postId,
-    });
+    }) as LikeDocument | null;
     const finalIsLiked = !!finalLike;
 
     const actualCount = await Like.countDocuments({
@@ -261,13 +287,14 @@ export async function POST(
         : 'State synchronized',
     });
 
-  } catch (error: any) {
+  } catch (error) {
     if (userId && postId) {
       cleanupRateLimit(userId, postId);
     }
     
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

@@ -1,4 +1,3 @@
-// app/api/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@paceon/lib/supabase';
 import sharp from 'sharp';
@@ -8,11 +7,15 @@ const VALID_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image
 const MAX_WIDTH = 1920;
 const MAX_HEIGHT = 1920;
 
+interface StorageError {
+  message: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const userId = formData.get('userId') as string;
+    const file = formData.get('file') as File | null;
+    const userId = formData.get('userId') as string | null;
 
     if (!file) {
       return NextResponse.json(
@@ -71,7 +74,8 @@ export async function POST(request: NextRequest) {
       });
 
     if (error) {
-      if (error.message.includes('Duplicate')) {
+      const storageError = error as StorageError;
+      if (storageError.message.includes('Duplicate')) {
         return NextResponse.json(
           { success: false, error: 'File already exists. Please try again.' },
           { status: 409 }
@@ -90,9 +94,10 @@ export async function POST(request: NextRequest) {
       fileName: fileName,
       size: buffer.length,
     });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to upload image';
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to upload image' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
@@ -100,7 +105,7 @@ export async function POST(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
-    let fileName;
+    let fileName: string | null = null;
     
     const { searchParams } = new URL(request.url);
     fileName = searchParams.get('fileName');
@@ -108,7 +113,7 @@ export async function DELETE(request: NextRequest) {
     if (!fileName) {
       try {
         const body = await request.json();
-        fileName = body.fileName;
+        fileName = body.fileName as string;
       } catch {
         // No body
       }
@@ -133,9 +138,10 @@ export async function DELETE(request: NextRequest) {
       success: true,
       message: 'Image deleted successfully',
     });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to delete image';
     return NextResponse.json(
-      { success: false, error: error.message || 'Failed to delete image' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

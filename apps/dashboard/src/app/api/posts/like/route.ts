@@ -2,7 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@paceon/lib/mongodb";
 import Like from "@/lib/models/Like";
 
-// GET semua post yang di-like oleh user
+interface LikeDocument {
+  targetId: string;
+  createdAt: Date;
+}
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
@@ -17,15 +21,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Ambil semua likes dengan targetType "post"
     const likes = await Like.find({
       userId,
       targetType: "post",
     })
       .select("targetId createdAt")
-      .lean();
+      .lean() as LikeDocument[];
 
-    // Format response agar sesuai dengan yang diharapkan frontend
     const formattedLikes = likes.map((like) => ({
       postId: like.targetId,
       createdAt: like.createdAt,
@@ -35,10 +37,10 @@ export async function GET(request: NextRequest) {
       success: true,
       data: formattedLikes,
     });
-  } catch (error: any) {
-    console.error("GET /api/posts/like error:", error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

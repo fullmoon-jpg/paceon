@@ -1,8 +1,7 @@
-// src/components/ActivityFeed/components/ProfileModal.tsx
 "use client";
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { X, Edit2, Calendar, Users, TrendingUp, Loader2 } from 'lucide-react';
+import { X, Edit2, Calendar, Users, TrendingUp, Loader2, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@paceon/lib/supabase';
 
@@ -13,6 +12,19 @@ interface Post {
   likesCount: number;
   commentsCount: number;
   createdAt: string;
+}
+
+interface Rating {
+  id: string;
+  reviewer_id: string;
+  reviewer_name: string;
+  reviewer_avatar: string | null;
+  reviewer_position: string | null;
+  reviewer_company: string | null;
+  event_name: string;
+  rating: number;
+  feedback: string | null;
+  created_at: string;
 }
 
 interface UserStats {
@@ -32,7 +44,7 @@ interface ProfileModalProps {
   onClose: () => void;
   userId: string;
   userName: string;
-  userAvatar?: string;
+  userAvatar?: string | null;
   userPosition?: string;
   userCompany?: string;
   userRole?: string;
@@ -42,6 +54,7 @@ const profileCache = new Map<string, {
   stats: UserStats;
   profileInfo: ProfileInfo;
   posts: Post[];
+  ratings: Rating[];
   timestamp: number;
 }>();
 
@@ -82,23 +95,75 @@ const PostCard = ({ post }: { post: Post }) => (
   </div>
 );
 
+const RatingCard = ({ rating }: { rating: Rating }) => (
+  <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className="flex items-start gap-3 mb-3">
+      {rating.reviewer_avatar ? (
+        <img
+          src={rating.reviewer_avatar}
+          alt={rating.reviewer_name}
+          className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover flex-shrink-0"
+        />
+      ) : (
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#15b392] flex items-center justify-center text-white font-bold flex-shrink-0">
+          {rating.reviewer_name.charAt(0).toUpperCase()}
+        </div>
+      )}
+      <div className="flex-1 min-w-0">
+        <h4 className="font-semibold text-sm sm:text-base text-gray-800 dark:text-white truncate">
+          {rating.reviewer_name}
+        </h4>
+        {(rating.reviewer_position || rating.reviewer_company) && (
+          <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            {rating.reviewer_position && rating.reviewer_company
+              ? `${rating.reviewer_position} at ${rating.reviewer_company}`
+              : rating.reviewer_position || rating.reviewer_company
+            }
+          </p>
+        )}
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5 truncate">
+          {rating.event_name}
+        </p>
+      </div>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <Star size={16} className="text-yellow-500 fill-yellow-500 sm:w-5 sm:h-5" />
+        <span className="font-bold text-base sm:text-lg text-gray-800 dark:text-white">
+          {rating.rating}
+        </span>
+      </div>
+    </div>
+
+    {rating.feedback && (
+      <div className="bg-gray-50 dark:bg-gray-600 p-3 rounded-lg">
+        <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 italic">
+          &quot;{rating.feedback}&quot;
+        </p>
+      </div>
+    )}
+
+    <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 text-right">
+      {format(new Date(rating.created_at), 'MMM dd, yyyy')}
+    </p>
+  </div>
+);
+
 const StatCard = ({ 
   icon: Icon, 
   value, 
   label, 
   bgColor 
 }: { 
-  icon: any; 
+  icon: React.ComponentType<{ size: number; className?: string }>;
   value: number | string; 
   label: string; 
   bgColor: string;
 }) => (
-  <div className="bg-white dark:bg-gray-700 rounded-lg p-4 text-center shadow-sm">
-    <div className={`w-12 h-12 ${bgColor} rounded-full flex items-center justify-center mx-auto mb-2`}>
-      <Icon size={24} />
+  <div className="bg-white dark:bg-gray-700 rounded-lg p-3 sm:p-4 text-center shadow-sm">
+    <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bgColor} rounded-full flex items-center justify-center mx-auto mb-2`}>
+      <Icon size={20} className="sm:w-6 sm:h-6" />
     </div>
-    <p className="text-2xl font-bold text-gray-800 dark:text-white">{value}</p>
-    <p className="text-sm text-gray-600 dark:text-gray-400">{label}</p>
+    <p className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">{value}</p>
+    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{label}</p>
   </div>
 );
 
@@ -119,9 +184,11 @@ export default function ProfileModal({
     networking_score: 0
   });
   const [posts, setPosts] = useState<Post[]>([]);
+  const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [profileInfo, setProfileInfo] = useState<ProfileInfo>({});
+  const [activeTab, setActiveTab] = useState<'posts' | 'ratings'>('posts');
 
   const abortControllerRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
@@ -146,6 +213,12 @@ export default function ProfileModal({
     [profileInfo.company, userCompany]
   );
 
+  const averageRating = useMemo(() => {
+    if (ratings.length === 0) return 0;
+    const sum = ratings.reduce((acc, r) => acc + r.rating, 0);
+    return sum / ratings.length;
+  }, [ratings]);
+
   const fetchUserData = useCallback(async () => {
     if (!userId) return;
 
@@ -158,6 +231,7 @@ export default function ProfileModal({
         setStats(cached.stats);
         setProfileInfo(cached.profileInfo);
         setPosts(cached.posts);
+        setRatings(cached.ratings);
         setLoading(false);
       }
       return;
@@ -167,7 +241,7 @@ export default function ProfileModal({
     abortControllerRef.current = new AbortController();
 
     try {
-      const [statsResponse, preferencesResponse, postsResponse] = await Promise.allSettled([
+      const [statsResponse, preferencesResponse, postsResponse, ratingsResponse] = await Promise.allSettled([
         supabase
           .from('user_statistics')
           .select('event_attended, connections, total_posts, networking_score')
@@ -184,7 +258,14 @@ export default function ProfileModal({
         
         fetch(`/api/posts?userId=${userId}&limit=20`, {
           signal: abortControllerRef.current.signal
-        }).then(res => res.json())
+        }).then(res => res.json()),
+
+        supabase
+          .from('affirmation_cube')
+          .select('id, reviewer_id, rating, feedback, created_at, event_id')
+          .eq('reviewee_id', userId)
+          .order('created_at', { ascending: false })
+          .abortSignal(abortControllerRef.current.signal)
       ]);
 
       if (!mountedRef.current) return;
@@ -219,14 +300,70 @@ export default function ProfileModal({
         };
       }
 
+      let ratingsData: Rating[] = [];
+      if (ratingsResponse.status === 'fulfilled' && ratingsResponse.value.data && ratingsResponse.value.data.length > 0) {
+        const reviewerIds = [...new Set(ratingsResponse.value.data.map((r: Record<string, unknown>) => r.reviewer_id as string))];
+        const eventIds = [...new Set(ratingsResponse.value.data.map((r: Record<string, unknown>) => r.event_id as string))];
+        
+        const [reviewerProfiles, reviewerPreferences, events] = await Promise.all([
+          supabase
+            .from('users_profile')
+            .select('id, full_name, avatar_url')
+            .in('id', reviewerIds),
+          supabase
+            .from('matchmaking_preferences')
+            .select('user_id, position, company')
+            .in('user_id', reviewerIds),
+          supabase
+            .from('events')
+            .select('id, title')
+            .in('id', eventIds)
+        ]);
+
+        const reviewerProfileMap = new Map(
+          (reviewerProfiles.data || []).map((p: { id: string; full_name: string; avatar_url: string | null }) => [p.id, p])
+        );
+
+        const reviewerPrefMap = new Map(
+          (reviewerPreferences.data || []).map((p: { user_id: string; position: string | null; company: string | null }) => [p.user_id, p])
+        );
+
+        const eventMap = new Map(
+          (events.data || []).map((e: { id: string; title: string }) => [e.id, e])
+        );
+
+        ratingsData = ratingsResponse.value.data.map((r: Record<string, unknown>) => {
+          const reviewerId = r.reviewer_id as string;
+          const eventId = r.event_id as string;
+          const reviewerProfile = reviewerProfileMap.get(reviewerId);
+          const reviewerPref = reviewerPrefMap.get(reviewerId);
+          const event = eventMap.get(eventId);
+
+          return {
+            id: r.id as string,
+            reviewer_id: reviewerId,
+            reviewer_name: reviewerProfile?.full_name || 'Unknown User',
+            reviewer_avatar: reviewerProfile?.avatar_url || null,
+            reviewer_position: reviewerPref?.position || null,
+            reviewer_company: reviewerPref?.company || null,
+            event_name: event?.title || 'Unknown Event',
+            rating: r.rating as number,
+            feedback: r.feedback as string | null,
+            created_at: r.created_at as string,
+          };
+        });
+      }
+
       setStats(statsData);
       setProfileInfo(preferencesData);
       setPosts(postsData);
+      setRatings(ratingsData);
 
       profileCache.set(userId, {
         stats: statsData,
         profileInfo: preferencesData,
         posts: postsData,
+        ratings: ratingsData,
         timestamp: Date.now()
       });
 
@@ -269,27 +406,28 @@ export default function ProfileModal({
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
+
   return (
     <div 
-      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+      className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 sm:p-4"
       onClick={onClose}
     >
       <div 
-        className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#15b392] to-[#2a6435] p-6 relative">
+        <div className="bg-gradient-to-r from-[#15b392] to-[#2a6435] p-4 sm:p-6 relative">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
+            className="absolute top-2 right-2 sm:top-4 sm:right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
             aria-label="Close modal"
           >
-            <X size={24} className="text-white" />
+            <X size={20} className="text-white sm:w-6 sm:h-6" />
           </button>
 
-          <div className="flex items-center gap-4">
-            <div className="w-24 h-24 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center text-[#15b392] dark:text-green-400 font-bold text-3xl overflow-hidden flex-shrink-0">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center text-[#15b392] dark:text-green-400 font-bold text-xl sm:text-3xl overflow-hidden flex-shrink-0">
               {userAvatar ? (
                 <img 
                   src={userAvatar} 
@@ -301,18 +439,25 @@ export default function ProfileModal({
                 initials
               )}
             </div>
-            <div className="text-white">
-              <h2 className="text-2xl font-bold">{userName || 'User'}</h2>
+            <div className="text-white min-w-0 flex-1">
+              <h2 className="text-lg sm:text-2xl font-bold truncate">{userName || 'User'}</h2>
               {(displayPosition || displayCompany) && (
-                <p className="text-white/90">
+                <p className="text-sm sm:text-base text-white/90 truncate">
                   {displayPosition && displayCompany 
                     ? `${displayPosition} at ${displayCompany}`
                     : displayPosition || displayCompany
                   }
                 </p>
               )}
+              {ratings.length > 0 && (
+                <div className="flex items-center gap-1 mt-1 sm:mt-2">
+                  <Star size={14} className="text-yellow-300 fill-yellow-300 sm:w-5 sm:h-5" />
+                  <span className="text-sm sm:text-base font-bold">{averageRating.toFixed(1)}</span>
+                  <span className="text-xs sm:text-sm text-white/80">({ratings.length} ratings)</span>
+                </div>
+              )}
               {userRole === 'admin' && (
-                <span className="inline-block mt-2 px-3 py-1 bg-yellow-500 dark:bg-yellow-600 text-black dark:text-white text-xs font-bold rounded-full">
+                <span className="inline-block mt-1 sm:mt-2 px-2 sm:px-3 py-0.5 sm:py-1 bg-yellow-500 dark:bg-yellow-600 text-black dark:text-white text-xs font-bold rounded-full">
                   ADMIN
                 </span>
               )}
@@ -321,7 +466,7 @@ export default function ProfileModal({
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-gray-50 dark:bg-gray-900">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 p-4 sm:p-6 bg-gray-50 dark:bg-gray-900">
           <StatCard
             icon={Calendar}
             value={stats.event_attended}
@@ -349,16 +494,33 @@ export default function ProfileModal({
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 dark:border-gray-700 px-6">
-          <div className="flex gap-8">
-            <button className="py-4 border-b-2 border-[#15b392] dark:border-green-400 text-[#15b392] dark:text-green-400 font-semibold">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6">
+          <div className="flex gap-4 sm:gap-8 overflow-x-auto">
+            <button 
+              onClick={() => setActiveTab('posts')}
+              className={`py-3 sm:py-4 border-b-2 font-semibold text-sm sm:text-base transition-colors whitespace-nowrap ${
+                activeTab === 'posts'
+                  ? 'border-[#15b392] dark:border-green-400 text-[#15b392] dark:text-green-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+              }`}
+            >
               Posts ({stats.total_posts})
+            </button>
+            <button 
+              onClick={() => setActiveTab('ratings')}
+              className={`py-3 sm:py-4 border-b-2 font-semibold text-sm sm:text-base transition-colors whitespace-nowrap ${
+                activeTab === 'ratings'
+                  ? 'border-[#15b392] dark:border-green-400 text-[#15b392] dark:text-green-400'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+              }`}
+            >
+              Ratings ({ratings.length})
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-[#15b392]" />
@@ -369,22 +531,37 @@ export default function ProfileModal({
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{error}</p>
               <button
                 onClick={fetchUserData}
-                className="px-4 py-2 bg-[#15b392] text-white rounded-lg hover:bg-[#2a6435] transition-colors"
+                className="px-4 py-2 bg-[#15b392] text-white rounded-lg hover:bg-[#2a6435] transition-colors text-sm sm:text-base"
               >
                 Retry
               </button>
             </div>
-          ) : posts.length === 0 ? (
-            <div className="text-center py-12">
-              <Edit2 size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-              <p className="text-gray-600 dark:text-gray-400">No posts yet</p>
-            </div>
+          ) : activeTab === 'posts' ? (
+            posts.length === 0 ? (
+              <div className="text-center py-12">
+                <Edit2 size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+                <p className="text-gray-600 dark:text-gray-400">No posts yet</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {posts.map((post) => (
+                  <PostCard key={post._id} post={post} />
+                ))}
+              </div>
+            )
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {posts.map((post) => (
-                <PostCard key={post._id} post={post} />
-              ))}
-            </div>
+            ratings.length === 0 ? (
+              <div className="text-center py-12">
+                <Star size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+                <p className="text-gray-600 dark:text-gray-400">No ratings yet</p>
+              </div>
+            ) : (
+              <div className="space-y-3 sm:space-y-4">
+                {ratings.map((rating) => (
+                  <RatingCard key={rating.id} rating={rating} />
+                ))}
+              </div>
+            )
           )}
         </div>
       </div>

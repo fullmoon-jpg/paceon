@@ -6,6 +6,7 @@ import { format } from "date-fns";
 import { Plus, TrendingUp, Users, Calendar as CalendarIcon, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@paceon/lib/supabase";
+import { getEventImage } from "@/lib/eventImages";
 
 import BookingCalendar from "./components/BookingCalendar";
 import BookingFilters from "./components/BookingFilters";
@@ -34,6 +35,41 @@ interface BookingEvent {
   status: string;
 }
 
+interface EventData {
+  id: string;
+  title: string;
+  description: string | null;
+  event_type: string;
+  venue_name: string;
+  venue_address: string;
+  venue_city: string;
+  event_date: string;
+  start_time: string;
+  end_time: string;
+  max_players: number;
+  price_per_person: number;
+  image_url: string | null;
+  created_by: string;
+  event_status: string;
+  is_active: boolean;
+  current_players?: number;
+}
+
+interface EventFormData {
+  title: string;
+  description: string;
+  eventType: string;
+  venueName: string;
+  venueAddress: string;
+  venueCity: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  maxPlayers: number;
+  price: number;
+  image: string;
+}
+
 export default function BookingPage() {
   const { user, loading: authLoading } = useAuth();
   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -51,7 +87,6 @@ export default function BookingPage() {
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const { showToast } = useToast();
 
-  // Check admin
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user) {
@@ -82,36 +117,27 @@ export default function BookingPage() {
     setLoading(true);
     
     try {
-      console.log('Fetching events');
-      
       const { data: eventsData, error } = await supabase
         .from('events')
         .select('*')
         .eq('is_active', true)
         .order('event_date', { ascending: true });
 
-      if (error) {
-        console.error('Query Error:', error);
-        throw error;
-      }
-
-      console.log('Events fetched:', eventsData?.length || 0);
+      if (error) throw error;
 
       if (!eventsData || eventsData.length === 0) {
-        console.warn('No events found');
         setEvents([]);
         setLoading(false);
         return;
       }
 
-      // Count players for each event
       const eventsWithCounts = await Promise.all(
-        eventsData.map(async (event: any) => {
+        (eventsData as EventData[]).map(async (event) => {
           const { count } = await supabase
             .from('bookings')
             .select('*', { count: 'exact', head: true })
             .eq('event_id', event.id)
-            .in('booking_status', ['confirmed', 'pending', 'attended']); // ✅ FIXED: Remove pending_payment
+            .in('booking_status', ['confirmed', 'pending', 'attended']);
 
           return {
             ...event,
@@ -120,17 +146,16 @@ export default function BookingPage() {
         })
       );
 
-      // Transform events
       const formatTime = (timeString: string) => {
         if (!timeString) return '';
         return timeString.substring(0, 5);
       };
 
-      const transformedEvents: BookingEvent[] = eventsWithCounts.map((event: any) => ({
+      const transformedEvents: BookingEvent[] = eventsWithCounts.map((event) => ({
         id: event.id,
         title: event.title,
         description: event.description || '',
-        event_type: event.event_type,
+        event_type: event.event_type as BookingEvent['event_type'],
         venueName: event.venue_name,
         venueAddress: event.venue_address,
         venueCity: event.venue_city,
@@ -141,24 +166,20 @@ export default function BookingPage() {
         maxPlayers: event.max_players,
         currentPlayers: Number(event.current_players) || 0,
         price: event.price_per_person,
-        image: event.image_url || getDefaultImage(event.event_type),
+        image: event.image_url || getEventImage(event.event_type),
         createdBy: event.created_by,
         status: event.event_status,
       }));
 
-      console.log('Events transformed:', transformedEvents.length);
       setEvents(transformedEvents);
       
-    } catch (error: any) {
-      console.error('Error:', error.message || error);
+    } catch (error) {
       setEvents([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-
-  // Realtime
   useEffect(() => {
     if (!authLoading && !checkingAdmin) {
       fetchEvents();
@@ -182,20 +203,6 @@ export default function BookingPage() {
       };
     }
   }, [authLoading, checkingAdmin, fetchEvents]);
-
-  const getDefaultImage = (eventType: string) => {
-    const images: Record<string, string> = {
-      tennis: 'https://images.unsplash.com/photo-1622279457486-62dcc4a431d6?w=800&q=80',
-      padel: 'https://images.unsplash.com/photo-1554068865-64ba29f34874?w=800&q=80',
-      badminton: 'https://images.unsplash.com/photo-1626224583643-c1dc0c4f0b6d?w=800&q=80',
-      coffee_chat: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=800&q=80',
-      workshop: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&q=80',
-      meetup: 'https://images.unsplash.com/photo-1528605105345-5344ea20e269?w=800&q=80',
-      social: 'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800&q=80',
-      other: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&q=80',
-    };
-    return images[eventType] || images.other;
-  };
 
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
@@ -233,111 +240,40 @@ export default function BookingPage() {
 
   const handleJoinEvent = async () => {
     if (!selectedEvent || !user) {
-      showToast('error','Please login first');
+      showToast('error', 'Please login first');
       return;
     }
 
     try {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      const userId = user?.id || currentUser?.id;
+      const response = await fetch('/api/booking/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: selectedEvent.id,
+          userId: user.id,
+        }),
+      });
 
-      if (!userId) {
-        showToast('error','Authentication required');
+      const data = await response.json();
+
+      if (!data.success) {
+        showToast('error', data.error || 'Booking failed');
         return;
-      }
-
-      // Check existing booking
-      const { data: existingBooking } = await supabase
-        .from('bookings')
-        .select('id, booking_status')
-        .eq('event_id', selectedEvent.id)
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      if (existingBooking) {
-        if (existingBooking.booking_status === 'cancelled') {
-          showToast('error','You cancelled this booking. Please contact admin.');
-        } else {
-          showToast('error','You already have a booking!');
-        }
-        return;
-      }
-
-      // Verify availability
-      const { data: eventData, error: eventError } = await supabase
-        .from('events')
-        .select('id, max_players, current_players, event_status, is_active, price_per_person')
-        .eq('id', selectedEvent.id)
-        .single();
-
-      if (eventError) throw eventError;
-
-      if (!eventData.is_active) {
-        showToast('error','Event no longer active');
-        return;
-      }
-
-      if (eventData.event_status === 'cancelled') {
-        showToast('error','Event cancelled');
-        return;
-      }
-
-      if (eventData.event_status === 'completed') {
-        showToast('error','Event ended');
-        return;
-      }
-
-      if (eventData.current_players >= eventData.max_players) {
-        showToast('error','Event full!');
-        await fetchEvents();
-        return;
-      }
-
-      // Create booking
-      const totalAmount = eventData.price_per_person + 10000;
-
-      const { data: booking, error: bookingError } = await supabase
-        .from('bookings')
-        .insert({
-          event_id: selectedEvent.id,
-          user_id: userId,
-          booking_status: 'pending',
-          amount_to_pay: totalAmount,
-          has_paid: false,
-        })
-        .select()
-        .single();
-
-      if (bookingError) throw bookingError;
-
-      // Create payment
-      const { error: paymentError } = await supabase
-        .from('payments')
-        .insert({
-          booking_id: booking.id,
-          user_id: userId,
-          event_id: selectedEvent.id,
-          amount: totalAmount,
-          payment_status: 'pending',
-          payment_method: 'pending',
-        });
-
-      if (paymentError) {
-        await supabase.from('bookings').delete().eq('id', booking.id);
-        throw new Error('Failed to create payment');
       }
 
       setIsDetailModalOpen(false);
       setSelectedEvent(null);
       await fetchEvents();
 
-      showToast('success','Booking successful! Please complete payment within 12 hours.');
-    } catch (error: any) {
-      showToast('error',`Booking failed: ${error.message}`);
-    }
-};
+      showToast('success', `Booking successful! Invoice #${data.invoiceNumber} sent to your email.`);
 
-  const handleCreateEvent = async (eventData: any) => {
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Booking failed';
+      showToast('error', errorMessage);
+    }
+  };
+
+  const handleCreateEvent = async (eventData: EventFormData) => {
     if (!user || !isAdmin) {
       showToast('error','Admin access required');
       return;
@@ -371,8 +307,9 @@ export default function BookingPage() {
       setIsCreateModalOpen(false);
       await fetchEvents();
       showToast('success','Event created!');
-    } catch (error: any) {
-      showToast('error',`Failed: ${error.message}`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to create event';
+      showToast('error',`Failed: ${errorMessage}`);
     }
   };
 
@@ -384,10 +321,10 @@ export default function BookingPage() {
 
   if (authLoading || checkingAdmin || loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#f4f4ef] dark:bg-[#3f3e3d] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#15b392] mx-auto mb-4"></div>
-          <p className="text-gray-500 dark:text-gray-400">Loading bookings...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#21c36e] mx-auto mb-4"></div>
+          <p className="text-[#3f3e3d] dark:text-[#f4f4ef]">Loading bookings...</p>
         </div>
       </div>
     );
@@ -395,14 +332,14 @@ export default function BookingPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#f4f4ef] dark:bg-[#3f3e3d] flex items-center justify-center p-4">
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-md text-center">
           <CalendarIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-2">Sign In Required</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">Please sign in to view and book events</p>
+          <h2 className="text-2xl font-brand bg-[#f0c946] text-[#3f3e3d] mb-2">Sign In Required</h2>
+          <p className="text-[#f4f4ef] dark:text-[#3f3e3d] mb-6">Please sign in to view and book events</p>
           <button
             onClick={() => window.location.href = '/login'}
-            className="w-full py-3 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white rounded-lg font-bold hover:shadow-lg transition-all"
+            className="w-full py-3 bg-[#21c36e] text-[#f4f4ef] rounded-lg font-bold hover:shadow-lg transition-all"
           >
             Sign In
           </button>
@@ -413,7 +350,6 @@ export default function BookingPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
       <div className="relative bg-gray-50 dark:bg-transparent text-black dark:text-white overflow-hidden">
         <div className="absolute top-0 left-0 w-96 h-36 bg-gradient-to-tr from-[#15b392]/20 to-[#2a6435]/10 rounded-b-full blur-2xl opacity-75 -z-10" />
 
@@ -444,7 +380,6 @@ export default function BookingPage() {
             )}
           </div>
 
-          {/* Stats */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="bg-white dark:bg-gray-700 shadow rounded-2xl p-6 flex items-center gap-3 hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-600">
               <div className="w-12 h-12 bg-[#e0f7ef] dark:bg-green-900/30 rounded-xl flex items-center justify-center text-[#15b392]">
@@ -469,7 +404,7 @@ export default function BookingPage() {
                 <TrendingUp size={26} />
               </div>
               <div>
-                <p className="text-gray-600 dark:text-gray-300 text-sm font-medium">Today's Events</p>
+                <p className="text-gray-600 dark:text-gray-300 text-sm font-medium">Today&apos;s Events</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.upcomingToday}</p>
               </div>
             </div>
@@ -477,7 +412,6 @@ export default function BookingPage() {
         </div>
       </div>
 
-      {/* Main */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="lg:col-span-1">
@@ -557,7 +491,6 @@ export default function BookingPage() {
         </div>
       </div>
 
-      {/* Modals */}
       {selectedEvent && isDetailModalOpen && (
         <EventDetailModal
           event={selectedEvent}

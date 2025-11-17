@@ -1,14 +1,23 @@
-// apps/dashboard/src/contexts/AuthContext.tsx
 "use client";
 
 import { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@paceon/lib/supabase';
 
+interface UserProfile {
+  id: string;
+  name?: string;
+  email?: string;
+  role?: string;
+  avatar_url?: string;
+  position?: string;
+  company?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
-  profile: any | null;
+  profile: UserProfile | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
 }
@@ -32,7 +41,7 @@ export const useAuth = () => {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<any | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadProfile = async (userId: string) => {
@@ -42,13 +51,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .select('*')
         .eq('id', userId)
         .single();
-
+        
       if (error) {
         throw error;
       }
 
-      setProfile(data);
-      return data;
+      setProfile(data as UserProfile);
+      return data as UserProfile;
     } catch (error) {
       setProfile(null);
       return null;

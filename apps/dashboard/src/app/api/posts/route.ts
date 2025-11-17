@@ -4,6 +4,24 @@ import Post from '@/lib/models/Posts';
 import { supabaseAdmin } from '@paceon/lib/supabase';
 import { broadcastFeedUpdate } from '@/lib/utils/broadcast';
 
+interface PostDocument {
+  _id: { toString: () => string };
+  userId: { toString: () => string };
+  content: string;
+  createdAt: Date;
+  [key: string]: unknown;
+}
+
+interface PostDocumentWithMethods extends PostDocument {
+  toObject: () => Record<string, unknown>;
+}
+
+interface UserProfile {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+}
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
@@ -14,7 +32,7 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId');
 
     const skip = (page - 1) * limit;
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (userId) {
       query.userId = userId;
     }
@@ -23,7 +41,7 @@ export async function GET(request: NextRequest) {
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
-      .lean();
+      .lean() as PostDocument[];
 
     if (posts.length === 0) {
       return NextResponse.json({
@@ -43,7 +61,9 @@ export async function GET(request: NextRequest) {
       .select('id, full_name, avatar_url')
       .in('id', userIds);
 
-    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+    const profileMap = new Map<string, UserProfile>(
+      (profiles || []).map((p: UserProfile) => [p.id, p])
+    );
 
     const enrichedPosts = posts.map(post => ({
       ...post,
@@ -67,20 +87,19 @@ export async function GET(request: NextRequest) {
       total: totalCount
     });
 
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
 }
 
-// FIX: Parse FormData, bukan JSON
 export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
-    // Parse FormData instead of JSON
     const formData = await request.formData();
     const userId = formData.get('userId') as string;
     const content = formData.get('content') as string;
@@ -95,7 +114,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Upload files to Supabase (optional)
     const mediaUrls: string[] = [];
     
     if (mediaFiles && mediaFiles.length > 0) {
@@ -126,7 +144,6 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Create post
     const post = await Post.create({
       userId,
       content,
@@ -136,9 +153,8 @@ export async function POST(request: NextRequest) {
       likesCount: 0,
       commentsCount: 0,
       sharesCount: 0,
-    });
+    }) as unknown as PostDocumentWithMethods;
 
-    // Fetch user profile
     const { data: profile } = await supabaseAdmin
       .from('users_profile')
       .select('id, full_name, avatar_url')
@@ -155,14 +171,12 @@ export async function POST(request: NextRequest) {
       },
     };
 
-    // Broadcast
     try {
       await broadcastFeedUpdate('new_post', enrichedPost);
     } catch (broadcastError) {
       console.warn('Broadcast failed:', broadcastError);
     }
 
-    // Update stats
     supabaseAdmin.rpc('increment_total_posts', { p_user_id: userId })
       .catch(err => console.error('Stats update failed:', err));
 
@@ -172,10 +186,10 @@ export async function POST(request: NextRequest) {
       message: 'Post created successfully',
     }, { status: 201 });
 
-  } catch (error: any) {
-    console.error('POST /api/posts error:', error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

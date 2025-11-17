@@ -1,7 +1,16 @@
-// src/app/api/saved-posts/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@paceon/lib/mongodb';
 import SavedPost from '@/lib/models/SavedPost';
+
+interface SavedPostDocument {
+  userId: string;
+  postId: string;
+  createdAt: Date;
+}
+
+interface MongoError extends Error {
+  code?: number;
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,18 +26,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Add pagination support
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
-    // Parallel queries
     const [savedPosts, total] = await Promise.all([
       SavedPost.find({ userId })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean(),
+        .lean() as Promise<SavedPostDocument[]>,
       SavedPost.countDocuments({ userId })
     ]);
 
@@ -42,10 +49,11 @@ export async function GET(request: NextRequest) {
         hasMore: skip + limit < total,
       },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('GET /api/saved-posts error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
@@ -55,7 +63,9 @@ export async function POST(request: NextRequest) {
   try {
     await connectDB();
 
-    const { userId, postId } = await request.json();
+    const body = await request.json();
+    const userId = body.userId as string | undefined;
+    const postId = body.postId as string | undefined;
 
     if (!userId || !postId) {
       return NextResponse.json(
@@ -64,7 +74,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Use upsert to avoid duplicate check
     const savedPost = await SavedPost.findOneAndUpdate(
       { userId, postId },
       { userId, postId, createdAt: new Date() },
@@ -76,9 +85,10 @@ export async function POST(request: NextRequest) {
       data: savedPost,
       message: 'Post saved successfully',
     });
-  } catch (error: any) {
-    // Handle duplicate key error
-    if (error.code === 11000) {
+  } catch (error) {
+    const mongoError = error as MongoError;
+    
+    if (mongoError.code === 11000) {
       return NextResponse.json(
         { success: false, error: 'Post already saved' },
         { status: 400 }
@@ -86,8 +96,9 @@ export async function POST(request: NextRequest) {
     }
     
     console.error('POST /api/saved-posts error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
@@ -97,13 +108,13 @@ export async function DELETE(request: NextRequest) {
   try {
     await connectDB();
 
-    // Support both body and query params
-    let userId, postId;
+    let userId: string | null = null;
+    let postId: string | null = null;
     
     try {
       const body = await request.json();
-      userId = body.userId;
-      postId = body.postId;
+      userId = body.userId as string;
+      postId = body.postId as string;
     } catch {
       const { searchParams } = new URL(request.url);
       userId = searchParams.get('userId');
@@ -124,10 +135,11 @@ export async function DELETE(request: NextRequest) {
       message: result.deletedCount > 0 ? 'Post unsaved successfully' : 'Post was not saved',
       data: { deletedCount: result.deletedCount },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error('DELETE /api/saved-posts error:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

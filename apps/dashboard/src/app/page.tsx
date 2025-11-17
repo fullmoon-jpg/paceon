@@ -1,4 +1,3 @@
-// src/app/dashboard/page.tsx - PART 1
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
@@ -8,6 +7,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useDataCache } from "@/contexts/DataContext";
 import { useNotifications } from "@/hooks/useRealtimeNotifications";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import ProfileModal from "./components/components/ProfileModal";
 import {
   Calendar,
   Users,
@@ -63,6 +63,32 @@ interface Connection {
   avatar: string | null;
 }
 
+interface UserProfile {
+  id: string;
+  full_name: string;
+  email: string;
+  avatar_url: string | null;
+  position?: string;
+  company?: string;
+  role?: string;
+}
+
+interface Booking {
+  event_id: string;
+  events: Event;
+}
+
+interface ViewingProfile {
+  userId: string;
+  userName: string;
+  userAvatar: string | null;
+  userPosition?: string;
+  userCompany?: string;
+  userRole?: string;
+}
+
+type TabType = 'notifications' | 'connections';
+
 const formatTime = (timeString: string): string => {
   if (!timeString) return "";
   return timeString.substring(0, 5);
@@ -86,7 +112,9 @@ const DashboardPage = () => {
     networkScore: 0,
   });
   const [connections, setConnections] = useState<Connection[]>([]);
-  const [showFindPlayers, setShowFindPlayers] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('notifications');
+  const [viewingProfile, setViewingProfile] = useState<ViewingProfile | null>(null);
+  const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
   const channelRef = useRef<RealtimeChannel | null>(null);
 
@@ -116,45 +144,57 @@ const DashboardPage = () => {
 
       setStats(data);
     } catch (error) {
-      console.error('Stats fetch error:', error);
+      setStats({
+        eventsAttended: 0,
+        connections: 0,
+        upcomingEvents: 0,
+        networkScore: 0,
+      });
     }
   }, [user, fetchWithCache]);
 
   const fetchConnections = useCallback(async () => {
-    if (!user) return;
+    if (!user) {
+      return;
+    }
 
     try {
-      const data = await fetchWithCache<Connection[]>(
-        `connections-${user.id}`,
-        async () => {
-          const { data, error } = await supabase
-            .from("user_connections")
-            .select(
-              "connected_user_id, users_profile!user_connections_connected_user_id_fkey(full_name,email,avatar_url)"
-            )
-            .eq("user_id", user.id)
-            .eq("status", "active");
+      const { data: connectionsData, error: connectionsError } = await supabase
+        .from("user_connections")
+        .select("connected_user_id")
+        .eq("user_id", user.id);
 
-          if (error) throw error;
+      console.log('📊 Raw connections data:', connectionsData, connectionsError);
 
-          return (
-            data?.map((r: any) => ({
-              id: r.connected_user_id,
-              name: r.users_profile?.full_name || "Unknown User",
-              email: r.users_profile?.email || "",
-              avatar: r.users_profile?.avatar_url || null,
-            })) || []
-          );
-        }
-      );
+      if (connectionsError) throw connectionsError;
 
-      setConnections(data);
+      const userIds = connectionsData?.map((c) => c.connected_user_id).filter(Boolean) || [];
+
+      if (userIds.length === 0) {
+        setConnections([]);
+        return;
+      }
+
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("users_profile")
+        .select("id, full_name, email, avatar_url")
+        .in("id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      const mapped: Connection[] = (profilesData || []).map((profile) => ({
+        id: profile.id,
+        name: profile.full_name || "Unknown User",
+        email: profile.email || "",
+        avatar: profile.avatar_url || null,
+      }));
+
+      setConnections(mapped);
     } catch (error) {
-      console.error('Connections fetch error:', error);
+      setConnections([]);
     }
-  }, [user, fetchWithCache]);
+  }, [user]);
 
-  // ✅ FIXED: Fetch events dengan current_players yang benar
   const fetchAllEvents = useCallback(async () => {
     try {
       const { data: eventsData, error } = await supabase
@@ -166,9 +206,8 @@ const DashboardPage = () => {
 
       if (error) throw error;
 
-      // ✅ Count current_players for each event
       const eventsWithCounts = await Promise.all(
-        (eventsData || []).map(async (event: any) => {
+        (eventsData || []).map(async (event) => {
           const { count } = await supabase
             .from('bookings')
             .select('*', { count: 'exact', head: true })
@@ -178,17 +217,16 @@ const DashboardPage = () => {
           return {
             ...event,
             current_players: count || 0,
-          };
+          } as Event;
         })
       );
 
-      setAllEvents(eventsWithCounts as Event[]);
+      setAllEvents(eventsWithCounts);
     } catch (error) {
-      console.error('All events fetch error:', error);
+      setAllEvents([]);
     }
   }, []);
 
-  // ✅ FIXED: Fetch registered events dengan current_players
   const fetchRegisteredEvents = useCallback(async () => {
     if (!user) return;
 
@@ -201,11 +239,11 @@ const DashboardPage = () => {
 
       if (error) throw error;
 
-      const eventsList = data?.map((b: any) => b.events).filter((e): e is Event => e !== null) || [];
+      const bookings = data as unknown as Booking[];
+      const eventsList = bookings?.map((b) => b.events).filter((e): e is Event => e !== null) || [];
 
-      // ✅ Count current_players for registered events
       const eventsWithCounts = await Promise.all(
-        eventsList.map(async (event: Event) => {
+        eventsList.map(async (event) => {
           const { count } = await supabase
             .from('bookings')
             .select('*', { count: 'exact', head: true })
@@ -221,18 +259,16 @@ const DashboardPage = () => {
 
       setRegisteredEvents(eventsWithCounts);
     } catch (error) {
-      console.error('Registered events fetch error:', error);
+      setRegisteredEvents([]);
     }
   }, [user]);
 
-  // Initial fetch
   useEffect(() => {
     if (!loading && user) {
       Promise.all([fetchStats(), fetchConnections(), fetchAllEvents(), fetchRegisteredEvents()]);
     }
   }, [loading, user, fetchStats, fetchConnections, fetchAllEvents, fetchRegisteredEvents]);
 
-  // ✅ IMPROVED: Realtime subscription with current_players update
   useEffect(() => {
     if (!user) return;
 
@@ -268,7 +304,6 @@ const DashboardPage = () => {
     };
   }, [user, fetchAllEvents, fetchRegisteredEvents]);
 
-  // Visibility change - refetch
   useEffect(() => {
     if (!user) return;
 
@@ -287,7 +322,6 @@ const DashboardPage = () => {
     };
   }, [user, fetchAllEvents, fetchRegisteredEvents, fetchStats]);
 
-  // Redirect
   useEffect(() => {
     if (!loading) {
       if (!user) router.replace("/auth/login");
@@ -295,7 +329,6 @@ const DashboardPage = () => {
     }
   }, [loading, user, profile?.role, router]);
 
-  // Calendar logic
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -325,11 +358,23 @@ const DashboardPage = () => {
     [notifications]
   );
 
+  const handleViewProfile = (conn: Connection & { position?: string; company?: string; role?: string }) => {
+    setViewingProfile({
+      userId: conn.id,
+      userName: conn.name,
+      userAvatar: conn.avatar,
+      userPosition: conn.position,
+      userCompany: conn.company,
+      userRole: conn.role,
+    });
+    setProfileRefreshKey(prev => prev + 1);
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#15b392] mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#21c36e] mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-400">Loading dashboard...</p>
         </div>
       </div>
@@ -340,11 +385,8 @@ const DashboardPage = () => {
 
   const userName = profile?.full_name || profile?.username || user?.email?.split("@")[0] || "User";
 
-    // ... continuing from Part 1
-
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
       <div className="relative bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white overflow-hidden">
         <div className="absolute inset-0 opacity-60 dark:opacity-40">
           <img
@@ -362,9 +404,7 @@ const DashboardPage = () => {
       </div>
 
       <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 overflow-hidden">
-        {/* MAIN CONTENT */}
         <div className="lg:col-span-2 overflow-y-auto px-4 sm:px-8 pt-8 pb-8 bg-white dark:bg-gray-800">
-          {/* Calendar */}
           <div className="mb-8">
             <h2 className="text-xl font-extrabold mb-4 text-gray-800 dark:text-white">Upcoming Events</h2>
             <div className="bg-white dark:bg-gray-700 rounded-xl shadow-lg border border-gray-200 dark:border-gray-600 p-6">
@@ -435,7 +475,6 @@ const DashboardPage = () => {
             </div>
           </div>
 
-          {/* Your Events */}
           <section className="mb-8">
             <div className="flex items-center mb-4 justify-between">
               <h3 className="text-lg font-bold text-gray-800 dark:text-white">Your Events</h3>
@@ -460,7 +499,6 @@ const DashboardPage = () => {
             </div>
           </section>
 
-          {/* Available Events */}
           <section>
             <div className="flex items-center mb-4 justify-between">
               <h3 className="text-lg font-bold text-gray-800 dark:text-white">Available Events</h3>
@@ -486,10 +524,8 @@ const DashboardPage = () => {
           </section>
         </div>
 
-        {/* SIDEBAR */}
         <div className="overflow-y-auto p-4 sm:p-6 bg-gray-50 dark:bg-gray-800 border-l border-gray-200 dark:border-gray-700">
           <div className="space-y-6">
-            {/* Profile Card */}
             <div className="bg-gradient-to-br from-[#15b392] to-[#2a6435] rounded-xl shadow-lg p-6 text-white text-center">
               {profile?.avatar_url ? (
                 <img
@@ -506,7 +542,6 @@ const DashboardPage = () => {
               <p className="text-white/80 text-sm">{profile?.email || user?.email}</p>
             </div>
 
-            {/* Stats */}
             <div className="grid grid-cols-2 gap-3">
               <StatCard icon={<Users className="w-4 h-4 text-blue-600" />} value={stats.connections} label="Connections" color="blue" />
               <StatCard icon={<Trophy className="w-4 h-4 text-green-600" />} value={stats.eventsAttended} label="Events Attended" color="green" />
@@ -514,28 +549,37 @@ const DashboardPage = () => {
               <StatCard icon={<Zap className="w-4 h-4 text-orange-600" />} value={stats.networkScore} label="Network Score" color="orange" />
             </div>
 
-            {/* Tabs */}
             <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-2 shadow-md">
               <div className="flex gap-2">
-                <button className="flex-1 py-2 px-3 rounded-lg font-medium text-sm bg-[#15b392] text-white relative">
+                <button
+                  onClick={() => setActiveTab('notifications')}
+                  className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm relative ${
+                    activeTab === 'notifications'
+                      ? 'bg-[#15b392] text-white'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                  }`}
+                >
                   Notifications
-                  {unreadNotifications.length > 0 && (
+                  {unreadNotifications.length > 0 && activeTab !== 'notifications' && (
                     <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                       {unreadNotifications.length}
                     </span>
                   )}
                 </button>
                 <button
-                  className="flex-1 py-2 px-3 rounded-lg font-medium text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                  onClick={() => setShowFindPlayers(true)}
+                  onClick={() => setActiveTab('connections')}
+                  className={`flex-1 py-2 px-3 rounded-lg font-medium text-sm ${
+                    activeTab === 'connections'
+                      ? 'bg-[#15b392] text-white'
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-600'
+                  }`}
                 >
-                  Find Players
+                  Connections
                 </button>
               </div>
             </div>
 
-            {/* Notifications */}
-            {notifications && notifications.length > 0 && (
+            {activeTab === 'notifications' && notifications && notifications.length > 0 && (
               <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-md overflow-hidden">
                 <div className="p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-600">
                   <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
@@ -562,58 +606,70 @@ const DashboardPage = () => {
                 </div>
               </div>
             )}
-          </div>
-        </div>
-      </main>
-          {/* Find Players Modal */}
-      {showFindPlayers && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full max-h-[80vh] overflow-y-auto relative shadow-2xl">
-            <button
-              className="absolute top-4 right-4 text-gray-600 dark:text-gray-300 hover:text-[#15b392] dark:hover:text-green-400 transition-colors"
-              onClick={() => setShowFindPlayers(false)}
-              aria-label="Close"
-            >
-              <X size={24} />
-            </button>
-            <h3 className="font-bold text-2xl mb-6 text-gray-800 dark:text-white">Your Connections</h3>
-            {connections.length > 0 ? (
-              <ul className="space-y-3">
-                {connections.map((conn) => (
-                  <li
-                    key={conn.id}
-                    className="flex items-center gap-3 bg-gray-50 dark:bg-gray-700 rounded-lg p-4 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    {conn.avatar ? (
-                      <img
-                        src={conn.avatar}
-                        alt={conn.name}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
-                      />
-                    ) : (
-                      <div className="w-12 h-12 rounded-full bg-[#15b392] flex items-center justify-center text-white text-lg font-bold">
-                        {conn.name?.charAt(0).toUpperCase() || "U"}
-                      </div>
-                    )}
-                    <div>
-                      <div className="font-semibold text-gray-800 dark:text-white">{conn.name || "Unknown User"}</div>
-                      <div className="text-gray-500 dark:text-gray-400 text-sm">{conn.email}</div>
+
+            {activeTab === 'connections' && (
+              <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 shadow-md overflow-hidden">
+                <div className="p-4 border-b border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-600">
+                  <h3 className="font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                    <Users className="w-5 h-5 text-[#15b392]" />
+                    Your Connections
+                  </h3>
+                </div>
+                <div className="max-h-[400px] overflow-y-auto p-4">
+                  {connections.length > 0 ? (
+                    <ul className="space-y-3">
+                      {connections.map((conn) => (
+                        <li
+                          key={conn.id}
+                          onClick={() => handleViewProfile(conn as Connection & { position?: string; company?: string; role?: string })}
+                          className="flex items-center gap-3 bg-gray-50 dark:bg-gray-600 rounded-lg p-3 hover:bg-gray-100 dark:hover:bg-gray-500 transition-colors cursor-pointer"
+                        >
+                          {conn.avatar ? (
+                            <img
+                              src={conn.avatar}
+                              alt={conn.name}
+                              className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-gray-600"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 rounded-full bg-[#15b392] flex items-center justify-center text-white text-lg font-bold">
+                              {conn.name?.charAt(0).toUpperCase() || "U"}
+                            </div>
+                          )}
+                          <div className="flex-1">
+                            <div className="font-semibold text-gray-800 dark:text-white">{conn.name || "Unknown User"}</div>
+                            <div className="text-gray-500 dark:text-gray-400 text-sm">{conn.email}</div>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div className="text-center py-8">
+                      <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                      <p className="text-gray-500 dark:text-gray-400 font-medium">No connections yet</p>
+                      <p className="text-gray-400 dark:text-gray-500 text-sm mt-2 font-open-sans font-bold">Join events to meet new players!</p>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-center py-8">
-                <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                <p className="text-gray-500 dark:text-gray-400 font-medium">No connections yet</p>
-                <p className="text-gray-400 dark:text-gray-500 text-sm mt-2 font-open-sans font-bold">Join events to meet new players!</p>
+                  )}
+                </div>
               </div>
             )}
           </div>
         </div>
+      </main>
+
+      {viewingProfile && (
+        <ProfileModal
+          isOpen={true}
+          onClose={() => setViewingProfile(null)}
+          userId={viewingProfile.userId}
+          userName={viewingProfile.userName}
+          userAvatar={viewingProfile.userAvatar}
+          userPosition={viewingProfile.userPosition}
+          userCompany={viewingProfile.userCompany}
+          userRole={viewingProfile.userRole}
+          key={`profile-${viewingProfile.userId}-${profileRefreshKey}`}
+        />
       )}
 
-      {/* Event Detail Modal */}
       {modalEvent && (
         <div className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-lg w-full relative shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -695,7 +751,6 @@ const DashboardPage = () => {
   );
 };
 
-// Helper Components
 interface DashboardEventCardProps {
   event: Event;
   onClick: () => void;
@@ -762,4 +817,3 @@ const StatCard = ({ icon, value, label, color }: StatCardProps) => (
 );
 
 export default DashboardPage;
-

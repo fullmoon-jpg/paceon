@@ -23,6 +23,6 @@
       "@paceon/*": ["../../packages/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "../../packages/lib/firebaseConfig.ts", "src/app/api/sendWelcomeEmail.tsx/route.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "../../packages/lib/firebaseConfig.ts", "src/app/api/sendWelcomeEmail.tsx/route.js", "../../tailwind.config.ts", "../../packages/config/emailService.ts"],
   "exclude": ["node_modules"]
 }

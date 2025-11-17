@@ -3,6 +3,37 @@ import connectDB from '@paceon/lib/mongodb';
 import Post from '@/lib/models/Posts';
 import { supabaseAdmin } from '@paceon/lib/supabase';
 
+interface PostDocument {
+  _id: { toString: () => string };
+  userId: string;
+  content: string;
+  mediaUrls?: string[];
+  location?: string;
+  sport?: string;
+  createdAt: Date;
+  updatedAt: Date;
+  save: () => Promise<void>;
+  toObject: () => Record<string, unknown>;
+}
+
+interface UserProfile {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+}
+
+interface PatchRequestBody {
+  userId: string;
+  content?: string;
+  mediaUrls?: string[];
+  location?: string;
+  sport?: string;
+}
+
+interface DeleteRequestBody {
+  userId: string;
+}
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -13,7 +44,7 @@ export async function GET(
     const resolvedParams = await params;
     const postId = resolvedParams.id;
 
-    const post = await Post.findById(postId).lean();
+    const post = await Post.findById(postId).lean() as Record<string, unknown> | null;
 
     if (!post) {
       return NextResponse.json(
@@ -34,9 +65,9 @@ export async function GET(
 
     const postWithUser = {
       ...post,
-      _id: post._id.toString(),
+      _id: (post._id as { toString: () => string }).toString(),
       user: userProfile || {
-        id: post.userId,
+        id: post.userId as string,
         full_name: 'Unknown User',
         avatar_url: null,
       },
@@ -47,10 +78,10 @@ export async function GET(
       data: postWithUser,
     });
 
-  } catch (error: any) {
-    console.error('GET /api/posts/[id] error:', error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
@@ -65,7 +96,7 @@ export async function PATCH(
 
     const resolvedParams = await params;
     const postId = resolvedParams.id;
-    const body = await request.json();
+    const body = await request.json() as PatchRequestBody;
     const { userId, content, mediaUrls, location, sport } = body;
 
     if (!userId) {
@@ -75,7 +106,7 @@ export async function PATCH(
       );
     }
 
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId) as PostDocument | null;
 
     if (!post) {
       return NextResponse.json(
@@ -84,7 +115,6 @@ export async function PATCH(
       );
     }
 
-    // Check ownership
     if (post.userId !== userId) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -92,7 +122,6 @@ export async function PATCH(
       );
     }
 
-    // Update fields
     if (content !== undefined) post.content = content;
     if (mediaUrls !== undefined) post.mediaUrls = mediaUrls;
     if (location !== undefined) post.location = location;
@@ -121,10 +150,10 @@ export async function PATCH(
       data: postWithUser,
     });
 
-  } catch (error: any) {
-    console.error('PATCH /api/posts/[id] error:', error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
@@ -139,10 +168,9 @@ export async function DELETE(
 
     const resolvedParams = await params;
     const postId = resolvedParams.id;
-    const body = await request.json();
+    const body = await request.json() as DeleteRequestBody;
     const { userId } = body;
 
-    // Get isAdmin dari query parameter
     const { searchParams } = new URL(request.url);
     const isAdmin = searchParams.get('isAdmin') === 'true';
 
@@ -153,8 +181,7 @@ export async function DELETE(
       );
     }
 
-    // Find post
-    const post = await Post.findById(postId);
+    const post = await Post.findById(postId) as PostDocument | null;
 
     if (!post) {
       return NextResponse.json(
@@ -163,7 +190,6 @@ export async function DELETE(
       );
     }
 
-    // Check ownership OR admin
     const isOwner = post.userId === userId;
     if (!isOwner && !isAdmin) {
       return NextResponse.json(
@@ -172,7 +198,6 @@ export async function DELETE(
       );
     }
 
-    // Delete post
     await Post.findByIdAndDelete(postId);
 
     return NextResponse.json({
@@ -180,10 +205,10 @@ export async function DELETE(
       message: 'Post deleted successfully',
     });
 
-  } catch (error: any) {
-    console.error('DELETE /api/posts/[id] error:', error);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

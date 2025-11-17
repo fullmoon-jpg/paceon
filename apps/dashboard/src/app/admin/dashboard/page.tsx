@@ -17,14 +17,85 @@ import { format } from "date-fns";
 
 type TabType = "payments" | "events" | "players";
 
+interface Payment {
+  id: string;
+  amount: number;
+  payment_status: string;
+  created_at: string;
+  booking_id: string;
+  user_id: string;
+  bookings?: {
+    id: string;
+    events?: { title: string };
+  } | null;
+  users_profile?: {
+    full_name?: string;
+    email?: string;
+  } | null;
+}
+
+interface Booking {
+  id: string;
+  booking_status: string;
+}
+
+interface EventData {
+  id: string;
+  title: string;
+  event_status: string;
+  event_date: string;
+  start_time: string;
+  image_url?: string;
+  max_players: number;
+  sport?: string;
+  bookings?: Booking[];
+}
+
+interface UserStatistics {
+  event_attended: number;
+  connections: number;
+  networking_score: number;
+  event_upcoming?: number;
+}
+
+interface Player {
+  id: string;
+  full_name: string;
+  email: string;
+  avatar_url?: string;
+  created_at: string;
+  user_statistics?: UserStatistics;
+}
+
+interface BookingData {
+  id: string;
+  booking_status: string;
+  event_id: string;
+  events: { id: string; title: string };
+}
+
+interface UserProfile {
+  id: string;
+  full_name: string;
+  email: string;
+}
+
+interface UserStatisticsData {
+  user_id: string;
+  event_attended: number;
+  connections: number;
+  networking_score: number;
+  event_upcoming: number;
+}
+
 const AdminDashboard = () => {
   const router = useRouter();
   const { user, profile, loading } = useAuth();
 
   const [activeTab, setActiveTab] = useState<TabType>("payments");
-  const [payments, setPayments] = useState<any[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
-  const [players, setPlayers] = useState<any[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [events, setEvents] = useState<EventData[]>([]);
+  const [players, setPlayers] = useState<Player[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
@@ -49,8 +120,6 @@ const AdminDashboard = () => {
       if (activeTab === "payments") await fetchPayments();
       if (activeTab === "events") await fetchEvents();
       if (activeTab === "players") await fetchPlayers();
-    } catch (error) {
-      console.error('Fetch error:', error);
     } finally {
       setRefreshing(false);
     }
@@ -58,7 +127,6 @@ const AdminDashboard = () => {
 
   const fetchPayments = async () => {
     try {
-      // Fetch payments base data
       const { data: paymentsData, error: paymentsError } = await supabase
         .from("payments")
         .select("*")
@@ -71,30 +139,26 @@ const AdminDashboard = () => {
         return;
       }
 
-      // Fetch related bookings
-      const bookingIds = paymentsData.map(p => p.booking_id).filter(Boolean);
+      const bookingIds = paymentsData.map((p) => p.booking_id).filter(Boolean);
       const { data: bookingsData } = await supabase
         .from("bookings")
         .select("id, booking_status, event_id, events(id, title)")
         .in("id", bookingIds);
 
-      // Fetch related users
-      const userIds = paymentsData.map(p => p.user_id).filter(Boolean);
+      const userIds = paymentsData.map((p) => p.user_id).filter(Boolean);
       const { data: usersData } = await supabase
         .from("users_profile")
         .select("id, full_name, email")
         .in("id", userIds);
 
-      // Merge all data
-      const merged = paymentsData.map((payment: any) => ({
+      const merged: Payment[] = paymentsData.map((payment) => ({
         ...payment,
-        bookings: bookingsData?.find((b: any) => b.id === payment.booking_id) || null,
-        users_profile: usersData?.find((u: any) => u.id === payment.user_id) || null,
+        bookings: (bookingsData as unknown as BookingData[])?.find((b) => b.id === payment.booking_id) || null,
+        users_profile: usersData?.find((u: UserProfile) => u.id === payment.user_id) || null,
       }));
 
       setPayments(merged);
-    } catch (err: any) {
-      console.error('Payments error:', err);
+    } catch (error) {
       setPayments([]);
     }
   };
@@ -107,9 +171,8 @@ const AdminDashboard = () => {
         .order("event_date", { ascending: false });
       
       if (error) throw error;
-      setEvents(data || []);
-    } catch (err: any) {
-      console.error('Events error:', err);
+      setEvents((data as EventData[]) || []);
+    } catch (error) {
       setEvents([]);
     }
   };
@@ -127,9 +190,9 @@ const AdminDashboard = () => {
         .from("user_statistics")
         .select("user_id, event_attended, connections, networking_score, event_upcoming");
 
-      const merged = (profiles || []).map((p: any) => ({
+      const merged: Player[] = (profiles || []).map((p) => ({
         ...p,
-        user_statistics: stats?.find((s: any) => s.user_id === p.id) || {
+        user_statistics: (stats as UserStatisticsData[])?.find((s) => s.user_id === p.id) || {
           event_attended: 0,
           connections: 0,
           networking_score: 0,
@@ -138,8 +201,7 @@ const AdminDashboard = () => {
       }));
       
       setPlayers(merged);
-    } catch (err: any) {
-      console.error('Players error:', err);
+    } catch (error) {
       setPlayers([]);
     }
   };
@@ -150,7 +212,7 @@ const AdminDashboard = () => {
     try {
       const { error: paymentError } = await supabase
         .from("payments")
-        .update({ payment_status: "paid", updated_at: new Date().toISOString() })
+        .update({ payment_status: "paid", payment_method: "paid", updated_at: new Date().toISOString() })
         .eq("id", paymentId);
 
       if (paymentError) throw paymentError;
@@ -162,10 +224,11 @@ const AdminDashboard = () => {
 
       if (bookingError) throw bookingError;
 
-      alert("✅ Payment approved!");
-      fetchPayments();
-    } catch (error: any) {
-      alert(`❌ Error: ${error.message}`);
+      alert("Payment approved!");
+      await fetchPayments();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(`Error: ${message}`);
     }
   };
 
@@ -187,10 +250,11 @@ const AdminDashboard = () => {
 
       if (bookingError) throw bookingError;
 
-      alert("❌ Payment rejected!");
-      fetchPayments();
-    } catch (error: any) {
-      alert(`❌ Error: ${error.message}`);
+      alert("Payment rejected!");
+      await fetchPayments();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(`Error: ${message}`);
     }
   };
 
@@ -212,10 +276,11 @@ const AdminDashboard = () => {
 
       if (bookingError) throw bookingError;
 
-      alert("✅ Event cancelled!");
-      fetchEvents();
-    } catch (error: any) {
-      alert(`❌ Error: ${error.message}`);
+      alert("Event cancelled!");
+      await fetchEvents();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(`Error: ${message}`);
     }
   };
 
@@ -223,17 +288,21 @@ const AdminDashboard = () => {
     if (!confirm("Mark this event as completed?")) return;
 
     try {
-      const { error } = await supabase
-        .from("events")
-        .update({ event_status: "completed" })
-        .eq("id", eventId);
+      const response = await fetch(`/api/events/${eventId}/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eventId }),
+      });
 
-      if (error) throw error;
-
-      alert("✅ Event completed! Triggers will auto-update stats & connections.");
-      fetchEvents();
-    } catch (error: any) {
-      alert(`❌ Error: ${error.message}`);
+      const data = await response.json();
+      
+      if (!data.success) throw new Error(data.error || 'Failed to complete event');
+      
+      alert("Event completed! Connections auto-created.");
+      await fetchEvents();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown error";
+      alert(`Error: ${message}`);
     }
   };
 
@@ -270,7 +339,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
       <div className="bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white py-8 px-4 sm:px-8 shadow-lg">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
@@ -279,7 +347,6 @@ const AdminDashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-8 py-8">
-        {/* Tabs */}
         <div className="bg-white rounded-xl shadow-md p-2 mb-6 flex gap-2">
           <button
             onClick={() => setActiveTab("payments")}
@@ -316,7 +383,6 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        {/* Search & Filter */}
         <div className="bg-white rounded-xl shadow-md p-4 mb-6 flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
@@ -362,7 +428,6 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        {/* Content */}
         {activeTab === "payments" && (
           <div className="bg-white rounded-xl shadow-md overflow-hidden">
             <div className="overflow-x-auto">
@@ -386,7 +451,7 @@ const AdminDashboard = () => {
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-700">{payment.bookings?.events?.title || 'N/A'}</td>
                       <td className="px-6 py-4 text-sm font-semibold text-gray-900">
-                        Rp {parseInt(payment.amount || 0, 10).toLocaleString()}
+                        Rp {parseInt(String(payment.amount || 0), 10).toLocaleString()}
                       </td>
                       <td className="px-6 py-4">
                         <span
@@ -438,7 +503,7 @@ const AdminDashboard = () => {
         {activeTab === "events" && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredEvents.map((event) => {
-              const confirmedBookings = event.bookings?.filter((b: any) => b.booking_status === "confirmed").length || 0;
+              const confirmedBookings = event.bookings?.filter((b) => b.booking_status === "confirmed").length || 0;
               return (
                 <div key={event.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all">
                   <img src={event.image_url || 'https://via.placeholder.com/400x200'} alt={event.title} className="w-full h-40 object-cover" />
