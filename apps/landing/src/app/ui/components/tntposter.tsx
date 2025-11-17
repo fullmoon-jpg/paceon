@@ -51,7 +51,7 @@ const TalkNTalesPosterAndDescription = () => {
   ];
 
   return (
-    <section className="w-full pt-16 sm:pt-20 md:pt-24 lg:pt-28 bg-[#f4f4ef]">
+    <section className="w-full pt-8 bg-[#f4f4ef]">
       <div className="w-full px-6 sm:px-8 lg:px-28">
         
         {/* Grid Layout - Poster Left, Description Right */}
@@ -75,7 +75,7 @@ const TalkNTalesPosterAndDescription = () => {
           <div className="w-full">
             
             {/* Title */}
-            <div className="mb-8 lg:mb-10">
+            <div className="mb-8 lg:mb-10 pt-8">
               <h2 className="font-brand text-3xl sm:text-4xl md:text-5xl text-[#3f3e3d] mb-4">
                 About This Event
               </h2>

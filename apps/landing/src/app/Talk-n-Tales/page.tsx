@@ -22,7 +22,7 @@ export default function TalkNTalesPage() {
         </FadeInSection>
       </section>
 
-      <section id="registration-section" className="relative z-10">
+      <section id="registration-section" className="relative z-10 bg-[#f4f4ef]">
         <FadeInSection id="Talk n Tales Registration" delay={0.6}>
           <TalkNTalesRegistrationAndFAQ />
         </FadeInSection>
