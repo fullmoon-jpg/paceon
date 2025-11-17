@@ -136,7 +136,6 @@ export const talkNTalesRegistrationConfirmationTemplate = (data: {
               <!-- Closing -->
               <p style="margin: 40px 0 0 0; font-size: 18px; color: #3f3e3d; line-height: 1.8; text-align: center;">
                 Got questions? Hit us up on Instagram or reply to this email!<br>
-                <strong style="color: #f47a49;">Let's make this night legendary.</strong>
               </p>
 
               <div style="margin: 40px 0 0 0; padding-top: 40px; border-top: 2px solid #f4f4ef; text-align: center;">
