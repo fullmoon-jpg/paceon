@@ -70,6 +70,7 @@ const Footer = () => {
                 href="https://instagram.com/paceon.id"
                 target="_blank"
                 className="w-12 h-12 border-2 border-white rounded-lg flex items-center justify-center hover:bg-white hover:text-black transition-colors"
+                aria-label="instagram-link"
               >
                 <Instagram className="w-6 h-6" />
               </Link>
@@ -77,6 +78,7 @@ const Footer = () => {
                 href="https://wa.me/+628558451534"
                 target="_blank"
                 className="w-12 h-12 border-2 border-white rounded-lg flex items-center justify-center hover:bg-white hover:text-black transition-colors"
+                aria-label="whatsapp-link"
               >
                 <FaWhatsapp className="w-6 h-6" />
               </Link>
@@ -84,6 +86,7 @@ const Footer = () => {
                 href="https://linkedin.com/company/pace-on"
                 target="_blank"
                 className="w-12 h-12 border-2 border-white rounded-lg flex items-center justify-center hover:bg-white hover:text-black transition-colors"
+                aria-label="linkedin-link"
               >
                 <Linkedin className="w-6 h-6" />
               </Link>
@@ -115,6 +118,7 @@ const Footer = () => {
             <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors"
+              aria-label="up-button"
             >
               <svg 
                 className="w-5 h-5 text-white" 
