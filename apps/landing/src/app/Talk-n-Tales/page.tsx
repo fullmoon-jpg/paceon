@@ -3,6 +3,7 @@ import TalkNTalesPosterAndDescription from '../ui/components/tntposter';
 import TalkNTalesRegistrationAndFAQ from '../ui/components/tntform';
 import Footer from '../ui/footer';
 import FadeInSection from '@paceon/ui/FadeIn';
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata = {
   title: "Talk n Tales - PACE ON",
@@ -12,6 +13,7 @@ export const metadata = {
 export default function TalkNTalesPage() {
   return (
     <>
+    <Analytics />
       <section id="hero-section" className="relative z-10">
           <TalkNTalesHero />
       </section>

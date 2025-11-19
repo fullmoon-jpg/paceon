@@ -20,13 +20,30 @@ interface Review {
   feedback: string;
 }
 
+interface Event {
+  id: string;
+  title: string;
+  [key: string]: unknown;
+}
+
+interface UserProfile {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+  email: string;
+}
+
+interface Booking {
+  user_id: string;
+}
+
 const AffirmationCubePage = () => {
   const router = useRouter();
   const { user, loading } = useAuth();
   const { showToast } = useToast();
 
   const [eventId, setEventId] = useState<string | null>(null);
-  const [event, setEvent] = useState<any>(null);
+  const [event, setEvent] = useState<Event | null>(null);
   const [teammates, setTeammates] = useState<Teammate[]>([]);
   const [reviews, setReviews] = useState<Record<string, Review>>({});
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -55,92 +72,91 @@ const AffirmationCubePage = () => {
   }, [loading, user, eventId]);
 
   const fetchEventAndTeammates = async () => {
-  if (!user || !eventId) {
-    setPageLoading(false);
-    return;
-  }
-
-  try {
-    // Fetch event
-    const { data: eventData, error: eventError } = await supabase
-      .from("events")
-      .select("*")
-      .eq("id", eventId)
-      .single();
-
-    if (eventError) throw eventError;
-    setEvent(eventData);
-
-    // Fetch teammates - simpler approach
-    const { data: bookingsData, error: bookingsError } = await supabase
-      .from("bookings")
-      .select("user_id")
-      .eq("event_id", eventId)
-      .eq("booking_status", "attended")
-      .neq("user_id", user.id);
-
-    if (bookingsError) throw bookingsError;
-
-    const userIds = (bookingsData || []).map((b: any) => b.user_id);
-
-    // Get user profiles
-    const { data: profilesData, error: profilesError } = await supabase
-      .from("users_profile") // or "profiles" - check table name
-      .select("id, full_name, avatar_url, email")
-      .in("id", userIds);
-
-    if (profilesError) throw profilesError;
-
-    const userMap = new Map(
-      (profilesData || []).map((p: any) => [p.id, p])
-    );
-
-    const teammatesData: Teammate[] = userIds
-      .map((userId: string) => {
-        const profile = userMap.get(userId);
-        return {
-          user_id: userId,
-          full_name: profile?.full_name || "Unknown",
-          avatar_url: profile?.avatar_url || null,
-          email: profile?.email || "unknown@email.com",
-        };
-      });
-
-    setTeammates(teammatesData);
-
-    // Initialize reviews
-    const initialReviews: Record<string, Review> = {};
-    teammatesData.forEach((t: Teammate) => {
-      initialReviews[t.user_id] = {
-        reviewee_id: t.user_id,
-        rating: 0,
-        feedback: "",
-      };
-    });
-    setReviews(initialReviews);
-
-    // Check existing reviews
-    const { data: existingReviews } = await supabase
-      .from("affirmation_cube")
-      .select("reviewee_id")
-      .eq("event_id", eventId)
-      .eq("reviewer_id", user.id);
-
-    if (
-      existingReviews &&
-      existingReviews.length === teammatesData.length
-    ) {
-      setCompleted(true);
+    if (!user || !eventId) {
+      setPageLoading(false);
+      return;
     }
 
-    setPageLoading(false);
-  } catch (error) {
-    console.error("Fetch error:", error);
-    showToast('error', 'Failed to load event data');
-    setPageLoading(false);
-  }
-};
+    try {
+      // Fetch event
+      const { data: eventData, error: eventError } = await supabase
+        .from("events")
+        .select("*")
+        .eq("id", eventId)
+        .single();
 
+      if (eventError) throw eventError;
+      setEvent(eventData as Event);
+
+      // Fetch teammates - simpler approach
+      const { data: bookingsData, error: bookingsError } = await supabase
+        .from("bookings")
+        .select("user_id")
+        .eq("event_id", eventId)
+        .eq("booking_status", "attended")
+        .neq("user_id", user.id);
+
+      if (bookingsError) throw bookingsError;
+
+      const userIds = (bookingsData || []).map((b: Booking) => b.user_id);
+
+      // Get user profiles
+      const { data: profilesData, error: profilesError } = await supabase
+        .from("users_profile")
+        .select("id, full_name, avatar_url, email")
+        .in("id", userIds);
+
+      if (profilesError) throw profilesError;
+
+      const userMap = new Map(
+        (profilesData || []).map((p: UserProfile) => [p.id, p])
+      );
+
+      const teammatesData: Teammate[] = userIds
+        .map((userId: string) => {
+          const profile = userMap.get(userId);
+          return {
+            user_id: userId,
+            full_name: profile?.full_name || "Unknown",
+            avatar_url: profile?.avatar_url || null,
+            email: profile?.email || "unknown@email.com",
+          };
+        });
+
+      setTeammates(teammatesData);
+
+      // Initialize reviews
+      const initialReviews: Record<string, Review> = {};
+      teammatesData.forEach((t: Teammate) => {
+        initialReviews[t.user_id] = {
+          reviewee_id: t.user_id,
+          rating: 0,
+          feedback: "",
+        };
+      });
+      setReviews(initialReviews);
+
+      // Check existing reviews
+      const { data: existingReviews } = await supabase
+        .from("affirmation_cube")
+        .select("reviewee_id")
+        .eq("event_id", eventId)
+        .eq("reviewer_id", user.id);
+
+      if (
+        existingReviews &&
+        existingReviews.length === teammatesData.length
+      ) {
+        setCompleted(true);
+      }
+
+      setPageLoading(false);
+    } catch (error) {
+      console.error("Fetch error:", error);
+      showToast('error', 'Failed to load event data');
+      setPageLoading(false);
+    }
+  };
 
   const setRating = (userId: string, rating: number) => {
     setReviews((prev) => ({
@@ -169,60 +185,54 @@ const AffirmationCubePage = () => {
   };
 
   const handleSubmit = async () => {
-  if (!user || !eventId) return;
+    if (!user || !eventId) return;
 
-  const invalidReviews = Object.values(reviews).filter((r) => r.rating === 0);
-  if (invalidReviews.length > 0) {
-    showToast('warning', 'Please rate all teammates before submitting!');
-    return;
-  }
-
-  setSubmitting(true);
-
-  try {
-    console.log('🚀 Submitting via API...');
-
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session?.access_token) {
-      throw new Error('No auth token');
+    const invalidReviews = Object.values(reviews).filter((r) => r.rating === 0);
+    if (invalidReviews.length > 0) {
+      showToast('warning', 'Please rate all teammates before submitting!');
+      return;
     }
 
-    const response = await fetch('/api/affirmation-cube/submit', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        eventId,
-        reviews: Object.values(reviews),
-      }),
-    });
+    setSubmitting(true);
 
-    const result = await response.json();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
 
-    if (!response.ok) {
-      throw new Error(result.error || 'Submit failed');
+      if (!session?.access_token) {
+        throw new Error('No auth token');
+      }
+
+      const response = await fetch('/api/affirmation-cube/submit', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          eventId,
+          reviews: Object.values(reviews),
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Submit failed');
+      }
+
+      setCompleted(true);
+      showToast('success', 'Reviews submitted! 🎉');
+
+      setTimeout(() => {
+        router.push("/");
+      }, 3000);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      showToast('error', `Failed: ${message}`);
+    } finally {
+      setSubmitting(false);
     }
-
-    console.log('✅ Reviews submitted!');
-    setCompleted(true);
-    showToast('success', 'Reviews submitted! 🎉');
-
-    setTimeout(() => {
-      router.push("/");
-    }, 3000);
-  } catch (error) {
-    console.error('❌ Error:', error);
-    const message = error instanceof Error ? error.message : 'Unknown error';
-    showToast('error', `Failed: ${message}`);
-  } finally {
-    setSubmitting(false);
-  }
-};
-
-
+  };
 
   // Loading state
   if (pageLoading || loading) {
@@ -264,7 +274,7 @@ const AffirmationCubePage = () => {
           <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">Thank You!</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-2">Your reviews have been submitted successfully.</p>
           <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
-            Your networking score and teammates' scores will be updated shortly.
+            Your networking score and teammates&apos; scores will be updated shortly.
           </p>
           <button
             onClick={() => router.push("/")}

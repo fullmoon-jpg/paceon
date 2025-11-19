@@ -3,7 +3,7 @@
 
 import { Calendar, Clock, MapPin, Users } from "lucide-react";
 import { format } from "date-fns";
-import Image from "next/image";
+import { useMemo, useCallback } from "react";
 
 interface Event {
   id: string;
@@ -26,42 +26,66 @@ interface BookingCardProps {
 }
 
 export default function BookingCard({ event, onClick }: BookingCardProps) {
-  const isFull = event.currentPlayers >= event.maxPlayers;
-  const availableSlots = event.maxPlayers - event.currentPlayers;
+  const isFull = useMemo(
+    () => event.currentPlayers >= event.maxPlayers,
+    [event.currentPlayers, event.maxPlayers]
+  );
 
-  const eventTypeColors: Record<string, { bg: string; badge: string }> = {
-    tennis: { bg: "from-blue-500 to-blue-700", badge: "bg-blue-500" },
-    padel: { bg: "from-green-500 to-green-700", badge: "bg-green-500" },
-    badminton: { bg: "from-orange-500 to-orange-700", badge: "bg-orange-500" },
-    coffee_chat: { bg: "from-amber-600 to-amber-800", badge: "bg-amber-600" }, 
-    workshop: { bg: "from-yellow-500 to-yellow-700", badge: "bg-yellow-500" },
-    meetup: { bg: "from-pink-500 to-pink-700", badge: "bg-pink-500" },
-    social: { bg: "from-indigo-500 to-indigo-700", badge: "bg-indigo-500" },
-    other: { bg: "from-gray-500 to-gray-700", badge: "bg-gray-500" },
-  };
+  const availableSlots = useMemo(
+    () => event.maxPlayers - event.currentPlayers,
+    [event.maxPlayers, event.currentPlayers]
+  );
 
-  const colors = eventTypeColors[event.event_type] || eventTypeColors.other;
+  const progressPercentage = useMemo(
+    () => (event.currentPlayers / event.maxPlayers) * 100,
+    [event.currentPlayers, event.maxPlayers]
+  );
 
-  const formatEventType = (eventType: string): string => {
+  const eventTypeColors: Record<string, { gradient: string; badge: string }> = useMemo(
+    () => ({
+      tennis: { gradient: "from-[#007AA6] to-[#005f7f]", badge: "bg-[#007AA6]" },
+      padel: { gradient: "from-[#21C36E] to-[#1a9d57]", badge: "bg-[#21C36E]" },
+      badminton: { gradient: "from-[#F47A49] to-[#d65a2f]", badge: "bg-[#F47A49]" },
+      coffee_chat: { gradient: "from-[#F0C946] to-[#d4ad2f]", badge: "bg-[#F0C946]" },
+      workshop: { gradient: "from-[#FB6F7A] to-[#d64d5a]", badge: "bg-[#FB6F7A]" },
+      meetup: { gradient: "from-[#D33181] to-[#a82664]", badge: "bg-[#D33181]" },
+      social: { gradient: "from-[#007AA6] to-[#005f7f]", badge: "bg-[#007AA6]" },
+      other: { gradient: "from-gray-500 to-gray-700", badge: "bg-gray-500" },
+    }),
+    []
+  );
+
+  const colors = useMemo(
+    () => eventTypeColors[event.event_type] || eventTypeColors.other,
+    [event.event_type, eventTypeColors]
+  );
+
+  const formatEventType = useCallback((eventType: string): string => {
     return eventType
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-  };
+  }, []);
+
+  const formattedDate = useMemo(
+    () => format(new Date(event.date), 'EEE, MMM dd, yyyy'),
+    [event.date]
+  );
+
+  const handleClick = useCallback(() => onClick(), [onClick]);
 
   return (
     <div
-      onClick={onClick}
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer group border border-gray-200 dark:border-gray-700"
+      onClick={handleClick}
+      className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden cursor-pointer group border border-gray-200 dark:border-[#3d4459] hover:scale-[1.02]"
     >
       {/* Image */}
       <div className="relative h-40 overflow-hidden">
-        <Image
+        {/* Using regular img to avoid Next.js config issues */}
+        <img
           src={event.image}
           alt={event.title}
-          fill
-          className="object-cover group-hover:scale-110 transition-transform duration-300"
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         
@@ -70,7 +94,7 @@ export default function BookingCard({ event, onClick }: BookingCardProps) {
           <span className={`${colors.badge} text-white px-3 py-1 rounded-full text-xs font-semibold uppercase`}>
             {formatEventType(event.event_type)}
           </span>
-          <span className={`${isFull ? 'bg-red-500' : 'bg-green-500'} text-white px-3 py-1 rounded-full text-xs font-bold`}>
+          <span className={`${isFull ? 'bg-[#FB6F7A]' : 'bg-[#21C36E]'} text-white px-3 py-1 rounded-full text-xs font-bold`}>
             {isFull ? 'FULL' : 'OPEN'}
           </span>
         </div>
@@ -88,15 +112,15 @@ export default function BookingCard({ event, onClick }: BookingCardProps) {
         {/* Details */}
         <div className="space-y-2 mb-4">
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <Calendar size={16} className="text-[#15b392] flex-shrink-0" />
-            <span>{format(new Date(event.date), 'EEE, MMM dd, yyyy')}</span>
+            <Calendar size={16} className="text-[#f47a46] flex-shrink-0" />
+            <span>{formattedDate}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <Clock size={16} className="text-[#15b392] flex-shrink-0" />
+            <Clock size={16} className="text-[#f47a46] flex-shrink-0" />
             <span>{event.time}</span>
           </div>
           <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
-            <MapPin size={16} className="text-[#15b392] flex-shrink-0" />
+            <MapPin size={16} className="text-[#f47a46] flex-shrink-0" />
             <span className="line-clamp-1">{event.venueName}, {event.venueCity}</span>
           </div>
         </div>
@@ -108,14 +132,14 @@ export default function BookingCard({ event, onClick }: BookingCardProps) {
               <Users size={14} />
               Participants
             </span>
-            <span className="font-semibold text-gray-800 dark:text-white">
+            <span className="font-semibold text-[#3F3E3D] dark:text-white">
               {event.currentPlayers}/{event.maxPlayers}
             </span>
           </div>
-          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+          <div className="w-full bg-gray-200 dark:bg-[#3d4459] rounded-full h-2">
             <div
-              className={`bg-gradient-to-r ${colors.bg} h-2 rounded-full transition-all`}
-              style={{ width: `${(event.currentPlayers / event.maxPlayers) * 100}%` }}
+              className={`bg-gradient-to-r ${colors.gradient} h-2 rounded-full transition-all`}
+              style={{ width: `${progressPercentage}%` }}
             />
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -123,10 +147,10 @@ export default function BookingCard({ event, onClick }: BookingCardProps) {
           </p>
         </div>
 
-        {/* Price */}
+        {/* Price & Button */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1">
-            <span className="font-bold text-lg text-gray-800 dark:text-white">
+            <span className="font-bold text-lg text-[#3F3E3D] dark:text-white">
               Rp {event.price.toLocaleString()}
             </span>
             <span className="text-xs text-gray-500 dark:text-gray-400">/person</span>
@@ -134,8 +158,8 @@ export default function BookingCard({ event, onClick }: BookingCardProps) {
           <button
             className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
               isFull
-                ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                : 'bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white hover:shadow-md'
+                ? 'bg-gray-300 dark:bg-[#3d4459] text-gray-500 dark:text-gray-500 cursor-not-allowed'
+                : 'bg-[#FB6F7A] text-white hover:shadow-lg'
             }`}
             disabled={isFull}
           >

@@ -169,20 +169,25 @@ export default function LoginPage() {
     <div
       className="relative w-full h-screen bg-cover bg-center"
       id="login image"
-      style={{ backgroundImage: "url('/images/login-img.webp')" }}
+      style={{ backgroundImage: "url('/images/auth-img.png')" }}
     >
-      <div className="absolute inset-0 bg-black/50" />
+      <div className="absolute inset-0 bg-black/40" />
       
       <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
-        <h1 className="text-xl sm:text-2xl font-bold text-white font-brand">PACE.ON</h1>
+        <h1 
+          className="text-xl sm:text-2xl text-white font-brand drop-shadow-lg"
+          style={{ transform: 'rotate(-3deg)' }}
+        >
+          PACE ON
+        </h1>
       </div>
       
       <div className="relative flex items-center justify-center h-full">
         <div className="bg-white rounded-2xl shadow-2xl p-8 w-[400px] text-center">
-          <h2 className="text-2xl font-bold text-[#1f4381] mb-6">LOGIN</h2>
+          <h2 className="text-2xl font-bold text-[#FB6F7A] mb-6">LOGIN</h2>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+            <div className="bg-[#FB6F7A]/10 border border-[#FB6F7A] text-[#3F3E3D] px-4 py-3 rounded-lg mb-4 text-sm">
               {error}
             </div>
           )}
@@ -193,38 +198,46 @@ export default function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={loading}
-            className="text-black w-full mb-4 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#2a6435] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="text-[#3F3E3D] w-full mb-4 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FB6F7A] focus:border-transparent disabled:bg-[#F4F4EF] disabled:cursor-not-allowed"
           />
 
-          <div className="relative mb-6">
+          <div className="relative mb-4">
             <input
               type={showPassword ? "text" : "password"}
               placeholder="Enter Your Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={loading}
-              className="text-black w-full px-4 py-3 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#2a6435] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="text-[#3F3E3D] w-full px-4 py-3 pr-12 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FB6F7A] focus:border-transparent disabled:bg-[#F4F4EF] disabled:cursor-not-allowed"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
               disabled={loading}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 disabled:cursor-not-allowed"
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#FB6F7A] disabled:cursor-not-allowed"
             >
               {showPassword ? <FaEyeSlash /> : <FaEye />}
             </button>
           </div>
 
-          <div className="text-right mb-6">
+          <div className="text-right mb-5">
             <button
               onClick={openForgotModal}
-              className="text-sm text-[#2a6435] hover:text-green-950 hover:underline"
+              className="text-sm text-[#FB6F7A] hover:text-[#007AA6] hover:underline"
             >
               Forgot the password?
             </button>
           </div>
 
-          <div className="flex items-center my-6">
+          <button
+            onClick={handleEmailLogin}
+            disabled={loading || !email || !password}
+            className="w-full bg-[#Fb6f7a] text-[#f4f4ef] py-3 rounded-full hover:bg-[#21c36e] transition-colors font-medium disabled:bg-gray-300 disabled:text-black disabled:cursor-not-allowed shadow-lg hover:shadow-xl mb-4"
+          >
+            {loading ? "Processing..." : "Login"}
+          </button>
+
+          <div className="flex items-center my-4">
             <div className="flex-grow border-t border-gray-300"></div>
             <span className="mx-3 text-gray-500 text-sm">Or</span>
             <div className="flex-grow border-t border-gray-300"></div>
@@ -233,25 +246,17 @@ export default function LoginPage() {
           <button
             onClick={handleGoogleLogin}
             disabled={loading}
-            className="text-black w-full flex items-center justify-center gap-3 bg-gray-50 border border-gray-300 rounded-full py-3 mb-4 hover:bg-gray-100 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+            className="text-[#3F3E3D] w-full flex items-center justify-center gap-3 bg-[#F4F4EF] border border-gray-300 rounded-full py-3 mb-4 hover:bg-gray-100 transition-colors disabled:bg-[#F4F4EF] disabled:cursor-not-allowed"
           >
-            <FaGoogle className="text-red-500" />
+            <FaGoogle className="text-[#F47A49]" />
             <span>{loading ? "Processing..." : "Sign in with Google"}</span>
           </button>
 
-          <button
-            onClick={handleEmailLogin}
-            disabled={loading || !email || !password}
-            className="w-full bg-[#2a6435] text-white py-3 rounded-full hover:bg-green-950 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
-          >
-            {loading ? "Processing..." : "Login"}
-          </button>
-
-          <p className="mt-6 text-sm text-gray-600">
+          <p className="mt-4 text-sm text-[#3F3E3D]">
             Don&apos;t have account?{" "}
             <button
               onClick={() => router.push("./sign-up")}
-              className="text-[#2a6435] hover:text-green-950 hover:underline font-medium"
+              className="text-[#FB6F7A] hover:text-[#D33181] hover:underline font-medium"
             >
               Sign-Up
             </button>
@@ -265,24 +270,24 @@ export default function LoginPage() {
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-[400px] text-center relative">
             <button
               onClick={closeForgotModal}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              className="absolute top-4 right-4 text-gray-400 hover:text-[#FB6F7A] transition-colors"
             >
               <FaTimes size={20} />
             </button>
 
-            <h3 className="text-2xl font-bold text-gray-800 mb-2">Reset Password</h3>
-            <p className="text-gray-600 text-sm mb-6">
+            <h3 className="text-2xl font-bold text-[#FB6F7A] mb-2">Reset Password</h3>
+            <p className="text-[#3F3E3D] text-sm mb-6">
               Enter your email address and we&apos;ll send you a link to reset your password.
             </p>
 
             {resetError && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
+              <div className="bg-[#FB6F7A]/10 border border-[#FB6F7A] text-[#3F3E3D] px-4 py-3 rounded-lg mb-4 text-sm">
                 {resetError}
               </div>
             )}
 
             {resetMessage && (
-              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-4 text-sm">
+              <div className="bg-[#21C36E]/10 border border-[#21C36E] text-[#3F3E3D] px-4 py-3 rounded-lg mb-4 text-sm">
                 {resetMessage}
               </div>
             )}
@@ -293,21 +298,21 @@ export default function LoginPage() {
               value={resetEmail}
               onChange={(e) => setResetEmail(e.target.value)}
               disabled={resetLoading}
-              className="text-black w-full mb-6 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#15b392] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="text-[#3F3E3D] w-full mb-6 px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-[#FB6F7A] focus:border-transparent disabled:bg-[#F4F4EF] disabled:cursor-not-allowed"
             />
 
             <div className="flex gap-3">
               <button
                 onClick={closeForgotModal}
                 disabled={resetLoading}
-                className="flex-1 bg-gray-200 text-gray-800 py-3 rounded-full hover:bg-gray-300 transition-colors font-medium disabled:cursor-not-allowed"
+                className="flex-1 bg-[#F4F4EF] text-[#3F3E3D] py-3 rounded-full hover:bg-gray-200 transition-colors font-medium disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
               <button
                 onClick={handleForgotPassword}
                 disabled={resetLoading || !resetEmail}
-                className="flex-1 bg-[#2a6435] text-white py-3 rounded-full hover:bg-green-950 transition-colors font-medium disabled:bg-gray-400 disabled:cursor-not-allowed"
+                className="flex-1 bg-[#FB6F7A] text-white py-3 rounded-full hover:bg-[#D33181] transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg hover:shadow-xl"
               >
                 {resetLoading ? "Sending..." : "Send Reset Link"}
               </button>

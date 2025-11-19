@@ -2,6 +2,7 @@
 "use client";
 
 import { Filter, Search } from "lucide-react";
+import { useMemo, useCallback } from "react";
 
 interface BookingFiltersProps {
   selectedSport: string;
@@ -16,42 +17,50 @@ export default function BookingFilters({
   onSportChange,
   onSearchChange,
 }: BookingFiltersProps) {
-  // ✅ Updated: Complete event types list
-  const eventTypes = [
-    { id: "all", label: "All Events", color: "gray" },
-    { id: "tennis", label: "Tennis", color: "blue" },
-    { id: "padel", label: "Padel", color: "green" },
-    { id: "badminton", label: "Badminton", color: "orange" },
-    { id: "coffee_chat", label: "Coffee Chat", color: "amber" },
-    { id: "workshop", label: "Workshop", color: "yellow" },
-    { id: "meetup", label: "Meetup", color: "pink" },
-    { id: "social", label: "Social", color: "indigo" },
-    { id: "other", label: "Other", color: "slate" },
-  ];
+  const eventTypes = useMemo(
+    () => [
+      { id: "all", label: "All Events", color: "gray" },
+      { id: "tennis", label: "Tennis", color: "blue" },
+      { id: "padel", label: "Padel", color: "green" },
+      { id: "badminton", label: "Badminton", color: "orange" },
+      { id: "coffee_chat", label: "Coffee Chat", color: "amber" },
+      { id: "workshop", label: "Workshop", color: "yellow" },
+      { id: "meetup", label: "Meetup", color: "pink" },
+      { id: "social", label: "Social", color: "indigo" },
+      { id: "other", label: "Other", color: "slate" },
+    ],
+    []
+  );
 
-  // ✅ Dark mode color mapping helper
-  const getColorClasses = (eventTypeId: string, isSelected: boolean) => {
+  const getColorClasses = useCallback((eventTypeId: string, isSelected: boolean) => {
     if (!isSelected) {
-      return "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600";
+      return "bg-[#F4F4EF] dark:bg-[#3d4459] text-[#3F3E3D] dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-[#4a5166]";
     }
 
     const colorMap: Record<string, string> = {
-      all: "bg-gray-800 dark:bg-gray-600 text-white shadow-md",
-      tennis: "bg-blue-500 dark:bg-blue-600 text-white shadow-md",
-      padel: "bg-green-500 dark:bg-green-600 text-white shadow-md",
-      badminton: "bg-orange-500 dark:bg-orange-600 text-white shadow-md",
-      coffee_chat: "bg-amber-600 dark:bg-amber-700 text-white shadow-md",
-      workshop: "bg-yellow-500 dark:bg-yellow-600 text-white shadow-md",
-      meetup: "bg-pink-500 dark:bg-pink-600 text-white shadow-md",
-      social: "bg-indigo-500 dark:bg-indigo-600 text-white shadow-md",
-      other: "bg-slate-500 dark:bg-slate-600 text-white shadow-md",
+      all: "bg-[#3F3E3D] dark:bg-[#4a5166] text-white shadow-lg",
+      tennis: "bg-[#007AA6] text-white shadow-lg",
+      padel: "bg-[#21C36E] text-white shadow-lg",
+      badminton: "bg-[#F47A49] text-white shadow-lg",
+      coffee_chat: "bg-[#F0C946] text-[#3F3E3D] shadow-lg",
+      workshop: "bg-[#FB6F7A] text-white shadow-lg",
+      meetup: "bg-[#D33181] text-white shadow-lg",
+      social: "bg-[#007AA6] text-white shadow-lg",
+      other: "bg-gray-500 text-white shadow-lg",
     };
 
     return colorMap[eventTypeId] || colorMap.all;
-  };
+  }, []);
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onSearchChange(e.target.value);
+    },
+    [onSearchChange]
+  );
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-4">
+    <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-lg border border-gray-200 dark:border-[#3d4459] p-4">
       {/* Search Bar */}
       <div className="relative mb-4">
         <Search
@@ -62,8 +71,8 @@ export default function BookingFilters({
           type="text"
           placeholder="Search events, venues, or locations..."
           value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent transition-all"
+          onChange={handleSearchChange}
+          className="w-full pl-10 pr-4 py-3 border border-gray-300 dark:border-[#3d4459] rounded-lg bg-white dark:bg-[#242837] text-[#3F3E3D] dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-[#FB6F7A] focus:border-transparent transition-all"
         />
       </div>
 
@@ -77,11 +86,10 @@ export default function BookingFilters({
               onClick={() => onSportChange(eventType.id)}
               className={`
                 px-4 py-2 rounded-lg font-medium text-sm whitespace-nowrap transition-all
-                flex items-center gap-2
                 ${getColorClasses(eventType.id, selectedSport === eventType.id)}
               `}
             >
-              <span>{eventType.label}</span>
+              {eventType.label}
             </button>
           ))}
         </div>

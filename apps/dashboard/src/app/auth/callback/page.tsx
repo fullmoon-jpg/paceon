@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@paceon/lib/supabase';
+import Image from 'next/image';
 
 interface ProfileData {
     id: string;
@@ -91,21 +92,62 @@ export default function CallbackPage() {
     }, [router, searchParams]);
 
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="flex items-center justify-center min-h-screen bg-[#F4F4EF] dark:bg-[#3F3E3D]">
             <div className="text-center">
                 {error ? (
-                    <div className="bg-red-50 border border-red-200 text-red-700 px-6 py-4 rounded-lg">
+                    <div className="bg-[#FB6F7A]/10 border border-[#FB6F7A] text-[#3F3E3D] dark:text-white px-6 py-4 rounded-lg max-w-md">
                         <p className="font-semibold">Authentication Failed</p>
                         <p className="text-sm mt-2">{error}</p>
                         <p className="text-sm mt-2">Redirecting...</p>
                     </div>
                 ) : (
-                    <div>
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#2a6435] mx-auto"></div>
-                        <p className="mt-4 text-gray-600">Processing authentication...</p>
+                    <div className="relative">
+                        {/* Spinning Border */}
+                        <div className="relative inline-block">
+                            <div className="absolute inset-0 rounded-full">
+                                <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
+                            </div>
+                            
+                            {/* Logo Container */}
+                            <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center bg-transparent rounded-full p-4">
+                                {/* Light mode logo (dark logo) */}
+                                <Image
+                                    src="/images/dark-logo.png"
+                                    alt="PACE ON"
+                                    width={120}
+                                    height={120}
+                                    className="object-contain dark:hidden"
+                                    priority
+                                />
+                                {/* Dark mode logo (light logo) */}
+                                <Image
+                                    src="/images/light-logo.png"
+                                    alt="PACE ON"
+                                    width={120}
+                                    height={120}
+                                    className="object-contain hidden dark:block"
+                                    priority
+                                />
+                            </div>
+                        </div>
+                        
+                        <p className="mt-6 text-[#3F3E3D] dark:text-white font-medium">
+                            Processing authentication...
+                        </p>
                     </div>
                 )}
             </div>
+
+            <style jsx>{`
+                @keyframes spin {
+                    from {
+                        transform: rotate(0deg);
+                    }
+                    to {
+                        transform: rotate(360deg);
+                    }
+                }
+            `}</style>
         </div>
     );
 }

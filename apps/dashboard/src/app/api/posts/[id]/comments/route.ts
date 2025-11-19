@@ -61,10 +61,15 @@ export async function GET(
       data: commentsWithUsers,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('GET /api/posts/[id]/comments error:', error);
+    
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Internal server error';
+    
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }
@@ -154,10 +159,15 @@ export async function POST(
       data: commentWithUser,
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('POST /api/posts/[id]/comments error:', error);
+    
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Internal server error';
+    
     return NextResponse.json(
-      { success: false, error: error.message || 'Internal server error' },
+      { success: false, error: errorMessage },
       { status: 500 }
     );
   }

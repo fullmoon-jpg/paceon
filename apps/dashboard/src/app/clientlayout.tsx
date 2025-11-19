@@ -16,8 +16,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
     '/auth/login',
     '/auth/sign-up',
     '/auth/verify-email',
-    '/auth/reset-password',
+    '/auth/resetpassword',
     '/auth/callback',
+    '/auth/success',
   ];
 
   // ✅ Check if current path should hide navbar
@@ -31,9 +32,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <ToastProvider>
             {shouldShowNavbar ? (
               // ✅ Layout WITH Navbar (Dashboard pages)
-              <div className="flex min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+              <div className="flex min-h-screen bg-[#f4f4ef] dark:bg-[#1a1d29] transition-colors duration-200">
                 <ResponsiveNavbar />
-                <main className="flex-1 md:ml-20 transition-all duration-300 bg-gray-50 dark:bg-gray-900 pt-14 pb-20 md:pt-0 md:pb-0">
+                <main className="flex-1 md:ml-20 transition-all duration-300 bg-white dark:bg-[#242837] pt-14 pb-20 md:pt-0 md:pb-0">
                   <div className="max-w-7xl mx-auto">
                     {children}
                   </div>
@@ -41,7 +42,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
               </div>
             ) : (
               // ✅ Layout WITHOUT Navbar (Auth pages)
-              <main className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-200">
+              <main className="min-h-screen bg-white dark:bg-[#242837] transition-colors duration-200">
                 {children}
               </main>
             )}

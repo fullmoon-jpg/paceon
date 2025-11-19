@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useEffect, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
@@ -14,35 +15,25 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/contexts/AuthContext";
 import { useNotifications } from "@/hooks/useRealtimeNotifications";
+import Image from "next/image";
 
 const ResponsiveNavbar: React.FC = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { user, profile, loading: authLoading, signOut } = useAuth();
+  const { user, session, profile, loading: authLoading, signOut } = useAuth();
   const { unreadCount, isConnected } = useNotifications(user?.id || null);
 
   const [isExpanded, setIsExpanded] = React.useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
 
   useEffect(() => {
-    if ("Notification" in window && Notification.permission === "default") {
+    if (typeof window !== 'undefined' && "Notification" in window && Notification.permission === "default") {
       Notification.requestPermission().catch(console.error);
     }
   }, []);
-
-  useEffect(() => {
-    if (!authLoading) return;
-
-    const timeout = setTimeout(() => {
-      console.error('Auth loading timeout - redirecting to login');
-      router.push('/auth/login');
-    }, 30000);
-
-    return () => clearTimeout(timeout);
-  }, [authLoading, router]);
 
   const handleLogout = useCallback(async () => {
     try {
@@ -82,19 +73,41 @@ const ResponsiveNavbar: React.FC = () => {
 
   const handleMouseEnter = useCallback(() => setIsExpanded(true), []);
   const handleMouseLeave = useCallback(() => setIsExpanded(false), []);
+  const closeMobileMenu = useCallback(() => setIsMobileMenuOpen(false), []);
 
   if (authLoading) {
     return (
       <>
         {/* Desktop Loading */}
-        <div className="hidden md:flex fixed left-0 top-0 h-screen w-20 bg-gradient-to-b from-[#15b392] via-[#2a6435] to-[#15b392] dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 shadow-2xl flex-col items-center justify-center z-50">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mb-2"></div>
-          <p className="text-white text-xs">Loading</p>
+        <div className="hidden md:flex fixed left-0 top-0 h-screen w-20 bg-white dark:bg-[#242837] shadow-2xl flex-col items-center justify-center z-50">
+          <div className="relative inline-block">
+            <div className="absolute inset-0 rounded-full">
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
+            </div>
+            <div className="relative w-16 h-16 flex items-center justify-center rounded-full p-2">
+              <Image
+                src="/images/dark-logo.png"
+                alt="Loading"
+                width={48}
+                height={48}
+                className="object-contain dark:hidden"
+                priority
+              />
+              <Image
+                src="/images/light-logo.png"
+                alt="Loading"
+                width={48}
+                height={48}
+                className="object-contain hidden dark:block"
+                priority
+              />
+            </div>
+          </div>
         </div>
         {/* Mobile Loading */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-4 py-2 z-50">
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#242837] border-t border-gray-200 dark:border-[#3d4459] px-4 py-3 z-50">
           <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-[#15b392]"></div>
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#FB6F7A] border-t-transparent"></div>
           </div>
         </div>
       </>
@@ -105,49 +118,52 @@ const ResponsiveNavbar: React.FC = () => {
     <>
       {/* ===== DESKTOP SIDE NAVBAR ===== */}
       <div
-        className={`hidden md:flex fixed left-0 top-0 h-screen bg-[#7ba9ff] dark:from-gray-800 dark:via-gray-900 dark:to-gray-800 shadow-2xl flex-col z-50 transition-all duration-300 ${
+        className={`hidden md:flex fixed left-0 top-0 h-screen bg-white dark:bg-[#242837] shadow-2xl flex-col z-50 transition-all duration-300 border-r border-gray-200 dark:border-[#3d4459] ${
           isExpanded ? "w-72" : "w-20"
         }`}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
         {/* Logo Section */}
-        <div className="px-6 py-8 border-b border-white/20 dark:border-white/10 flex items-center justify-center">
+        <div className="px-6 py-8 border-b border-gray-200 dark:border-[#3d4459] flex items-center justify-center">
           {isExpanded ? (
             <div
-              className="text-3xl font-brand tracking-tight text-[#f4f4ef] cursor-pointer"
+              className="text-3xl font-brand tracking-tight text-[#FB6F7A] cursor-pointer select-none"
+              style={{ transform: 'rotate(-3deg)' }}
               onClick={() => router.push("/")}
             >
               PACE ON
             </div>
           ) : (
-            <>
-              <img
+            <div className="relative w-10 h-10 cursor-pointer" onClick={() => router.push("/")}>
+              <Image
                 src="/images/dark-logo.png"
                 alt="PACE.ON Logo"
-                className="w-10 h-10 object-contain cursor-pointer dark:hidden"
-                onClick={() => router.push("/")}
-                loading="eager"
+                width={40}
+                height={40}
+                className="object-contain dark:hidden"
+                priority
               />
-              <img
+              <Image
                 src="/images/light-logo.png"
                 alt="PACE.ON Logo"
-                className="w-10 h-10 object-contain cursor-pointer hidden dark:block"
-                onClick={() => router.push("/")}
-                loading="eager"
+                width={40}
+                height={40}
+                className="object-contain hidden dark:block"
+                priority
               />
-            </>
+            </div>
           )}
         </div>
 
         {/* Profile Section */}
         <div
-          className={`px-6 py-6 border-b border-white/20 dark:border-white/10 ${
+          className={`px-6 py-6 border-b border-gray-200 dark:border-[#3d4459] ${
             isExpanded ? "" : "flex justify-center"
           }`}
         >
           <div className={`flex items-center ${isExpanded ? "space-x-4" : ""}`}>
-            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/30 dark:border-white/20 flex-shrink-0 relative">
+            <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#FB6F7A]/30 flex-shrink-0 relative">
               {profile?.avatar_url ? (
                 <img
                   src={profile.avatar_url}
@@ -159,7 +175,7 @@ const ResponsiveNavbar: React.FC = () => {
                   }}
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-400 to-green-400 flex items-center justify-center text-white font-semibold text-lg">
+                <div className="w-full h-full bg-[#FB6F7A] flex items-center justify-center text-white font-semibold text-lg">
                   {profile?.full_name
                     ? getInitials(profile.full_name)
                     : profile?.email?.charAt(0).toUpperCase() || "?"}
@@ -168,17 +184,17 @@ const ResponsiveNavbar: React.FC = () => {
 
               {isConnected && (
                 <div
-                  className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 border-2 border-[#f4f4ef] rounded-full"
+                  className="absolute bottom-0 right-0 w-3 h-3 bg-[#21C36E] border-2 border-white dark:border-[#242837] rounded-full"
                   title="Connected to real-time notifications"
                 />
               )}
             </div>
             {isExpanded && (
               <div className="flex-1 min-w-0">
-                <p className="text-[#f4f4ef] font-brand text-sm truncate">
+                <p className="text-[#3F3E3D] dark:text-white font-semibold text-sm truncate">
                   {profile?.full_name || "Loading..."}
                 </p>
-                <p className="text-[#f4f4ef] text-xs truncate">
+                <p className="text-gray-500 dark:text-gray-400 text-xs truncate">
                   {profile?.email || ""}
                 </p>
               </div>
@@ -187,7 +203,7 @@ const ResponsiveNavbar: React.FC = () => {
         </div>
 
         {/* Menu Items */}
-        <nav className="flex-1 px-4 py-6 overflow-y-auto">
+        <nav className="flex-1 px-4 py-6 overflow-y-auto scrollbar-hide">
           <ul className="space-y-2">
             {menuItems.map((item) => {
               const isActive = pathname === item.path;
@@ -199,8 +215,8 @@ const ResponsiveNavbar: React.FC = () => {
                     prefetch={true}
                     className={`flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200 ${
                       isActive
-                        ? "bg-[#f4f4ef] dark:bg-gray-700 text-[#21c36e] dark:text-green-400 shadow-lg"
-                        : "text-[#f4f4ef] hover:bg-white/10 dark:hover:bg-white/5"
+                        ? "bg-[#FB6F7A] text-white shadow-lg"
+                        : "text-[#3F3E3D] dark:text-white hover:bg-[#F4F4EF] dark:hover:bg-[#2d3548]"
                     } ${isExpanded ? "" : "justify-center"}`}
                   >
                     <div className="relative">
@@ -208,7 +224,7 @@ const ResponsiveNavbar: React.FC = () => {
                       {!isExpanded &&
                         item.badge !== undefined &&
                         item.badge > 0 && (
-                          <span className="absolute -top-1 -right-1 bg-red-500 text-[#f4f4ef] text-xs w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
+                          <span className="absolute -top-1 -right-1 bg-[#FB6F7A] text-white text-xs w-4 h-4 flex items-center justify-center rounded-full animate-pulse">
                             {item.badge > 9 ? "9+" : item.badge}
                           </span>
                         )}
@@ -217,7 +233,7 @@ const ResponsiveNavbar: React.FC = () => {
                       <>
                         <span className="font-medium ml-3">{item.label}</span>
                         {item.badge !== undefined && item.badge > 0 && (
-                          <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full animate-pulse">
+                          <span className="ml-auto bg-[#FB6F7A] text-white text-xs px-2 py-1 rounded-full animate-pulse">
                             {item.badge > 99 ? "99+" : item.badge}
                           </span>
                         )}
@@ -234,8 +250,8 @@ const ResponsiveNavbar: React.FC = () => {
                 prefetch={true}
                 className={`flex items-center w-full px-4 py-3 rounded-xl transition-all duration-200 ${
                   pathname === "/settings"
-                    ? "bg-white dark:bg-gray-700 text-[#15b392] dark:text-green-400 shadow-lg"
-                    : "text-white hover:bg-white/10 dark:hover:bg-white/5"
+                    ? "bg-[#FB6F7A] text-white shadow-lg"
+                    : "text-[#3F3E3D] dark:text-white hover:bg-[#F4F4EF] dark:hover:bg-[#2d3548]"
                 } ${isExpanded ? "" : "justify-center"}`}
               >
                 <Settings className="w-5 h-5" />
@@ -244,9 +260,10 @@ const ResponsiveNavbar: React.FC = () => {
             </li>
           </ul>
         </nav>
-                {/* Affirmation Cube */}
+
+        {/* Affirmation Cube */}
         <div
-          className={`px-4 py-4 border-t border-white/20 dark:border-white/10 ${
+          className={`px-4 py-4 border-t border-gray-200 dark:border-[#3d4459] ${
             isExpanded ? "px-6" : "flex justify-center"
           }`}
         >
@@ -254,7 +271,7 @@ const ResponsiveNavbar: React.FC = () => {
             href="/affirmation-cube"
             aria-label="Affirmation Cube"
             prefetch={false}
-            className={`flex items-center justify-center bg-gradient-to-r from-[#f47149] to-[#d33181] rounded-xl text-white font-medium hover:shadow-lg transition-all duration-200 hover:scale-105 ${
+            className={`flex items-center justify-center bg-[#F0C946] rounded-xl text-[#3F3E3D] font-medium hover:shadow-lg transition-all duration-200 hover:scale-105 ${
               isExpanded ? "w-full px-4 py-3" : "w-12 h-12"
             }`}
           >
@@ -265,14 +282,14 @@ const ResponsiveNavbar: React.FC = () => {
 
         {/* Logout */}
         <div
-          className={`px-4 py-4 border-t border-white/20 dark:border-white/10 ${
+          className={`px-4 py-4 border-t border-gray-200 dark:border-[#3d4459] ${
             isExpanded ? "px-6" : "flex justify-center"
           }`}
         >
           <button
             onClick={handleLogout}
             aria-label="Logout"
-            className={`flex items-center justify-center bg-[#d33181]/50 dark:bg-red-500/30 rounded-xl text-white font-medium hover:bg-red-500/30 dark:hover:bg-red-500/40 transition-all duration-200 ${
+            className={`flex items-center justify-center bg-[#FB6F7A]/20 dark:bg-[#FB6F7A]/30 rounded-xl text-[#FB6F7A] dark:text-white font-medium hover:bg-[#FB6F7A]/30 dark:hover:bg-[#FB6F7A]/40 transition-all duration-200 ${
               isExpanded ? "w-full px-4 py-3" : "w-12 h-12"
             }`}
           >
@@ -283,19 +300,33 @@ const ResponsiveNavbar: React.FC = () => {
       </div>
 
       {/* ===== MOBILE TOP BAR ===== */}
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-gradient-to-r from-[#15b392] to-[#2a6435] dark:from-gray-800 dark:to-gray-900 text-white z-50 shadow-lg">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#242837] text-[#3F3E3D] dark:text-white z-50 shadow-lg border-b border-gray-200 dark:border-[#3d4459]">
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
-            <img
-              src="/images/logo-paceon.png"
-              alt="PACE.ON"
-              className="w-8 h-8 object-contain"
-            />
-            <span className="font-bold text-lg">PACE.ON</span>
+            <div className="relative w-8 h-8">
+              <Image
+                src="/images/dark-logo.png"
+                alt="PACE.ON"
+                width={32}
+                height={32}
+                className="object-contain dark:hidden"
+                priority
+              />
+              <Image
+                src="/images/light-logo.png"
+                alt="PACE.ON"
+                width={32}
+                height={32}
+                className="object-contain hidden dark:block"
+                priority
+              />
+            </div>
+            <span className="font-brand text-lg text-[#FB6F7A]">PACE ON</span>
           </div>
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 hover:bg-white/10 dark:hover:bg-white/5 rounded-lg transition-colors"
+            className="p-2 hover:bg-[#F4F4EF] dark:hover:bg-[#2d3548] rounded-lg transition-colors"
+            aria-label="Toggle menu"
           >
             {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
@@ -304,15 +335,15 @@ const ResponsiveNavbar: React.FC = () => {
 
       {/* ===== MOBILE MENU OVERLAY ===== */}
       {isMobileMenuOpen && (
-        <div className="md:hidden fixed inset-0 bg-black/60 z-40" onClick={() => setIsMobileMenuOpen(false)}>
+        <div className="md:hidden fixed inset-0 bg-black/60 z-40" onClick={closeMobileMenu}>
           <div 
-            className="fixed top-[56px] right-0 w-64 h-[calc(100vh-56px)] bg-white dark:bg-gray-800 shadow-2xl overflow-y-auto"
+            className="fixed top-[57px] right-0 w-64 h-[calc(100vh-57px)] bg-white dark:bg-[#242837] shadow-2xl overflow-y-auto scrollbar-hide"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Profile Section */}
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-[#15b392] to-[#2a6435] dark:from-gray-700 dark:to-gray-800">
+            <div className="p-4 border-b border-gray-200 dark:border-[#3d4459] bg-[#F4F4EF] dark:bg-[#2d3548]">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white dark:border-white/30">
+                <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-[#FB6F7A]">
                   {profile?.avatar_url ? (
                     <img
                       src={profile.avatar_url}
@@ -320,7 +351,7 @@ const ResponsiveNavbar: React.FC = () => {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-blue-400 to-green-400 flex items-center justify-center text-white font-semibold">
+                    <div className="w-full h-full bg-[#FB6F7A] flex items-center justify-center text-white font-semibold">
                       {profile?.full_name
                         ? getInitials(profile.full_name)
                         : profile?.email?.charAt(0).toUpperCase() || "?"}
@@ -328,10 +359,10 @@ const ResponsiveNavbar: React.FC = () => {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-white font-semibold text-sm truncate">
+                  <p className="text-[#3F3E3D] dark:text-white font-semibold text-sm truncate">
                     {profile?.full_name || "Loading..."}
                   </p>
-                  <p className="text-white/80 text-xs truncate">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs truncate">
                     {profile?.email || ""}
                   </p>
                 </div>
@@ -344,18 +375,18 @@ const ResponsiveNavbar: React.FC = () => {
                 <li>
                   <Link
                     href="/settings"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg text-[#3F3E3D] dark:text-white hover:bg-[#F4F4EF] dark:hover:bg-[#2d3548] transition-colors"
                   >
-                    <Settings className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                    <span className="font-medium text-gray-800 dark:text-gray-200">Settings</span>
+                    <Settings className="w-5 h-5" />
+                    <span className="font-medium">Settings</span>
                   </Link>
                 </li>
                 <li>
                   <Link
                     href="/affirmation-cube"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 px-4 py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg transition-all"
+                    onClick={closeMobileMenu}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg bg-[#F0C946] text-[#3F3E3D] hover:shadow-lg transition-all"
                   >
                     <Box className="w-5 h-5" />
                     <span className="font-medium">Affirmation Cube</span>
@@ -364,10 +395,10 @@ const ResponsiveNavbar: React.FC = () => {
                 <li>
                   <button
                     onClick={() => {
-                      setIsMobileMenuOpen(false);
+                      closeMobileMenu();
                       handleLogout();
                     }}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                    className="w-full flex items-center gap-3 px-4 py-3 rounded-lg bg-[#FB6F7A]/10 text-[#FB6F7A] hover:bg-[#FB6F7A]/20 transition-colors"
                   >
                     <LogOut className="w-5 h-5" />
                     <span className="font-medium">Logout</span>
@@ -380,7 +411,7 @@ const ResponsiveNavbar: React.FC = () => {
       )}
 
       {/* ===== MOBILE BOTTOM NAVIGATION ===== */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 px-2 py-2 z-50 safe-area-bottom">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#242837] border-t border-gray-200 dark:border-[#3d4459] px-2 py-2 z-50 safe-area-bottom">
         <div className="flex items-center justify-around">
           {menuItems.map((item) => {
             const isActive = pathname === item.path;
@@ -389,21 +420,22 @@ const ResponsiveNavbar: React.FC = () => {
                 key={item.id}
                 href={item.path}
                 aria-label={item.label}
+                prefetch={true}
                 className={`flex flex-col items-center justify-center px-3 py-2 rounded-lg transition-all duration-200 ${
                   isActive
-                    ? "text-[#15b392] dark:text-green-400"
-                    : "text-gray-600 dark:text-gray-400"
+                    ? "text-[#FB6F7A]"
+                    : "text-gray-500 dark:text-gray-400"
                 }`}
               >
                 <div className="relative">
                   <item.icon className={`w-6 h-6 ${isActive ? 'scale-110' : ''} transition-transform`} />
                   {item.badge !== undefined && item.badge > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                    <span className="absolute -top-1 -right-1 bg-[#FB6F7A] text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
                       {item.badge > 9 ? "9+" : item.badge}
                     </span>
                   )}
                 </div>
-                <span className={`text-xs mt-1 font-medium ${isActive ? 'text-[#15b392] dark:text-green-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                <span className={`text-xs mt-1 font-medium ${isActive ? 'text-[#FB6F7A]' : ''}`}>
                   {item.label}
                 </span>
               </Link>
@@ -413,8 +445,18 @@ const ResponsiveNavbar: React.FC = () => {
       </div>
 
       {/* ===== SPACER FOR MOBILE ===== */}
-      <div className="md:hidden h-[56px]" />
+      <div className="md:hidden h-[57px]" />
       <div className="md:hidden h-[72px]" />
+
+      <style jsx global>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </>
   );
 };

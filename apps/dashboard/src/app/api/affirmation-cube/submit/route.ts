@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@paceon/lib/supabase';
 import { createClient } from '@supabase/supabase-js';
 
+interface Review {
+  reviewee_id: string;
+  rating: number;
+  feedback?: string;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    console.log('📤 API: Submit reviews');
-
     const { eventId, reviews } = await request.json();
 
     // Get auth token
@@ -27,14 +31,11 @@ export async function POST(request: NextRequest) {
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
-      console.error('Auth error:', userError);
       return NextResponse.json({ error: 'Auth failed' }, { status: 401 });
     }
 
-    console.log('✅ User verified:', user.id);
-
     // Use ADMIN client untuk bypass RLS
-    const reviewsToInsert = reviews.map((review: any) => ({
+    const reviewsToInsert = reviews.map((review: Review) => ({
       event_id: eventId,
       reviewer_id: user.id,
       reviewee_id: review.reviewee_id,
@@ -43,8 +44,6 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString(),
     }));
 
-    console.log('📋 Inserting reviews:', reviewsToInsert);
-
     // Insert dengan admin
     const { data: insertData, error: insertError } = await supabaseAdmin
       .from('affirmation_cube')
@@ -52,11 +51,8 @@ export async function POST(request: NextRequest) {
       .select();
 
     if (insertError) {
-      console.error('❌ Insert error:', insertError);
       throw new Error(`Insert failed: ${insertError.message}`);
     }
-
-    console.log('✅ Reviews inserted:', insertData);
 
     // Update booking dengan admin
     const { error: updateError } = await supabaseAdmin
@@ -66,17 +62,17 @@ export async function POST(request: NextRequest) {
       .eq('user_id', user.id);
 
     if (updateError) {
-      console.error('❌ Update error:', updateError);
       throw new Error(`Update failed: ${updateError.message}`);
     }
 
-    console.log('✅ Booking updated');
-
     return NextResponse.json({ success: true });
-  } catch (error: any) {
-    console.error('❌ API error:', error);
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error 
+      ? error.message 
+      : 'Server error';
+    
     return NextResponse.json(
-      { error: error.message || 'Server error' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

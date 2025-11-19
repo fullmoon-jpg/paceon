@@ -19,8 +19,8 @@ const outfit = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "PACE.ON",
-  description: "Easy Ways To Booking",
+  title: "PACE ON Community Platform",
+  description: "One space to connect, collaborate, and keep up with what's happening in the community. See events, feed, and give feedback, all in one dashboard built for Gen Z founders and decision makers.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { X, Edit2, Calendar, Users, TrendingUp, Loader2, Star } from 'lucide-react';
 import { format } from 'date-fns';
 import { supabase } from '@paceon/lib/supabase';
+import Image from 'next/image';
 
 interface Post {
   _id: string;
@@ -69,7 +70,7 @@ export function clearAllProfileCache() {
 }
 
 const PostCard = ({ post }: { post: Post }) => (
-  <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer">
+  <div className="bg-white dark:bg-[#2d3548] border border-gray-200 dark:border-[#3d4459] rounded-lg overflow-hidden hover:shadow-lg transition-all cursor-pointer hover:scale-[1.02]">
     {post.mediaUrls && post.mediaUrls.length > 0 ? (
       <img
         src={post.mediaUrls[0]}
@@ -78,12 +79,12 @@ const PostCard = ({ post }: { post: Post }) => (
         loading="lazy"
       />
     ) : (
-      <div className="w-full h-40 bg-gray-100 dark:bg-gray-600 flex items-center justify-center">
+      <div className="w-full h-40 bg-[#F4F4EF] dark:bg-[#3d4459] flex items-center justify-center">
         <Edit2 size={32} className="text-gray-400 dark:text-gray-500" />
       </div>
     )}
     <div className="p-3">
-      <p className="text-sm text-gray-800 dark:text-gray-200 line-clamp-2 mb-2">
+      <p className="text-sm text-[#3F3E3D] dark:text-gray-200 line-clamp-2 mb-2">
         {post.content}
       </p>
       <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400">
@@ -96,7 +97,7 @@ const PostCard = ({ post }: { post: Post }) => (
 );
 
 const RatingCard = ({ rating }: { rating: Rating }) => (
-  <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow">
+  <div className="bg-white dark:bg-[#2d3548] border border-gray-200 dark:border-[#3d4459] rounded-lg p-4 hover:shadow-lg transition-all">
     <div className="flex items-start gap-3 mb-3">
       {rating.reviewer_avatar ? (
         <img
@@ -105,12 +106,12 @@ const RatingCard = ({ rating }: { rating: Rating }) => (
           className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover flex-shrink-0"
         />
       ) : (
-        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#15b392] flex items-center justify-center text-white font-bold flex-shrink-0">
+        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#21C36E] flex items-center justify-center text-white font-bold flex-shrink-0">
           {rating.reviewer_name.charAt(0).toUpperCase()}
         </div>
       )}
       <div className="flex-1 min-w-0">
-        <h4 className="font-semibold text-sm sm:text-base text-gray-800 dark:text-white truncate">
+        <h4 className="font-semibold text-sm sm:text-base text-[#3F3E3D] dark:text-white truncate">
           {rating.reviewer_name}
         </h4>
         {(rating.reviewer_position || rating.reviewer_company) && (
@@ -126,16 +127,16 @@ const RatingCard = ({ rating }: { rating: Rating }) => (
         </p>
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
-        <Star size={16} className="text-yellow-500 fill-yellow-500 sm:w-5 sm:h-5" />
-        <span className="font-bold text-base sm:text-lg text-gray-800 dark:text-white">
+        <Star size={16} className="text-[#F0C946] fill-[#F0C946] sm:w-5 sm:h-5" />
+        <span className="font-bold text-base sm:text-lg text-[#3F3E3D] dark:text-white">
           {rating.rating}
         </span>
       </div>
     </div>
 
     {rating.feedback && (
-      <div className="bg-gray-50 dark:bg-gray-600 p-3 rounded-lg">
-        <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 italic">
+      <div className="bg-[#F4F4EF] dark:bg-[#3d4459] p-3 rounded-lg">
+        <p className="text-xs sm:text-sm text-[#3F3E3D] dark:text-gray-300 italic">
           &quot;{rating.feedback}&quot;
         </p>
       </div>
@@ -151,18 +152,20 @@ const StatCard = ({
   icon: Icon, 
   value, 
   label, 
-  bgColor 
+  bgColor,
+  iconColor
 }: { 
   icon: React.ComponentType<{ size: number; className?: string }>;
   value: number | string; 
   label: string; 
   bgColor: string;
+  iconColor: string;
 }) => (
-  <div className="bg-white dark:bg-gray-700 rounded-lg p-3 sm:p-4 text-center shadow-sm">
+  <div className="bg-white dark:bg-[#2d3548] border border-gray-200 dark:border-[#3d4459] rounded-lg p-3 sm:p-4 text-center shadow-sm">
     <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bgColor} rounded-full flex items-center justify-center mx-auto mb-2`}>
-      <Icon size={20} className="sm:w-6 sm:h-6" />
+      <Icon size={20} className={`sm:w-6 sm:h-6 ${iconColor}`} />
     </div>
-    <p className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">{value}</p>
+    <p className="text-xl sm:text-2xl font-bold text-[#3F3E3D] dark:text-white">{value}</p>
     <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">{label}</p>
   </div>
 );
@@ -405,21 +408,23 @@ export default function ProfileModal({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
+  const handleClose = useCallback(() => onClose(), [onClose]);
+
   if (!isOpen) return null;
 
   return (
     <div 
       className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-2 sm:p-4"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div 
-        className="bg-white dark:bg-gray-800 rounded-xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl"
+        className="bg-white dark:bg-[#242837] rounded-xl max-w-4xl w-full max-h-[95vh] sm:max-h-[90vh] overflow-y-auto shadow-2xl scrollbar-hide"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="bg-gradient-to-r from-[#15b392] to-[#2a6435] p-4 sm:p-6 relative">
+        <div className="bg-gradient-to-r from-[#FB6F7A] to-[#F47A49] p-4 sm:p-6 relative">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="absolute top-2 right-2 sm:top-4 sm:right-4 p-2 hover:bg-white/20 rounded-full transition-colors"
             aria-label="Close modal"
           >
@@ -427,7 +432,7 @@ export default function ProfileModal({
           </button>
 
           <div className="flex items-center gap-3 sm:gap-4">
-            <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white dark:bg-gray-700 rounded-full flex items-center justify-center text-[#15b392] dark:text-green-400 font-bold text-xl sm:text-3xl overflow-hidden flex-shrink-0">
+            <div className="w-16 h-16 sm:w-24 sm:h-24 bg-white dark:bg-[#2d3548] rounded-full flex items-center justify-center text-[#FB6F7A] font-bold text-xl sm:text-3xl overflow-hidden flex-shrink-0">
               {userAvatar ? (
                 <img 
                   src={userAvatar} 
@@ -451,13 +456,13 @@ export default function ProfileModal({
               )}
               {ratings.length > 0 && (
                 <div className="flex items-center gap-1 mt-1 sm:mt-2">
-                  <Star size={14} className="text-yellow-300 fill-yellow-300 sm:w-5 sm:h-5" />
+                  <Star size={14} className="text-[#F0C946] fill-[#F0C946] sm:w-5 sm:h-5" />
                   <span className="text-sm sm:text-base font-bold">{averageRating.toFixed(1)}</span>
                   <span className="text-xs sm:text-sm text-white/80">({ratings.length} ratings)</span>
                 </div>
               )}
               {userRole === 'admin' && (
-                <span className="inline-block mt-1 sm:mt-2 px-2 sm:px-3 py-0.5 sm:py-1 bg-yellow-500 dark:bg-yellow-600 text-black dark:text-white text-xs font-bold rounded-full">
+                <span className="inline-block mt-1 sm:mt-2 px-2 sm:px-3 py-0.5 sm:py-1 bg-[#F0C946] text-[#3F3E3D] text-xs font-bold rounded-full">
                   ADMIN
                 </span>
               )}
@@ -466,42 +471,46 @@ export default function ProfileModal({
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 p-4 sm:p-6 bg-gray-50 dark:bg-gray-900">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 p-4 sm:p-6 bg-[#F4F4EF] dark:bg-[#1a1d29]">
           <StatCard
             icon={Calendar}
             value={stats.event_attended}
             label="Events Attended"
-            bgColor="bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+            bgColor="bg-[#FB6F7A]/10"
+            iconColor="text-[#FB6F7A]"
           />
           <StatCard
             icon={Users}
             value={stats.connections}
             label="Connections"
-            bgColor="bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400"
+            bgColor="bg-[#21C36E]/10"
+            iconColor="text-[#21C36E]"
           />
           <StatCard
             icon={Edit2}
             value={stats.total_posts}
             label="Total Posts"
-            bgColor="bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400"
+            bgColor="bg-[#D33181]/10"
+            iconColor="text-[#D33181]"
           />
           <StatCard
             icon={TrendingUp}
             value={stats.networking_score.toFixed(1)}
             label="Network Score"
-            bgColor="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400"
+            bgColor="bg-[#F0C946]/10"
+            iconColor="text-[#F0C946]"
           />
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6">
-          <div className="flex gap-4 sm:gap-8 overflow-x-auto">
+        <div className="border-b border-gray-200 dark:border-[#3d4459] px-4 sm:px-6">
+          <div className="flex gap-4 sm:gap-8 overflow-x-auto scrollbar-hide">
             <button 
               onClick={() => setActiveTab('posts')}
               className={`py-3 sm:py-4 border-b-2 font-semibold text-sm sm:text-base transition-colors whitespace-nowrap ${
                 activeTab === 'posts'
-                  ? 'border-[#15b392] dark:border-green-400 text-[#15b392] dark:text-green-400'
-                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  ? 'border-[#FB6F7A] text-[#FB6F7A]'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-[#3F3E3D] dark:hover:text-gray-200'
               }`}
             >
               Posts ({stats.total_posts})
@@ -510,8 +519,8 @@ export default function ProfileModal({
               onClick={() => setActiveTab('ratings')}
               className={`py-3 sm:py-4 border-b-2 font-semibold text-sm sm:text-base transition-colors whitespace-nowrap ${
                 activeTab === 'ratings'
-                  ? 'border-[#15b392] dark:border-green-400 text-[#15b392] dark:text-green-400'
-                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200'
+                  ? 'border-[#21C36E] text-[#21C36E]'
+                  : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-[#3F3E3D] dark:hover:text-gray-200'
               }`}
             >
               Ratings ({ratings.length})
@@ -523,15 +532,22 @@ export default function ProfileModal({
         <div className="p-4 sm:p-6">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Loader2 className="w-8 h-8 animate-spin text-[#15b392]" />
+              <div className="relative">
+                <div className="absolute inset-0 rounded-full">
+                  <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
+                </div>
+                <div className="relative w-16 h-16 flex items-center justify-center">
+                  <Loader2 className="w-8 h-8 text-[#FB6F7A]" />
+                </div>
+              </div>
             </div>
           ) : error ? (
             <div className="text-center py-12">
-              <p className="text-red-600 dark:text-red-400 mb-2">Error loading data</p>
+              <p className="text-[#FB6F7A] mb-2 font-semibold">Error loading data</p>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{error}</p>
               <button
                 onClick={fetchUserData}
-                className="px-4 py-2 bg-[#15b392] text-white rounded-lg hover:bg-[#2a6435] transition-colors text-sm sm:text-base"
+                className="px-4 py-2 bg-[#FB6F7A] text-white rounded-lg hover:bg-[#D33181] transition-colors text-sm sm:text-base"
               >
                 Retry
               </button>
@@ -539,7 +555,7 @@ export default function ProfileModal({
           ) : activeTab === 'posts' ? (
             posts.length === 0 ? (
               <div className="text-center py-12">
-                <Edit2 size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+                <Edit2 size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-600" />
                 <p className="text-gray-600 dark:text-gray-400">No posts yet</p>
               </div>
             ) : (
@@ -552,7 +568,7 @@ export default function ProfileModal({
           ) : (
             ratings.length === 0 ? (
               <div className="text-center py-12">
-                <Star size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
+                <Star size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-600" />
                 <p className="text-gray-600 dark:text-gray-400">No ratings yet</p>
               </div>
             ) : (
@@ -565,6 +581,16 @@ export default function ProfileModal({
           )}
         </div>
       </div>
+
+      <style jsx global>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }

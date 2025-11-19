@@ -12,6 +12,7 @@ import {
   subMonths
 } from "date-fns";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useMemo, useCallback } from "react";
 
 interface Event {
   date: string | Date;
@@ -33,42 +34,57 @@ export default function BookingCalendar({
   onMonthChange,
   onDateSelect,
 }: BookingCalendarProps) {
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const monthStart = useMemo(() => startOfMonth(currentMonth), [currentMonth]);
+  const monthEnd = useMemo(() => endOfMonth(currentMonth), [currentMonth]);
+  const daysInMonth = useMemo(
+    () => eachDayOfInterval({ start: monthStart, end: monthEnd }),
+    [monthStart, monthEnd]
+  );
 
-  const getEventsForDate = (date: Date) => {
+  const getEventsForDate = useCallback((date: Date) => {
     return events.filter((event) => 
       isSameDay(new Date(event.date), date)
     );
-  };
+  }, [events]);
+
+  const handlePrevMonth = useCallback(() => {
+    onMonthChange(subMonths(currentMonth, 1));
+  }, [currentMonth, onMonthChange]);
+
+  const handleNextMonth = useCallback(() => {
+    onMonthChange(addMonths(currentMonth, 1));
+  }, [currentMonth, onMonthChange]);
+
+  const weekDays = useMemo(() => ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], []);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-lg p-6 border border-gray-200 dark:border-[#3d4459]">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
+        <h2 className="text-2xl font-bold text-[#3F3E3D] dark:text-white">
           {format(currentMonth, "MMMM yyyy")}
         </h2>
         <div className="flex gap-2">
           <button
-            onClick={() => onMonthChange(subMonths(currentMonth, 1))}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            onClick={handlePrevMonth}
+            className="p-2 hover:bg-[#F4F4EF] dark:hover:bg-[#3d4459] rounded-lg transition-colors"
+            aria-label="Previous month"
           >
-            <ChevronLeft size={20} className="text-gray-600 dark:text-gray-300" />
+            <ChevronLeft size={20} className="text-[#3F3E3D] dark:text-gray-300" />
           </button>
           <button
-            onClick={() => onMonthChange(addMonths(currentMonth, 1))}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+            onClick={handleNextMonth}
+            className="p-2 hover:bg-[#F4F4EF] dark:hover:bg-[#3d4459] rounded-lg transition-colors"
+            aria-label="Next month"
           >
-            <ChevronRight size={20} className="text-gray-600 dark:text-gray-300" />
+            <ChevronRight size={20} className="text-[#3F3E3D] dark:text-gray-300" />
           </button>
         </div>
       </div>
 
       {/* Grid */}
       <div className="grid grid-cols-7 gap-2">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+        {weekDays.map((day) => (
           <div
             key={day}
             className="text-center text-sm font-semibold text-gray-500 dark:text-gray-400 py-2"
@@ -89,12 +105,13 @@ export default function BookingCalendar({
               className={`
                 relative p-3 rounded-lg text-center transition-all
                 ${isSelected 
-                  ? "bg-gradient-to-br from-[#15b392] to-[#2a6435] text-white shadow-md" 
+                  ? "bg-[#007aa6] text-white shadow-lg scale-105" 
                   : isCurrentDay
-                    ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-2 border-blue-200 dark:border-blue-700"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200"
+                    ? "bg-[#FB6F7A]/20 text-[#FB6F7A] font-bold border-2 border-[#FB6F7A]"
+                    : "hover:bg-[#F4F4EF] dark:hover:bg-[#3d4459] text-[#3F3E3D] dark:text-gray-200"
                 }
               `}
+              aria-label={`Select ${format(day, "MMMM d, yyyy")}`}
             >
               <div className="text-sm font-semibold">{format(day, "d")}</div>
               {dayEvents.length > 0 && (
@@ -102,8 +119,8 @@ export default function BookingCalendar({
                   {dayEvents.slice(0, 3).map((_, idx) => (
                     <div
                       key={idx}
-                      className={`w-1 h-1 rounded-full ${
-                        isSelected ? "bg-white" : "bg-[#15b392]"
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        isSelected ? "bg-white" : "bg-[#F0C946]"
                       }`}
                     />
                   ))}

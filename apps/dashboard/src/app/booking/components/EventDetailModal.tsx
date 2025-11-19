@@ -1,7 +1,7 @@
 // src/app/booking/components/EventDetailModal.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { format } from "date-fns";
 import {
   Calendar,
@@ -9,6 +9,7 @@ import {
   MapPin,
   Users,
   X,
+  Loader2,
 } from "lucide-react";
 import { supabase } from "@paceon/lib/supabase";
 import Image from "next/image";
@@ -69,65 +70,70 @@ export default function EventDetailModal({
   const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([]);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
 
-  const isFull = event ? event.currentPlayers >= event.maxPlayers : false;
-  const availableSlots = event ? event.maxPlayers - event.currentPlayers : 0;
+  const isFull = useMemo(() => 
+    event ? event.currentPlayers >= event.maxPlayers : false,
+    [event]
+  );
 
-  useEffect(() => {
+  const availableSlots = useMemo(() => 
+    event ? event.maxPlayers - event.currentPlayers : 0,
+    [event]
+  );
+
+  const getInitials = useCallback((name: string) => {
+    if (!name) return '??';
+    const names = name.trim().split(' ');
+    if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
+    return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+  }, []);
+
+  const fetchRegisteredPlayers = useCallback(async () => {
     if (!event) return;
 
-    const fetchRegisteredPlayers = async () => {
-      setLoadingPlayers(true);
-      try {
-        const { data, error } = await supabase
-          .rpc('get_event_players', { p_event_id: event.id });
+    setLoadingPlayers(true);
+    try {
+      const { data, error } = await supabase
+        .rpc('get_event_players', { p_event_id: event.id });
 
-        if (error) {
-          console.error('Error fetching players:', error);
-          setRegisteredPlayers([]);
-          setLoadingPlayers(false);
-          return;
-        }
-
-        if (!data || data.length === 0) {
-          setRegisteredPlayers([]);
-          setLoadingPlayers(false);
-          return;
-        }
-
-        const getInitials = (name: string) => {
-          if (!name) return '??';
-          const names = name.trim().split(' ');
-          if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
-          return (names[0][0] + names[names.length - 1][0]).toUpperCase();
-        };
-
-        const players: RegisteredPlayer[] = (data as PlayerRow[]).map((row) => {
-          return {
-            id: row.booking_id,
-            name: row.full_name || 'Anonymous Player',
-            avatar: getInitials(row.full_name || '??'),
-            avatarUrl: row.avatar_url || undefined,
-            position: row.user_position || 'Not specified',
-            company: row.company || 'Not specified',
-            networkingScore: row.networking_score || 0,
-            email: row.email || '',
-            joinedDate: undefined,
-          };
-        });
-
-        setRegisteredPlayers(players);
-      } catch (err) {
-        console.error('Error:', err);
+      if (error) {
+        console.error('Error fetching players:', error);
         setRegisteredPlayers([]);
-      } finally {
-        setLoadingPlayers(false);
+        return;
       }
-    };
 
-    fetchRegisteredPlayers();
-  }, [event]);
+      if (!data || data.length === 0) {
+        setRegisteredPlayers([]);
+        return;
+      }
 
-  const getServicesForEventType = (eventType: string) => {
+      const players: RegisteredPlayer[] = (data as PlayerRow[]).map((row) => ({
+        id: row.booking_id,
+        name: row.full_name || 'Anonymous Player',
+        avatar: getInitials(row.full_name || '??'),
+        avatarUrl: row.avatar_url || undefined,
+        position: row.user_position || 'Not specified',
+        company: row.company || 'Not specified',
+        networkingScore: row.networking_score || 0,
+        email: row.email || '',
+        joinedDate: undefined,
+      }));
+
+      setRegisteredPlayers(players);
+    } catch (err) {
+      console.error('Error:', err);
+      setRegisteredPlayers([]);
+    } finally {
+      setLoadingPlayers(false);
+    }
+  }, [event, getInitials]);
+
+  useEffect(() => {
+    if (event) {
+      fetchRegisteredPlayers();
+    }
+  }, [event, fetchRegisteredPlayers]);
+
+  const getServicesForEventType = useCallback((eventType: string) => {
     const sportServices = [
       "Professional Equipment Rental",
       "Locker Room & Shower Facilities",
@@ -150,9 +156,9 @@ export default function EventDetailModal({
       return networkingServices;
     }
     return sportServices;
-  };
+  }, []);
 
-  const confirmBooking = async () => {
+  const confirmBooking = useCallback(async () => {
     setIsBooking(true);
     setShowConfirmModal(false);
     
@@ -165,32 +171,34 @@ export default function EventDetailModal({
     } finally {
       setIsBooking(false);
     }
-  };
+  }, [onJoin]);
 
-  const eventTypeColors: Record<string, { badge: string }> = {
-    tennis: { badge: "bg-blue-500" },
-    padel: { badge: "bg-green-500" },
-    badminton: { badge: "bg-orange-500" },
-    coffee_chat: { badge: "bg-amber-600" },
-    workshop: { badge: "bg-yellow-500" },
-    meetup: { badge: "bg-pink-500" },
-    social: { badge: "bg-indigo-500" },
+  const eventTypeColors: Record<string, { badge: string }> = useMemo(() => ({
+    tennis: { badge: "bg-[#007AA6]" },
+    padel: { badge: "bg-[#21C36E]" },
+    badminton: { badge: "bg-[#F47A49]" },
+    coffee_chat: { badge: "bg-[#F0C946]" },
+    workshop: { badge: "bg-[#FB6F7A]" },
+    meetup: { badge: "bg-[#D33181]" },
+    social: { badge: "bg-[#007AA6]" },
     other: { badge: "bg-gray-500" },
-  };
+  }), []);
 
-  const formatEventType = (eventType: string): string => {
+  const formatEventType = useCallback((eventType: string): string => {
     return eventType
       .split('_')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(' ');
-  };
+  }, []);
+
+  const handleClose = useCallback(() => onClose(), [onClose]);
 
   if (!event) return null;
 
   const colors = eventTypeColors[event.event_type] || eventTypeColors.other;
   const ourServices = getServicesForEventType(event.event_type);
   
-  const rules = [
+  const rules = useMemo(() => [
     "Arrive 10 minutes before the scheduled start time",
     event.event_type === 'coffee_chat' || event.event_type === 'meetup' 
       ? "Business casual attire recommended" 
@@ -200,21 +208,24 @@ export default function EventDetailModal({
     "Respect other participants and maintain etiquette",
     "Follow all venue safety guidelines and staff instructions",
     "Photography policy: Ask for consent before taking photos",
-  ];
+  ], [event.event_type, event.maxPlayers]);
+
+  const totalPrice = event.price + 10000;
 
   return (
     <>
       {/* Main Modal */}
       <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 overflow-y-auto">
-        <div className="bg-white dark:bg-gray-800 rounded-xl max-w-5xl w-full my-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+        <div className="bg-white dark:bg-[#242837] rounded-xl max-w-5xl w-full my-8 shadow-2xl max-h-[90vh] overflow-y-auto scrollbar-hide">
           {/* Header */}
-          <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between z-10 rounded-t-xl">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-white">Event Details</h2>
+          <div className="sticky top-0 bg-white dark:bg-[#242837] border-b border-gray-200 dark:border-[#3d4459] p-4 flex items-center justify-between z-10 rounded-t-xl">
+            <h2 className="text-xl font-bold text-[#3F3E3D] dark:text-white">Event Details</h2>
             <button
-              onClick={onClose}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              onClick={handleClose}
+              className="p-2 hover:bg-[#F4F4EF] dark:hover:bg-[#2d3548] rounded-lg transition-colors"
+              aria-label="Close modal"
             >
-              <X size={24} className="text-gray-600 dark:text-gray-300" />
+              <X size={24} className="text-[#3F3E3D] dark:text-gray-300" />
             </button>
           </div>
 
@@ -223,72 +234,71 @@ export default function EventDetailModal({
               {/* Main Content */}
               <div className="lg:col-span-2 space-y-6">
                 {/* Event Image & Info */}
-                <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 overflow-hidden">
+                <div className="bg-white dark:bg-[#2d3548] rounded-xl border border-gray-200 dark:border-[#3d4459] overflow-hidden">
                   <div className="relative h-48">
-                    <Image
+                    {/* Using regular img to avoid Next.js Image config issues */}
+                    <img
                       src={event.image}
                       alt={event.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 66vw"
+                      className="w-full h-full object-cover"
                     />
                     <div className="absolute top-3 right-3 flex gap-2">
                       <span className={`${colors.badge} text-white px-3 py-1 rounded-full text-sm font-semibold uppercase`}>
                         {formatEventType(event.event_type)}
                       </span>
-                      <span className={`${isFull ? 'bg-red-500' : 'bg-green-500'} text-white px-3 py-1 rounded-full text-sm font-bold`}>
+                      <span className={`${isFull ? 'bg-[#FB6F7A]' : 'bg-[#21C36E]'} text-white px-3 py-1 rounded-full text-sm font-bold`}>
                         {isFull ? 'FULL' : 'AVAILABLE'}
                       </span>
                     </div>
                   </div>
 
                   <div className="p-4">
-                    <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-3">{event.title}</h3>
+                    <h3 className="text-xl font-bold text-[#3F3E3D] dark:text-white mb-3">{event.title}</h3>
 
                     <div className="grid grid-cols-2 gap-3 mb-4">
-                      <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-600 rounded-lg">
-                        <Calendar className="text-[#15b392]" size={16} />
+                      <div className="flex items-center gap-2 p-2 bg-[#F4F4EF] dark:bg-[#3d4459] rounded-lg">
+                        <Calendar className="text-[#FB6F7A]" size={16} />
                         <div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">Date</div>
-                          <div className="text-sm font-semibold text-gray-800 dark:text-white">
+                          <div className="text-sm font-semibold text-[#3F3E3D] dark:text-white">
                             {format(event.date, 'MMM dd, yyyy')}
                           </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-600 rounded-lg">
-                        <Clock className="text-[#15b392]" size={16} />
+                      <div className="flex items-center gap-2 p-2 bg-[#F4F4EF] dark:bg-[#3d4459] rounded-lg">
+                        <Clock className="text-[#FB6F7A]" size={16} />
                         <div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">Time</div>
-                          <div className="text-sm font-semibold text-gray-800 dark:text-white">{event.time}</div>
+                          <div className="text-sm font-semibold text-[#3F3E3D] dark:text-white">{event.time}</div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-600 rounded-lg">
-                        <MapPin className="text-[#15b392]" size={16} />
+                      <div className="flex items-center gap-2 p-2 bg-[#F4F4EF] dark:bg-[#3d4459] rounded-lg">
+                        <MapPin className="text-[#FB6F7A]" size={16} />
                         <div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">Venue</div>
-                          <div className="text-sm font-semibold text-gray-800 dark:text-white">{event.venueName}</div>
+                          <div className="text-sm font-semibold text-[#3F3E3D] dark:text-white">{event.venueName}</div>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-2 p-2 bg-gray-50 dark:bg-gray-600 rounded-lg">
-                        <Users className="text-[#15b392]" size={16} />
+                      <div className="flex items-center gap-2 p-2 bg-[#F4F4EF] dark:bg-[#3d4459] rounded-lg">
+                        <Users className="text-[#FB6F7A]" size={16} />
                         <div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">Participants</div>
-                          <div className="text-sm font-semibold text-gray-800 dark:text-white">
+                          <div className="text-sm font-semibold text-[#3F3E3D] dark:text-white">
                             {event.currentPlayers}/{event.maxPlayers}
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    <div className="mb-4 p-3 bg-gray-50 dark:bg-gray-600 rounded-lg">
+                    <div className="mb-4 p-3 bg-[#F4F4EF] dark:bg-[#3d4459] rounded-lg">
                       <div className="flex items-start gap-2">
-                        <MapPin className="text-[#15b392] flex-shrink-0 mt-0.5" size={16} />
+                        <MapPin className="text-[#FB6F7A] flex-shrink-0 mt-0.5" size={16} />
                         <div>
                           <div className="text-xs text-gray-500 dark:text-gray-400">Location</div>
-                          <div className="text-sm font-medium text-gray-800 dark:text-white">
+                          <div className="text-sm font-medium text-[#3F3E3D] dark:text-white">
                             {event.venueAddress}, {event.venueCity}
                           </div>
                         </div>
@@ -298,45 +308,45 @@ export default function EventDetailModal({
                     <div className="mb-4">
                       <div className="flex justify-between text-xs mb-1">
                         <span className="text-gray-600 dark:text-gray-400">Booking Status</span>
-                        <span className="font-semibold text-gray-800 dark:text-white">
+                        <span className="font-semibold text-[#3F3E3D] dark:text-white">
                           {availableSlots} {availableSlots === 1 ? 'slot' : 'slots'} remaining
                         </span>
                       </div>
-                      <div className="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                      <div className="w-full bg-gray-200 dark:bg-[#3d4459] rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-[#15b392] to-[#2a6435] h-2 rounded-full transition-all"
+                          className="bg-gradient-to-r from-[#21C36E] to-[#007AA6] h-2 rounded-full transition-all"
                           style={{ width: `${(event.currentPlayers / event.maxPlayers) * 100}%` }}
                         />
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="font-bold text-gray-800 dark:text-white text-sm mb-2">Description</h4>
+                      <h4 className="font-bold text-[#3F3E3D] dark:text-white text-sm mb-2">Description</h4>
                       <p className="text-gray-600 dark:text-gray-300 text-sm leading-relaxed">{event.description}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Services */}
-                <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-4">
-                  <h4 className="font-bold text-gray-800 dark:text-white mb-3 text-sm">Our Services</h4>
+                <div className="bg-white dark:bg-[#2d3548] rounded-xl border border-gray-200 dark:border-[#3d4459] p-4">
+                  <h4 className="font-bold text-[#3F3E3D] dark:text-white mb-3 text-sm">Our Services</h4>
                   <div className="grid grid-cols-2 gap-2">
                     {ourServices.map((service, index) => (
-                      <div key={index} className="flex items-center gap-2 p-2 bg-green-50 dark:bg-green-900/30 rounded-lg">
-                        <div className="w-2 h-2 bg-green-600 rounded-full flex-shrink-0" />
-                        <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{service}</span>
+                      <div key={index} className="flex items-center gap-2 p-2 bg-[#21C36E]/10 rounded-lg">
+                        <div className="w-2 h-2 bg-[#21C36E] rounded-full flex-shrink-0" />
+                        <span className="text-xs font-medium text-[#3F3E3D] dark:text-gray-300">{service}</span>
                       </div>
                     ))}
                   </div>
                 </div>
 
                 {/* Rules */}
-                <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-4">
-                  <h4 className="font-bold text-gray-800 dark:text-white mb-3 text-sm">Event Rules</h4>
+                <div className="bg-white dark:bg-[#2d3548] rounded-xl border border-gray-200 dark:border-[#3d4459] p-4">
+                  <h4 className="font-bold text-[#3F3E3D] dark:text-white mb-3 text-sm">Event Rules</h4>
                   <ul className="space-y-2">
                     {rules.map((rule, index) => (
                       <li key={index} className="flex items-start gap-2 text-xs text-gray-600 dark:text-gray-300">
-                        <span className="text-[#15b392] mt-0.5 font-bold">{index + 1}.</span>
+                        <span className="text-[#FB6F7A] mt-0.5 font-bold">{index + 1}.</span>
                         <span>{rule}</span>
                       </li>
                     ))}
@@ -344,46 +354,49 @@ export default function EventDetailModal({
                 </div>
 
                 {/* Registered Participants */}
-                <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-4">
-                  <h4 className="font-bold text-gray-800 dark:text-white mb-3 text-sm">
+                <div className="bg-white dark:bg-[#2d3548] rounded-xl border border-gray-200 dark:border-[#3d4459] p-4">
+                  <h4 className="font-bold text-[#3F3E3D] dark:text-white mb-3 text-sm">
                     Registered Participants ({event.currentPlayers}/{event.maxPlayers})
                   </h4>
                   
                   {loadingPlayers ? (
                     <div className="text-center py-8">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#15b392] mx-auto"></div>
+                      <div className="relative inline-block">
+                        <div className="absolute inset-0 rounded-full">
+                          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
+                        </div>
+                        <div className="relative w-12 h-12 flex items-center justify-center">
+                          <Loader2 className="w-6 h-6 text-[#FB6F7A]" />
+                        </div>
+                      </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading participants...</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {registeredPlayers.length > 0 ? (
                         registeredPlayers.map((player) => (
-                          <div key={player.id} className="border border-gray-200 dark:border-gray-600 rounded-lg p-3 hover:border-[#15b392] transition-colors">
+                          <div key={player.id} className="border border-gray-200 dark:border-[#3d4459] rounded-lg p-3 hover:border-[#FB6F7A] transition-colors">
                             <div className="flex items-start gap-3">
                               {player.avatarUrl ? (
-                                <div className="relative w-12 h-12 rounded-full overflow-hidden flex-shrink-0">
-                                  <Image
-                                    src={player.avatarUrl}
-                                    alt={player.name}
-                                    fill
-                                    className="object-cover"
-                                    sizes="48px"
-                                  />
-                                </div>
+                                <img
+                                  src={player.avatarUrl}
+                                  alt={player.name}
+                                  className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                                />
                               ) : (
-                                <div className="w-12 h-12 bg-gradient-to-br from-[#15b392] to-[#2a6435] rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                                <div className="w-12 h-12 bg-[#FB6F7A] rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
                                   {player.avatar}
                                 </div>
                               )}
                               
                               <div className="flex-1 min-w-0">
-                                <h5 className="font-bold text-gray-800 dark:text-white text-sm">{player.name}</h5>
+                                <h5 className="font-bold text-[#3F3E3D] dark:text-white text-sm">{player.name}</h5>
                                 <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">
                                   {player.position} • {player.company}
                                 </p>
                                 <div className="flex items-center gap-2 mt-1">
                                   <span className="text-xs text-gray-500 dark:text-gray-400">Networking Score:</span>
-                                  <span className="text-xs font-semibold text-[#15b392]">
+                                  <span className="text-xs font-semibold text-[#21C36E]">
                                     {player.networkingScore}
                                   </span>
                                 </div>
@@ -398,10 +411,10 @@ export default function EventDetailModal({
                       )}
 
                       {availableSlots > 0 && Array.from({ length: availableSlots }).map((_, index) => (
-                        <div key={`empty-${index}`} className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-3 bg-gray-50 dark:bg-gray-600">
+                        <div key={`empty-${index}`} className="border-2 border-dashed border-gray-300 dark:border-[#3d4459] rounded-lg p-3 bg-[#F4F4EF] dark:bg-[#3d4459]">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-gray-200 dark:bg-gray-500 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Users size={20} className="text-gray-400 dark:text-gray-300" />
+                            <div className="w-12 h-12 bg-gray-200 dark:bg-[#4a5166] rounded-full flex items-center justify-center flex-shrink-0">
+                              <Users size={20} className="text-gray-400 dark:text-gray-500" />
                             </div>
                             <div>
                               <p className="text-gray-500 dark:text-gray-300 font-medium text-sm">Available Slot</p>
@@ -417,23 +430,23 @@ export default function EventDetailModal({
 
               {/* Booking Summary Sidebar */}
               <div className="lg:col-span-1">
-                <div className="bg-white dark:bg-gray-700 rounded-xl border border-gray-200 dark:border-gray-600 p-4 sticky top-20">
-                  <h4 className="font-bold text-gray-800 dark:text-white mb-3 text-sm">Booking Summary</h4>
+                <div className="bg-white dark:bg-[#2d3548] rounded-xl border border-gray-200 dark:border-[#3d4459] p-4 sticky top-20">
+                  <h4 className="font-bold text-[#3F3E3D] dark:text-white mb-3 text-sm">Booking Summary</h4>
                   
                   <div className="space-y-2 mb-4">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">Entry Fee</span>
-                      <span className="font-semibold text-gray-800 dark:text-white">Rp {event.price.toLocaleString()}</span>
+                      <span className="font-semibold text-[#3F3E3D] dark:text-white">Rp {event.price.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600 dark:text-gray-400">Service Fee</span>
-                      <span className="font-semibold text-gray-800 dark:text-white">Rp 10.000</span>
+                      <span className="font-semibold text-[#3F3E3D] dark:text-white">Rp 10.000</span>
                     </div>
-                    <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
+                    <div className="border-t border-gray-200 dark:border-[#3d4459] pt-2">
                       <div className="flex justify-between">
-                        <span className="font-bold text-gray-800 dark:text-white">Total</span>
-                        <span className="font-bold text-lg text-[#15b392]">
-                          Rp {(event.price + 10000).toLocaleString()}
+                        <span className="font-bold text-[#3F3E3D] dark:text-white">Total</span>
+                        <span className="font-bold text-lg text-[#FB6F7A]">
+                          Rp {totalPrice.toLocaleString()}
                         </span>
                       </div>
                     </div>
@@ -444,8 +457,8 @@ export default function EventDetailModal({
                     disabled={isFull}
                     className={`w-full py-3 rounded-lg font-bold transition-all duration-200 mb-2 ${
                       isFull
-                        ? 'bg-gray-300 dark:bg-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white hover:shadow-lg'
+                        ? 'bg-gray-300 dark:bg-[#3d4459] text-gray-500 dark:text-gray-500 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-[#FB6F7A] to-[#D33181] text-white hover:shadow-lg'
                     }`}
                   >
                     {isFull ? 'Event Full' : 'Join Event'}
@@ -459,31 +472,31 @@ export default function EventDetailModal({
 
       {/* Confirmation Modal */}
       {showConfirmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white dark:bg-gray-800 rounded-xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-4 text-center">Confirm Booking</h3>
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white dark:bg-[#242837] rounded-xl max-w-md w-full p-6">
+            <h3 className="text-xl font-bold text-[#3F3E3D] dark:text-white mb-4 text-center">Confirm Booking</h3>
             
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-6 space-y-2 text-sm">
+            <div className="bg-[#F4F4EF] dark:bg-[#2d3548] rounded-lg p-4 mb-6 space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Event</span>
-                <span className="font-semibold text-gray-800 dark:text-white">{event.title}</span>
+                <span className="font-semibold text-[#3F3E3D] dark:text-white">{event.title}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Date</span>
-                <span className="font-semibold text-gray-800 dark:text-white">{format(event.date, 'MMM dd, yyyy')}</span>
+                <span className="font-semibold text-[#3F3E3D] dark:text-white">{format(event.date, 'MMM dd, yyyy')}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Time</span>
-                <span className="font-semibold text-gray-800 dark:text-white">{event.time}</span>
+                <span className="font-semibold text-[#3F3E3D] dark:text-white">{event.time}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-600 dark:text-gray-400">Total</span>
-                <span className="font-bold text-[#15b392]">Rp {(event.price + 10000).toLocaleString()}</span>
+                <span className="font-bold text-[#FB6F7A]">Rp {totalPrice.toLocaleString()}</span>
               </div>
             </div>
 
-            <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded-lg p-3 mb-4">
-              <p className="text-xs text-yellow-800 dark:text-yellow-300">
+            <div className="bg-[#F0C946]/20 border border-[#F0C946] rounded-lg p-3 mb-4">
+              <p className="text-xs text-[#3F3E3D] dark:text-white">
                 ⏰ You will have <strong>12 hours</strong> to complete the payment after confirmation
               </p>
             </div>
@@ -492,14 +505,14 @@ export default function EventDetailModal({
               <button
                 onClick={() => setShowConfirmModal(false)}
                 disabled={isBooking}
-                className="flex-1 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors disabled:opacity-50"
+                className="flex-1 bg-[#F4F4EF] dark:bg-[#3d4459] text-[#3F3E3D] dark:text-gray-300 py-3 rounded-lg font-medium hover:bg-gray-200 dark:hover:bg-[#4a5166] transition-colors disabled:opacity-50"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmBooking}
                 disabled={isBooking}
-                className="flex-1 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white py-3 rounded-lg font-bold hover:shadow-lg transition-all disabled:opacity-50"
+                className="flex-1 bg-gradient-to-r from-[#FB6F7A] to-[#D33181] text-white py-3 rounded-lg font-bold hover:shadow-lg transition-all disabled:opacity-50"
               >
                 {isBooking ? 'Processing...' : 'Confirm'}
               </button>
@@ -507,6 +520,16 @@ export default function EventDetailModal({
           </div>
         </div>
       )}
+
+      <style jsx global>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </>
   );
 }
