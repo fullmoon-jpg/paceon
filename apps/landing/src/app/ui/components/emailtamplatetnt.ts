@@ -21,30 +21,27 @@ export const talkNTalesRegistrationConfirmationTemplate = (data: {
       <td align="center">
         <table width="750" cellpadding="0" cellspacing="0" border="0" style="background: #ffffff; border-radius: 24px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);">
           
-          <!-- Header with Extended Logo Container -->
+          <!-- Header - with Big Product Logo and Small Logo -->
           <tr>
-            <td style="background: #3f3e3d; padding: 30px 30px 60px 30px; text-align: center;">
-              
-              <!-- Extended Logo Container with Product Logo -->
-              <div style="background: #f4f4ef; border-radius: 10px; padding: 60px 100px; margin: 0; display: block; position: relative;">
-                
-                <!-- Product Logo - Top Left Corner -->
-                <div style="position: absolute; top: 20px; left: 20px;">
-                  <img src="https://paceon.id/images/logo-paceon.png" alt="Product Logo" style="width: 50px; height: 50px; display: block; object-fit: contain;" />
+            <td style="background: #3f3e3d; padding: 20px 20px 40px 20px; text-align: center; position: relative;">
+              <div style="background: #f4f4ef; padding: 20px 20px; border-radius: 20px;">
+                <!-- Small Logo Top Left -->
+                <div style="position: absolute; top: 40px; left: 40px;">
+                    <img src="https://paceon.id/images/logo-paceon.png" alt="PACE ON Logo" style="width: 48px; height: 48px; display: block; object-fit: contain; border-radius: 10px;" />
                 </div>
                 
-                <!-- Logo PACE ON (Much Bigger) -->
-                <img src="https://paceon.id/images/product-logo.png" alt="PACE ON" style="width: 220px; height: 220px; border-radius: 20px; display: block; margin: 0 auto; object-fit: contain;" />
-                
+                <!-- Main Product Logo Center -->
+                <div style="background: #f4f4ef; border-radius: 14px; padding: 40px 0 40px 0; margin: 0 auto 0 auto; width: 300px;">
+                    <img src="https://paceon.id/images/product-logo.png" alt="PACE ON" style="width: 180px; height: 180px; border-radius: 18px; display: block; margin: 0 auto; object-fit: contain;" />
+                </div>
               </div>
               
-              <!-- Registration Complete Badge (Separate, below) -->
-              <div style="background: linear-gradient(135deg, #f47a49 0%, #e0643a 100%); padding: 14px 32px; margin: 30px auto 0 auto; display: inline-block;">
-                <h1 style="margin: 0; font-size: 24px; font-weight: 900; color: #ffffff; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1.2;">
+              <!-- Invoice Title -->
+              <div style="background: #f47a49; padding: 16px 36px; margin: 34px auto 0 auto; display: inline-block;">
+                <h1 style="margin: 0; font-size: 26px; font-weight: 900; color: #fff; letter-spacing: 2px; text-transform: uppercase; line-height: 1.2;">
                   REGISTRATION COMPLETE
                 </h1>
               </div>
-              
             </td>
           </tr>
 
