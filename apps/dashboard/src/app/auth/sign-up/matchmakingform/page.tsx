@@ -1,20 +1,39 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@paceon/lib/supabase";
 import { useToast } from "@/contexts/ToastContext";
 import Image from "next/image";
 
+interface FormData {
+  fullName: string;
+  company: string;
+  position: string;
+  positionDuration: string;
+  linkedIn: string;
+  location: string;
+  locationOther: string;
+  goal: string;
+  goalOther: string;
+  networkingStyle: string;
+  passionateTopics: string[];
+  passionateOther: string;
+  hobby: string;
+  hobbyOther: string;
+  personality: string;
+}
+
 export default function MatchmakingPage() {
   const router = useRouter();
+  const { showToast } = useToast();
+  
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
-  const { showToast } = useToast();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     fullName: "",
     company: "",
     position: "",
@@ -25,7 +44,7 @@ export default function MatchmakingPage() {
     goal: "",
     goalOther: "",
     networkingStyle: "",
-    passionateTopics: [] as string[],
+    passionateTopics: [],
     passionateOther: "",
     hobby: "",
     hobbyOther: "",
@@ -38,35 +57,36 @@ export default function MatchmakingPage() {
     const initializeForm = async () => {
       try {
         // First attempt to get session
-        let { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        if (sessionError) {
-          console.error('Session error:', sessionError);
+        if (error) {
+          console.error('Session error:', error);
           router.replace('/auth/login?error=session_error');
           return;
         }
 
         // Retry mechanism for OAuth redirect race condition
-        if (!session?.user) {
+        let currentSession = session;
+        if (!currentSession?.user) {
           console.log('No session found, retrying once...');
           await new Promise(resolve => setTimeout(resolve, 500));
           const retryResult = await supabase.auth.getSession();
-          session = retryResult.data.session;
+          currentSession = retryResult.data.session;
         }
 
-        if (!session?.user) {
+        if (!currentSession?.user) {
           console.error('No session found after retry');
           router.replace('/auth/login?error=no_session');
           return;
         }
 
-        setUserId(session.user.id);
+        setUserId(currentSession.user.id);
 
         // Load existing profile data
         const { data: profile, error: profileError } = await supabase
           .from("users_profile")
           .select("full_name")
-          .eq("id", session.user.id)
+          .eq("id", currentSession.user.id)
           .maybeSingle();
 
         if (profileError && profileError.code !== 'PGRST116') {
@@ -81,7 +101,7 @@ export default function MatchmakingPage() {
         const { data: existingPrefs } = await supabase
           .from("matchmaking_preferences")
           .select("*")
-          .eq("user_id", session.user.id)
+          .eq("user_id", currentSession.user.id)
           .maybeSingle();
 
         if (existingPrefs) {
@@ -115,11 +135,11 @@ export default function MatchmakingPage() {
     initializeForm();
   }, [router]);
 
-  const handleInputChange = (field: keyof typeof formData, value: string) => {
+  const handleInputChange = useCallback((field: keyof FormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-  };
+  }, []);
 
-  const handleMultiSelect = (field: keyof typeof formData, value: string) => {
+  const handleMultiSelect = useCallback((field: keyof FormData, value: string) => {
     setFormData((prev) => {
       const selected = prev[field] as string[];
       return {
@@ -129,9 +149,9 @@ export default function MatchmakingPage() {
           : [...selected, value],
       };
     });
-  };
+  }, []);
 
-  const isStepValid = () => {
+  const isStepValid = useCallback(() => {
     switch (currentStep) {
       case 1:
         return (
@@ -153,15 +173,21 @@ export default function MatchmakingPage() {
       case 9: return formData.personality.trim().length > 0;
       default: return false;
     }
-  };
+  }, [currentStep, formData]);
 
-  const nextStep = () => {
-    if (currentStep < totalSteps && isStepValid()) setCurrentStep(currentStep + 1);
-  };
+  const nextStep = useCallback(() => {
+    if (currentStep < totalSteps && isStepValid()) {
+      setCurrentStep(currentStep + 1);
+    }
+  }, [currentStep, isStepValid]);
 
-  const prevStep = () => currentStep > 1 && setCurrentStep(currentStep - 1);
+  const prevStep = useCallback(() => {
+    if (currentStep > 1) {
+      setCurrentStep(currentStep - 1);
+    }
+  }, [currentStep]);
 
-  const saveUserData = async () => {
+  const saveUserData = useCallback(async () => {
     if (!userId) throw new Error("User not logged in");
 
     const { error: profileError } = await supabase
@@ -200,9 +226,9 @@ export default function MatchmakingPage() {
     if (matchmakingError) {
       throw matchmakingError;
     }
-  };
+  }, [userId, formData]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!isStepValid()) return;
     
     setLoading(true);
@@ -216,18 +242,18 @@ export default function MatchmakingPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isStepValid, saveUserData, router, showToast]);
 
   if (initializing) {
     return (
-      <div className="min-h-screen bg-[#F4F4EF] dark:bg-[#3F3E3D] flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-[#242837] flex items-center justify-center">
         <div className="text-center">
           <div className="relative inline-block">
             <div className="absolute inset-0 rounded-full">
               <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
             </div>
             
-            <div className="relative w-32 h-32 flex items-center justify-center bg-white dark:bg-[#3F3E3D] rounded-full p-4">
+            <div className="relative w-32 h-32 flex items-center justify-center rounded-full p-4">
               <Image
                 src="/images/dark-logo.png"
                 alt="PACE ON"
@@ -263,7 +289,7 @@ export default function MatchmakingPage() {
             value={formData.fullName}
             onChange={(e) => handleInputChange("fullName", e.target.value)}
             placeholder="Enter your full name"
-            className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#3F3E3D] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
+            className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#2d3548] border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
           />
           <p className="text-[#3F3E3D] dark:text-white">Your LinkedIn Profile (Required)</p>
           <input
@@ -271,7 +297,7 @@ export default function MatchmakingPage() {
             value={formData.linkedIn}
             onChange={(e) => handleInputChange("linkedIn", e.target.value)}
             placeholder="Example: linkedin.com/in/yourprofile"
-            className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#3F3E3D] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
+            className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#2d3548] border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
           />
         </div>
       ),
@@ -284,7 +310,7 @@ export default function MatchmakingPage() {
           value={formData.company}
           onChange={(e) => handleInputChange("company", e.target.value)}
           placeholder="Company name"
-          className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#3F3E3D] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
+          className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#2d3548] border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
         />
       ),
     },
@@ -297,13 +323,13 @@ export default function MatchmakingPage() {
             value={formData.position}
             onChange={(e) => handleInputChange("position", e.target.value)}
             placeholder="Your position"
-            className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#3F3E3D] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
+            className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#2d3548] border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
           />
           <p className="text-[#3F3E3D] dark:text-white">How long have you been in this position?</p>
           <select
             value={formData.positionDuration}
             onChange={(e) => handleInputChange("positionDuration", e.target.value)}
-            className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#3F3E3D] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
+            className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#2d3548] border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
           >
             <option value="">Select duration</option>
             <option value="1">Less than 1 year</option>
@@ -326,7 +352,7 @@ export default function MatchmakingPage() {
               className={`w-full px-4 py-3 text-left rounded-lg border transition ${
                 formData.location === loc
                   ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
-                  : "bg-white dark:bg-[#3F3E3D] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#FB6F7A]"
+                  : "bg-white dark:bg-[#2d3548] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
               }`}
             >
               {loc}
@@ -338,7 +364,7 @@ export default function MatchmakingPage() {
               value={formData.locationOther}
               onChange={(e) => handleInputChange("locationOther", e.target.value)}
               placeholder="Please specify"
-              className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#3F3E3D] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
+              className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#2d3548] border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
             />
           )}
         </div>
@@ -355,7 +381,7 @@ export default function MatchmakingPage() {
               className={`w-full px-4 py-3 text-left rounded-lg border transition ${
                 formData.goal === g
                   ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
-                  : "bg-white dark:bg-[#3F3E3D] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#FB6F7A]"
+                  : "bg-white dark:bg-[#2d3548] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
               }`}
             >
               {g}
@@ -367,7 +393,7 @@ export default function MatchmakingPage() {
               value={formData.goalOther}
               onChange={(e) => handleInputChange("goalOther", e.target.value)}
               placeholder="Please specify"
-              className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#3F3E3D] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
+              className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#2d3548] border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
             />
           )}
         </div>
@@ -384,7 +410,7 @@ export default function MatchmakingPage() {
               className={`w-full px-4 py-3 text-left rounded-lg border transition ${
                 formData.networkingStyle === style
                   ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
-                  : "bg-white dark:bg-[#3F3E3D] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#FB6F7A]"
+                  : "bg-white dark:bg-[#2d3548] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
               }`}
             >
               {style}
@@ -404,7 +430,7 @@ export default function MatchmakingPage() {
               className={`w-full px-4 py-3 text-left rounded-lg border transition ${
                 formData.passionateTopics.includes(topic)
                   ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
-                  : "bg-white dark:bg-[#3F3E3D] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#FB6F7A]"
+                  : "bg-white dark:bg-[#2d3548] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
               }`}
             >
               {topic}
@@ -415,7 +441,7 @@ export default function MatchmakingPage() {
             value={formData.passionateOther}
             onChange={(e) => handleInputChange("passionateOther", e.target.value)}
             placeholder="Other topics (optional)"
-            className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#3F3E3D] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
+            className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#2d3548] border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
           />
         </div>
       ),
@@ -431,7 +457,7 @@ export default function MatchmakingPage() {
               className={`w-full px-4 py-3 text-left rounded-lg border transition ${
                 formData.hobby === h
                   ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
-                  : "bg-white dark:bg-[#3F3E3D] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#FB6F7A]"
+                  : "bg-white dark:bg-[#2d3548] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
               }`}
             >
               {h}
@@ -443,7 +469,7 @@ export default function MatchmakingPage() {
               value={formData.hobbyOther}
               onChange={(e) => handleInputChange("hobbyOther", e.target.value)}
               placeholder="Please specify"
-              className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#3F3E3D] border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
+              className="w-full px-4 py-3 text-[#3F3E3D] dark:text-white bg-white dark:bg-[#2d3548] border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A]"
             />
           )}
         </div>
@@ -460,7 +486,7 @@ export default function MatchmakingPage() {
               className={`w-full px-4 py-3 text-left rounded-lg border transition ${
                 formData.personality === p
                   ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
-                  : "bg-white dark:bg-[#3F3E3D] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#FB6F7A]"
+                  : "bg-white dark:bg-[#2d3548] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
               }`}
             >
               {p}
@@ -472,7 +498,7 @@ export default function MatchmakingPage() {
   ];
 
   return (
-    <div className="relative min-h-screen bg-[#F4F4EF] dark:bg-[#3F3E3D]">
+    <div className="relative min-h-screen bg-[#F4F4EF] dark:bg-[#1a1d29]">
       <div className="absolute top-4 left-4 sm:top-6 sm:left-6 z-20">
         <h1 
           className="text-xl sm:text-2xl font-brand text-[#FB6F7A]"
@@ -483,7 +509,7 @@ export default function MatchmakingPage() {
       </div>
       
       <main className="flex flex-col lg:flex-row min-h-screen">
-        <div className="flex flex-col justify-center items-center w-full lg:w-1/2 bg-white dark:bg-[#3F3E3D] px-4 sm:px-6 lg:px-8 py-8 lg:py-0 z-10">
+        <div className="flex flex-col justify-center items-center w-full lg:w-1/2 bg-white dark:bg-[#242837] px-4 sm:px-6 lg:px-8 py-8 lg:py-0 z-10">
           <div className="w-full max-w-md space-y-6 lg:space-y-8">
             <div>
               <div className="flex justify-between items-center mb-2">
@@ -494,7 +520,7 @@ export default function MatchmakingPage() {
                   {Math.round((currentStep / totalSteps) * 100)}%
                 </span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-gray-200 dark:bg-[#3d4459] rounded-full h-2">
                 <div
                   className="bg-[#FB6F7A] h-2 rounded-full transition-all duration-300 ease-out"
                   style={{ width: `${(currentStep / totalSteps) * 100}%` }}
@@ -515,8 +541,8 @@ export default function MatchmakingPage() {
                 disabled={currentStep === 1 || loading}
                 className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-full font-semibold text-sm sm:text-base transition ${
                   currentStep === 1 || loading
-                    ? "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
-                    : "bg-[#F4F4EF] dark:bg-gray-700 text-[#3F3E3D] dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600"
+                    ? "bg-gray-200 dark:bg-[#3d4459] text-gray-400 cursor-not-allowed"
+                    : "bg-[#F4F4EF] dark:bg-[#2d3548] text-[#3F3E3D] dark:text-white hover:bg-gray-200 dark:hover:bg-[#3d4459]"
                 }`}
               >
                 <ChevronLeft size={18} />
@@ -530,7 +556,7 @@ export default function MatchmakingPage() {
                   className={`flex items-center gap-2 px-4 sm:px-6 py-3 rounded-full font-semibold text-sm sm:text-base transition shadow-lg hover:shadow-xl ${
                     isStepValid() && !loading
                       ? "bg-[#FB6F7A] text-white hover:bg-[#D33181]"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-200 dark:bg-[#3d4459] text-gray-400 cursor-not-allowed"
                   }`}
                 >
                   Next
@@ -543,7 +569,7 @@ export default function MatchmakingPage() {
                   className={`px-4 sm:px-6 py-3 rounded-full font-semibold text-sm sm:text-base transition shadow-lg hover:shadow-xl ${
                     isStepValid() && !loading
                       ? "bg-[#21C36E] text-white hover:bg-[#21C36E]/80"
-                      : "bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-200 dark:bg-[#3d4459] text-gray-400 cursor-not-allowed"
                   }`}
                 >
                   {loading ? "Saving..." : "Complete"}

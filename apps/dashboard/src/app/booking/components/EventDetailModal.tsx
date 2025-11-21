@@ -12,7 +12,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { supabase } from "@paceon/lib/supabase";
-import Image from "next/image";
 
 interface BookingEvent {
   id: number | string;
@@ -70,6 +69,7 @@ export default function EventDetailModal({
   const [registeredPlayers, setRegisteredPlayers] = useState<RegisteredPlayer[]>([]);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
 
+  // Move all useMemo/useCallback hooks BEFORE the early return
   const isFull = useMemo(() => 
     event ? event.currentPlayers >= event.maxPlayers : false,
     [event]
@@ -80,12 +80,75 @@ export default function EventDetailModal({
     [event]
   );
 
+  const eventTypeColors: Record<string, { badge: string }> = useMemo(() => ({
+    tennis: { badge: "bg-[#007AA6]" },
+    padel: { badge: "bg-[#21C36E]" },
+    badminton: { badge: "bg-[#F47A49]" },
+    coffee_chat: { badge: "bg-[#F0C946]" },
+    workshop: { badge: "bg-[#FB6F7A]" },
+    meetup: { badge: "bg-[#D33181]" },
+    social: { badge: "bg-[#007AA6]" },
+    other: { badge: "bg-gray-500" },
+  }), []);
+
+  const rules = useMemo(() => {
+    if (!event) return [];
+    return [
+      "Arrive 10 minutes before the scheduled start time",
+      event.event_type === 'coffee_chat' || event.event_type === 'meetup' 
+        ? "Business casual attire recommended" 
+        : "Proper attire required",
+      `Maximum ${event.maxPlayers} participants per session`,
+      "Cancellation allowed up to 2 hours before start time",
+      "Respect other participants and maintain etiquette",
+      "Follow all venue safety guidelines and staff instructions",
+      "Photography policy: Ask for consent before taking photos",
+    ];
+  }, [event]);
+
+  const totalPrice = useMemo(() => event ? event.price + 10000 : 0, [event]);
+
+  const colors = useMemo(
+    () => event ? (eventTypeColors[event.event_type] || eventTypeColors.other) : eventTypeColors.other,
+    [event, eventTypeColors]
+  );
+
   const getInitials = useCallback((name: string) => {
     if (!name) return '??';
     const names = name.trim().split(' ');
     if (names.length === 1) return names[0].substring(0, 2).toUpperCase();
     return (names[0][0] + names[names.length - 1][0]).toUpperCase();
   }, []);
+
+  const getServicesForEventType = useCallback((eventType: string) => {
+    const sportServices = [
+      "Professional Equipment Rental",
+      "Locker Room & Shower Facilities",
+      "Free Parking Area",
+      "On-site Cafe & Refreshments",
+      "Pro Shop & Merchandise",
+      "First Aid & Safety Equipment",
+    ];
+
+    const networkingServices = [
+      "Free Wi-Fi & Charging Stations",
+      "Comfortable Seating Area",
+      "Complimentary Beverages",
+      "Networking Name Tags",
+      "Photo Opportunities",
+      "Event Materials & Resources",
+    ];
+
+    if (['coffee_chat', 'workshop', 'meetup', 'social'].includes(eventType)) {
+      return networkingServices;
+    }
+    return sportServices;
+  }, []);
+
+  const ourServices = useMemo(
+    () => event ? getServicesForEventType(event.event_type) : [],
+    [event, getServicesForEventType]
+  );
 
   const fetchRegisteredPlayers = useCallback(async () => {
     if (!event) return;
@@ -127,37 +190,6 @@ export default function EventDetailModal({
     }
   }, [event, getInitials]);
 
-  useEffect(() => {
-    if (event) {
-      fetchRegisteredPlayers();
-    }
-  }, [event, fetchRegisteredPlayers]);
-
-  const getServicesForEventType = useCallback((eventType: string) => {
-    const sportServices = [
-      "Professional Equipment Rental",
-      "Locker Room & Shower Facilities",
-      "Free Parking Area",
-      "On-site Cafe & Refreshments",
-      "Pro Shop & Merchandise",
-      "First Aid & Safety Equipment",
-    ];
-
-    const networkingServices = [
-      "Free Wi-Fi & Charging Stations",
-      "Comfortable Seating Area",
-      "Complimentary Beverages",
-      "Networking Name Tags",
-      "Photo Opportunities",
-      "Event Materials & Resources",
-    ];
-
-    if (['coffee_chat', 'workshop', 'meetup', 'social'].includes(eventType)) {
-      return networkingServices;
-    }
-    return sportServices;
-  }, []);
-
   const confirmBooking = useCallback(async () => {
     setIsBooking(true);
     setShowConfirmModal(false);
@@ -173,17 +205,6 @@ export default function EventDetailModal({
     }
   }, [onJoin]);
 
-  const eventTypeColors: Record<string, { badge: string }> = useMemo(() => ({
-    tennis: { badge: "bg-[#007AA6]" },
-    padel: { badge: "bg-[#21C36E]" },
-    badminton: { badge: "bg-[#F47A49]" },
-    coffee_chat: { badge: "bg-[#F0C946]" },
-    workshop: { badge: "bg-[#FB6F7A]" },
-    meetup: { badge: "bg-[#D33181]" },
-    social: { badge: "bg-[#007AA6]" },
-    other: { badge: "bg-gray-500" },
-  }), []);
-
   const formatEventType = useCallback((eventType: string): string => {
     return eventType
       .split('_')
@@ -193,24 +214,14 @@ export default function EventDetailModal({
 
   const handleClose = useCallback(() => onClose(), [onClose]);
 
+  useEffect(() => {
+    if (event) {
+      fetchRegisteredPlayers();
+    }
+  }, [event, fetchRegisteredPlayers]);
+
+  // Early return AFTER all hooks
   if (!event) return null;
-
-  const colors = eventTypeColors[event.event_type] || eventTypeColors.other;
-  const ourServices = getServicesForEventType(event.event_type);
-  
-  const rules = useMemo(() => [
-    "Arrive 10 minutes before the scheduled start time",
-    event.event_type === 'coffee_chat' || event.event_type === 'meetup' 
-      ? "Business casual attire recommended" 
-      : "Proper attire required",
-    `Maximum ${event.maxPlayers} participants per session`,
-    "Cancellation allowed up to 2 hours before start time",
-    "Respect other participants and maintain etiquette",
-    "Follow all venue safety guidelines and staff instructions",
-    "Photography policy: Ask for consent before taking photos",
-  ], [event.event_type, event.maxPlayers]);
-
-  const totalPrice = event.price + 10000;
 
   return (
     <>
@@ -236,7 +247,6 @@ export default function EventDetailModal({
                 {/* Event Image & Info */}
                 <div className="bg-white dark:bg-[#2d3548] rounded-xl border border-gray-200 dark:border-[#3d4459] overflow-hidden">
                   <div className="relative h-48">
-                    {/* Using regular img to avoid Next.js Image config issues */}
                     <img
                       src={event.image}
                       alt={event.title}
@@ -314,7 +324,7 @@ export default function EventDetailModal({
                       </div>
                       <div className="w-full bg-gray-200 dark:bg-[#3d4459] rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-[#21C36E] to-[#007AA6] h-2 rounded-full transition-all"
+                          className="bg-[#21C36E] h-2 rounded-full transition-all"
                           style={{ width: `${(event.currentPlayers / event.maxPlayers) * 100}%` }}
                         />
                       </div>
@@ -455,10 +465,10 @@ export default function EventDetailModal({
                   <button
                     onClick={() => setShowConfirmModal(true)}
                     disabled={isFull}
-                    className={`w-full py-3 rounded-lg font-bold transition-all duration-200 mb-2 ${
+                    className={`w-full py-3 rounded-lg font-bold transition-all duration-200 mb-2 shadow-lg ${
                       isFull
                         ? 'bg-gray-300 dark:bg-[#3d4459] text-gray-500 dark:text-gray-500 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-[#FB6F7A] to-[#D33181] text-white hover:shadow-lg'
+                        : 'bg-[#FB6F7A] text-white hover:bg-[#D33181]'
                     }`}
                   >
                     {isFull ? 'Event Full' : 'Join Event'}
@@ -512,7 +522,7 @@ export default function EventDetailModal({
               <button
                 onClick={confirmBooking}
                 disabled={isBooking}
-                className="flex-1 bg-gradient-to-r from-[#FB6F7A] to-[#D33181] text-white py-3 rounded-lg font-bold hover:shadow-lg transition-all disabled:opacity-50"
+                className="flex-1 bg-[#21C36E] text-white py-3 rounded-lg font-bold hover:bg-[#1a9d57] transition-all disabled:opacity-50 shadow-lg"
               >
                 {isBooking ? 'Processing...' : 'Confirm'}
               </button>

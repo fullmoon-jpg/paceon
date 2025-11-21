@@ -7,6 +7,7 @@ import { Plus, TrendingUp, Users, Calendar as CalendarIcon, Shield } from "lucid
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@paceon/lib/supabase";
 import { getEventImage } from "@/lib/eventImages";
+import Image from "next/image";
 
 import BookingCalendar from "./components/BookingCalendar";
 import BookingFilters from "./components/BookingFilters";
@@ -70,8 +71,16 @@ interface EventFormData {
   image: string;
 }
 
+interface Stats {
+  totalEvents: number;
+  totalPlayers: number;
+  upcomingToday: number;
+}
+
 export default function BookingPage() {
   const { user, loading: authLoading } = useAuth();
+  const { showToast } = useToast();
+
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedEventType, setSelectedEventType] = useState("all");
@@ -85,7 +94,17 @@ export default function BookingPage() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
-  const { showToast } = useToast();
+
+  const formatTime = useCallback((timeString: string) => {
+    if (!timeString) return '';
+    return timeString.substring(0, 5);
+  }, []);
+
+  const calculateDuration = useCallback((startTime: string, endTime: string) => {
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+    return ((endH * 60 + endM) - (startH * 60 + startM)) / 60;
+  }, []);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
@@ -104,6 +123,7 @@ export default function BookingPage() {
 
         setIsAdmin(profile?.role === 'admin');
       } catch (error) {
+        console.error('Failed to check admin status:', error);
         setIsAdmin(false);
       } finally {
         setCheckingAdmin(false);
@@ -146,11 +166,6 @@ export default function BookingPage() {
         })
       );
 
-      const formatTime = (timeString: string) => {
-        if (!timeString) return '';
-        return timeString.substring(0, 5);
-      };
-
       const transformedEvents: BookingEvent[] = eventsWithCounts.map((event) => ({
         id: event.id,
         title: event.title,
@@ -174,11 +189,12 @@ export default function BookingPage() {
       setEvents(transformedEvents);
       
     } catch (error) {
+      console.error('Failed to fetch events:', error);
       setEvents([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [formatTime]);
 
   useEffect(() => {
     if (!authLoading && !checkingAdmin) {
@@ -218,27 +234,28 @@ export default function BookingPage() {
     });
   }, [events, selectedEventType, searchQuery, selectedDate]);
 
-  const stats = useMemo(() => {
+  const stats: Stats = useMemo(() => {
     const totalEvents = events.length;
     const totalPlayers = events.reduce((sum, e) => sum + e.currentPlayers, 0);
+    const todayStr = format(new Date(), 'yyyy-MM-dd');
     const upcomingToday = events.filter(e => 
-      format(e.date, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
+      format(e.date, 'yyyy-MM-dd') === todayStr
     ).length;
 
     return { totalEvents, totalPlayers, upcomingToday };
   }, [events]);
 
-  const handleEventClick = (event: BookingEvent) => {
+  const handleEventClick = useCallback((event: BookingEvent) => {
     setSelectedEvent(event);
     setIsDetailModalOpen(true);
-  };
+  }, []);
 
-  const handleCloseDetailModal = () => {
+  const handleCloseDetailModal = useCallback(() => {
     setIsDetailModalOpen(false);
     setSelectedEvent(null);
-  };
+  }, []);
 
-  const handleJoinEvent = async () => {
+  const handleJoinEvent = useCallback(async () => {
     if (!selectedEvent || !user) {
       showToast('error', 'Please login first');
       return;
@@ -271,11 +288,11 @@ export default function BookingPage() {
       const errorMessage = error instanceof Error ? error.message : 'Booking failed';
       showToast('error', errorMessage);
     }
-  };
+  }, [selectedEvent, user, showToast, fetchEvents]);
 
-  const handleCreateEvent = async (eventData: EventFormData) => {
+  const handleCreateEvent = useCallback(async (eventData: EventFormData) => {
     if (!user || !isAdmin) {
-      showToast('error','Admin access required');
+      showToast('error', 'Admin access required');
       return;
     }
 
@@ -306,25 +323,45 @@ export default function BookingPage() {
 
       setIsCreateModalOpen(false);
       await fetchEvents();
-      showToast('success','Event created!');
+      showToast('success', 'Event created successfully!');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Failed to create event';
-      showToast('error',`Failed: ${errorMessage}`);
+      showToast('error', `Failed: ${errorMessage}`);
     }
-  };
+  }, [user, isAdmin, calculateDuration, fetchEvents, showToast]);
 
-  const calculateDuration = (startTime: string, endTime: string) => {
-    const [startH, startM] = startTime.split(':').map(Number);
-    const [endH, endM] = endTime.split(':').map(Number);
-    return ((endH * 60 + endM) - (startH * 60 + startM)) / 60;
-  };
+  const handleClearDate = useCallback(() => setSelectedDate(null), []);
 
   if (authLoading || checkingAdmin || loading) {
     return (
-      <div className="min-h-screen bg-[#f4f4ef] dark:bg-[#3f3e3d] flex items-center justify-center">
+      <div className="min-h-screen bg-white dark:bg-[#242837] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#21c36e] mx-auto mb-4"></div>
-          <p className="text-[#3f3e3d] dark:text-[#f4f4ef]">Loading bookings...</p>
+          <div className="relative inline-block">
+            <div className="absolute inset-0 rounded-full">
+              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
+            </div>
+            
+            <div className="relative w-32 h-32 flex items-center justify-center rounded-full p-4">
+              <Image
+                src="/images/dark-logo.png"
+                alt="PACE ON"
+                width={120}
+                height={120}
+                className="object-contain dark:hidden"
+                priority
+              />
+              <Image
+                src="/images/light-logo.png"
+                alt="PACE ON"
+                width={120}
+                height={120}
+                className="object-contain hidden dark:block"
+                priority
+              />
+            </div>
+          </div>
+          
+          <p className="mt-6 text-[#3F3E3D] dark:text-white font-medium">Loading bookings...</p>
         </div>
       </div>
     );
@@ -332,14 +369,14 @@ export default function BookingPage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#f4f4ef] dark:bg-[#3f3e3d] flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-8 max-w-md text-center">
+      <div className="min-h-screen bg-white dark:bg-[#242837] flex items-center justify-center p-4">
+        <div className="bg-white dark:bg-[#242837] rounded-xl shadow-lg p-8 max-w-md text-center border border-gray-200 dark:border-[#3d4459]">
           <CalendarIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-          <h2 className="text-2xl font-brand bg-[#f0c946] text-[#3f3e3d] mb-2">Sign In Required</h2>
-          <p className="text-[#f4f4ef] dark:text-[#3f3e3d] mb-6">Please sign in to view and book events</p>
+          <h2 className="text-2xl font-bold text-[#3F3E3D] dark:text-white mb-2">Sign In Required</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">Please sign in to view and book events</p>
           <button
             onClick={() => window.location.href = '/login'}
-            className="w-full py-3 bg-[#21c36e] text-[#f4f4ef] rounded-lg font-bold hover:shadow-lg transition-all"
+            className="w-full py-3 bg-[#21C36E] text-white rounded-lg font-bold hover:bg-[#1a9d57] transition-all shadow-lg"
           >
             Sign In
           </button>
@@ -349,9 +386,10 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      <div className="relative bg-gray-50 dark:bg-transparent text-black dark:text-white overflow-hidden">
-        <div className="absolute top-0 left-0 w-96 h-36 bg-gradient-to-tr from-[#15b392]/20 to-[#2a6435]/10 rounded-b-full blur-2xl opacity-75 -z-10" />
+    <div className="min-h-screen bg-white dark:bg-[#242837]">
+      {/* Header Section */}
+      <div className="relative text-[#3F3E3D] dark:text-white overflow-hidden">
+        <div className="absolute top-0 left-0 w-96 h-36 bg-[#FB6F7A]/10 rounded-b-full blur-2xl opacity-75 -z-10" />
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative">
           <div className="flex items-center justify-between mb-10">
@@ -363,16 +401,16 @@ export default function BookingPage() {
                 Find and join events in your area
               </p>
               {isAdmin && (
-                <div className="mt-3 inline-flex items-center gap-2 bg-[#e4f7f2] dark:bg-green-900/30 border border-[#15b392]/20 px-2 py-[2px] rounded-full">
-                  <Shield size={14} className="text-[#15b392]" />
-                  <span className="text-xs font-semibold text-[#1b4635] dark:text-green-400">Admin Access</span>
+                <div className="mt-3 inline-flex items-center gap-2 bg-[#21C36E]/10 border border-[#21C36E]/20 px-2 py-[2px] rounded-full">
+                  <Shield size={14} className="text-[#21C36E]" />
+                  <span className="text-xs font-semibold text-[#21C36E]">Admin Access</span>
                 </div>
               )}
             </div>
             {isAdmin && (
               <button
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white px-7 py-3 rounded-xl font-bold shadow-lg hover:brightness-105 transition-all flex items-center gap-2"
+                className="bg-[#21C36E] text-white px-7 py-3 rounded-xl font-bold shadow-lg hover:bg-[#1a9d57] transition-all flex items-center gap-2"
               >
                 <Plus size={22} />
                 Create Event
@@ -380,40 +418,43 @@ export default function BookingPage() {
             )}
           </div>
 
+          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-white dark:bg-gray-700 shadow rounded-2xl p-6 flex items-center gap-3 hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-600">
-              <div className="w-12 h-12 bg-[#e0f7ef] dark:bg-green-900/30 rounded-xl flex items-center justify-center text-[#15b392]">
+            <div className="bg-white dark:bg-[#2d3548] shadow rounded-2xl p-6 flex items-center gap-3 hover:shadow-lg transition-shadow border border-gray-200 dark:border-[#3d4459]">
+              <div className="w-12 h-12 bg-[#FB6F7A]/10 rounded-xl flex items-center justify-center text-[#FB6F7A]">
                 <CalendarIcon size={26} />
               </div>
               <div>
                 <p className="text-gray-600 dark:text-gray-300 text-sm font-medium">Total Events</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalEvents}</p>
+                <p className="text-2xl font-bold text-[#3F3E3D] dark:text-white">{stats.totalEvents}</p>
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-700 shadow rounded-2xl p-6 flex items-center gap-3 hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-600">
-              <div className="w-12 h-12 bg-[#e4f5ff] dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-[#1ca3cc] dark:text-blue-400">
+            <div className="bg-white dark:bg-[#2d3548] shadow rounded-2xl p-6 flex items-center gap-3 hover:shadow-lg transition-shadow border border-gray-200 dark:border-[#3d4459]">
+              <div className="w-12 h-12 bg-[#007AA6]/10 rounded-xl flex items-center justify-center text-[#007AA6]">
                 <Users size={26} />
               </div>
               <div>
                 <p className="text-gray-600 dark:text-gray-300 text-sm font-medium">Active Participants</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalPlayers}</p>
+                <p className="text-2xl font-bold text-[#3F3E3D] dark:text-white">{stats.totalPlayers}</p>
               </div>
             </div>
-            <div className="bg-white dark:bg-gray-700 shadow rounded-2xl p-6 flex items-center gap-3 hover:shadow-md transition-shadow border border-gray-200 dark:border-gray-600">
-              <div className="w-12 h-12 bg-[#fff6e4] dark:bg-yellow-900/30 rounded-xl flex items-center justify-center text-[#eab308]">
+            <div className="bg-white dark:bg-[#2d3548] shadow rounded-2xl p-6 flex items-center gap-3 hover:shadow-lg transition-shadow border border-gray-200 dark:border-[#3d4459]">
+              <div className="w-12 h-12 bg-[#F0C946]/10 rounded-xl flex items-center justify-center text-[#F0C946]">
                 <TrendingUp size={26} />
               </div>
               <div>
                 <p className="text-gray-600 dark:text-gray-300 text-sm font-medium">Today&apos;s Events</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.upcomingToday}</p>
+                <p className="text-2xl font-bold text-[#3F3E3D] dark:text-white">{stats.upcomingToday}</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Calendar Sidebar */}
           <div className="lg:col-span-1">
             <div className="lg:sticky lg:top-4 space-y-4 z-10">
               <BookingCalendar
@@ -425,14 +466,14 @@ export default function BookingPage() {
               />
 
               {selectedDate && (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4 border border-gray-200 dark:border-gray-700">
+                <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-lg p-4 border border-gray-200 dark:border-[#3d4459]">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-bold text-gray-800 dark:text-white">
+                    <h3 className="font-bold text-[#3F3E3D] dark:text-white">
                       {format(selectedDate, 'EEEE, MMM dd')}
                     </h3>
                     <button
-                      onClick={() => setSelectedDate(null)}
-                      className="text-sm text-[#15b392] hover:underline"
+                      onClick={handleClearDate}
+                      className="text-sm text-[#FB6F7A] hover:underline"
                     >
                       Clear
                     </button>
@@ -445,8 +486,9 @@ export default function BookingPage() {
             </div>
           </div>
 
+          {/* Events Grid */}
           <div className="lg:col-span-2 flex flex-col h-[calc(100vh-2rem)]">
-            <div className="sticky top-4 z-20 bg-gray-50 dark:bg-gray-900 pb-4 flex-shrink-0">
+            <div className="sticky top-4 z-20 bg-[#F4F4EF] dark:bg-[#1a1d29] pb-4 flex-shrink-0">
               <BookingFilters
                 selectedSport={selectedEventType}
                 searchQuery={searchQuery}
@@ -455,7 +497,7 @@ export default function BookingPage() {
               />
             </div>
 
-            <div className="flex-1 overflow-y-auto overflow-x-hidden">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
               {filteredEvents.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6">
                   {filteredEvents.map((event) => (
@@ -467,9 +509,9 @@ export default function BookingPage() {
                   ))}
                 </div>
               ) : (
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-12 text-center border border-gray-200 dark:border-gray-700">
+                <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-lg p-12 text-center border border-gray-200 dark:border-[#3d4459]">
                   <CalendarIcon className="w-16 h-16 mx-auto text-gray-300 dark:text-gray-600 mb-4" />
-                  <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">No Events Found</h3>
+                  <h3 className="text-xl font-bold text-[#3F3E3D] dark:text-white mb-2">No Events Found</h3>
                   <p className="text-gray-600 dark:text-gray-400 mb-6">
                     {searchQuery || selectedEventType !== 'all' || selectedDate
                       ? 'Try adjusting your filters'
@@ -478,7 +520,7 @@ export default function BookingPage() {
                   {isAdmin && (
                     <button
                       onClick={() => setIsCreateModalOpen(true)}
-                      className="px-6 py-3 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white rounded-lg font-bold hover:shadow-lg transition-all inline-flex items-center gap-2"
+                      className="px-6 py-3 bg-[#21C36E] text-white rounded-lg font-bold hover:bg-[#1a9d57] transition-all inline-flex items-center gap-2 shadow-lg"
                     >
                       <Plus size={20} />
                       Create Event
@@ -491,6 +533,7 @@ export default function BookingPage() {
         </div>
       </div>
 
+      {/* Modals */}
       {selectedEvent && isDetailModalOpen && (
         <EventDetailModal
           event={selectedEvent}
@@ -505,6 +548,16 @@ export default function BookingPage() {
           onSubmit={handleCreateEvent}
         />
       )}
+
+      <style jsx global>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 }

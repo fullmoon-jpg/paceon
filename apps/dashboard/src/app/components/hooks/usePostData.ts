@@ -21,6 +21,30 @@ interface UsePostsDataReturn {
   setSavedPosts: React.Dispatch<React.SetStateAction<Set<string>>>;
 }
 
+interface LikedPostResponse {
+  postId: string;
+  userId: string;
+  createdAt?: string;
+}
+
+interface SavedPostResponse {
+  postId: string;
+  userId: string;
+  savedAt?: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  hasMore?: boolean;
+  pagination?: {
+    hasMore: boolean;
+    page: number;
+    total?: number;
+  };
+}
+
 export const usePostsData = (
   currentUserId: string,
   activeTab: 'all' | 'yours' | 'saved'
@@ -41,31 +65,33 @@ export const usePostsData = (
   const fetchLikedPosts = useCallback(async () => {
     try {
       const response = await fetch(`/api/posts/like?userId=${currentUserId}`);
-      const data = await response.json();
-      if (data.success) {
-        setLikedPosts(new Set(data.data.map((p: any) => p.postId)));
+      const data: ApiResponse<LikedPostResponse[]> = await response.json();
+      
+      if (data.success && data.data) {
+        setLikedPosts(new Set(data.data.map((p) => p.postId)));
       }
     } catch (error) {
-      // Silent fail for liked posts
+      console.error('Failed to fetch liked posts:', error);
     }
   }, [currentUserId]);
 
   const fetchSavedPosts = useCallback(async () => {
     try {
       const response = await fetch(`/api/saved-posts?userId=${currentUserId}`);
-      const data = await response.json();
-      if (data.success) {
-        setSavedPosts(new Set(data.data.map((p: any) => p.postId)));
+      const data: ApiResponse<SavedPostResponse[]> = await response.json();
+      
+      if (data.success && data.data) {
+        setSavedPosts(new Set(data.data.map((p) => p.postId)));
       }
     } catch (error) {
-      // Silent fail for saved posts
+      console.error('Failed to fetch saved posts:', error);
     }
   }, [currentUserId]);
 
   const fetchSavedPostsDetails = useCallback(async () => {
     try {
       const response = await fetch(`/api/saved-posts?userId=${currentUserId}`);
-      const data = await response.json();
+      const data: ApiResponse<SavedPostResponse[]> = await response.json();
       
       if (!data.success || !data.data || data.data.length === 0) {
         setPosts([]);
@@ -73,25 +99,29 @@ export const usePostsData = (
         return;
       }
 
-      const postIds = data.data.map((sp: any) => sp.postId);
+      const postIds = data.data.map((sp) => sp.postId);
       
       const postPromises = postIds.map(async (id: string) => {
         try {
           const res = await fetch(`/api/posts/${id}`);
-          const postData = await res.json();
+          const postData: ApiResponse<Post> = await res.json();
           return postData;
         } catch (error) {
-          return { success: false };
+          console.error(`Failed to fetch post ${id}:`, error);
+          return { success: false } as ApiResponse<Post>;
         }
       });
       
       const postsData = await Promise.all(postPromises);
       
       const validPosts = postsData
-        .filter(p => p.success && p.data)
+        .filter((p): p is ApiResponse<Post> & { success: true; data: Post } => 
+          p.success && !!p.data
+        )
         .map(p => {
           const post = p.data;
           
+          // Ensure user object exists
           if (!post.user || !post.user.id) {
             post.user = {
               id: post.userId?.toString() || 'unknown',
@@ -107,6 +137,7 @@ export const usePostsData = (
       setHasMore(false);
       
     } catch (error) {
+      console.error('Failed to fetch saved posts details:', error);
       setPosts([]);
       setHasMore(false);
     }
@@ -134,9 +165,9 @@ export const usePostsData = (
       }
 
       const response = await fetch(url);
-      const data = await response.json();
+      const data: ApiResponse<Post[]> = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
         if (pageNum === 1) {
           setPosts(data.data);
           lastCheckRef.current = new Date();
@@ -160,6 +191,7 @@ export const usePostsData = (
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'An error occurred';
       setError(errorMessage);
+      console.error('Failed to fetch posts:', error);
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -182,9 +214,9 @@ export const usePostsData = (
       }
 
       const response = await fetch(url);
-      const data = await response.json();
+      const data: ApiResponse<Post[]> = await response.json();
 
-      if (data.success) {
+      if (data.success && data.data) {
         setPosts(data.data);
         setNewPostsCount(0);
         lastCheckRef.current = new Date();
@@ -196,7 +228,7 @@ export const usePostsData = (
         }
       }
     } catch (error) {
-      // Silent fail for polling
+      console.error('Failed to load new posts:', error);
     } finally {
       setLoadingMore(false);
     }
@@ -214,15 +246,15 @@ export const usePostsData = (
           `/api/posts/recent?since=${lastCheckRef.current.toISOString()}`,
           { signal: controller.signal }
         );
-        const data = await response.json();
+        const data: ApiResponse<Post[]> = await response.json();
 
-        if (data.success && data.data?.length > 0) {
+        if (data.success && data.data && data.data.length > 0) {
           setNewPostsCount(prev => prev + data.data.length);
           lastCheckRef.current = new Date();
         }
       } catch (error) {
         if (error instanceof Error && error.name !== 'AbortError') {
-          // Silent fail for polling errors
+          console.error('Polling error:', error);
         }
       } finally {
         clearTimeout(timeout);

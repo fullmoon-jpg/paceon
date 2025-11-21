@@ -26,7 +26,8 @@ interface BroadcastPayload<T> {
   payload: T;
 }
 
-interface NewPostPayload extends Post {}
+// Fix: Use type alias instead of empty interface extending Post
+type NewPostPayload = Post;
 
 interface UpdatePostPayload {
   postId: string;
@@ -47,6 +48,14 @@ interface NewCommentPayload {
   commentsCount: number;
 }
 
+type HandlerRefs = {
+  onNewPost?: (post: Post) => void;
+  onUpdatePost?: (postId: string, updates: Partial<Post>) => void;
+  onDeletePost?: (postId: string) => void;
+  onNewLike?: (postId: string, likesCount: number) => void;
+  onNewComment?: (postId: string, commentsCount: number) => void;
+};
+
 export function useRealtimeFeed({
   enabled,
   currentUserId,
@@ -59,7 +68,7 @@ export function useRealtimeFeed({
   const [isConnected, setIsConnected] = useState(false);
   const channelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
   const mountedRef = useRef(true);
-  const handlersRef = useRef({
+  const handlersRef = useRef<HandlerRefs>({
     onNewPost,
     onUpdatePost,
     onDeletePost,

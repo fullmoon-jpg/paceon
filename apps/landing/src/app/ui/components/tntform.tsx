@@ -253,7 +253,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                 </p>
                 <div className="bg-green-100 border-2 border-green-300 rounded-xl p-4 mb-6">
                   <p className="font-body text-sm text-[#15803d] leading-relaxed">
-                    Announcement and investment fee details on your email at 8-11 November 2025.
+                    Announcement and investment fee details on your email at 8-11 December 2025.
                   </p>
                 </div>
                 <button
@@ -287,7 +287,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                       value={formData.full_name}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                       placeholder="Your Full Name"
                     />
                   </div>
@@ -303,7 +303,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -319,7 +319,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                       value={formData.phone}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                       placeholder="+62 812 3456 7890"
                     />
                   </div>
@@ -335,7 +335,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                       value={formData.linkedin_url}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                       placeholder="linkedin.com/in/yourname"
                     />
                   </div>
@@ -351,7 +351,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                       value={formData.role}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                       placeholder="CEO / CTO / Founder"
                     />
                   </div>
@@ -367,7 +367,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                       value={formData.company}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                       placeholder="Your Company Name"
                     />
                   </div>
@@ -383,7 +383,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                       value={formData.company_industry}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                       placeholder="Tech / Creative / F&B"
                     />
                   </div>
@@ -399,7 +399,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                       value={formData.domicile}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                       placeholder="Jakarta / Bandung"
                     />
                   </div>
@@ -414,7 +414,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                       value={formData.source}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none"
+                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none"
                     >
                       <option value="">Choose One</option>
                       {sourceOptions.map(option => (
@@ -450,12 +450,12 @@ const TalkNTalesRegistrationAndFAQ = () => {
                               checked={isChecked}
                               onChange={() => handleCheckboxChange(interest)}
                               disabled={isDisabled}
-                              className={`mt-1 w-4 h-4 rounded border-2 border-gray-300 text-[#FB6F7A] focus:ring-[#FB6F7A] focus:ring-2 ${
+                              className={`mt-1 w-4 h-4 rounded border-2 border-gray-300 text-[#21C36E] focus:ring-[#21C36E] focus:ring-2 ${
                                 isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
                               }`}
                             />
                             <span className={`font-body text-sm text-[#3f3e3d] leading-relaxed ${
-                              !isDisabled && 'group-hover:text-[#FB6F7A] transition-colors'
+                              !isDisabled && 'group-hover:text-[#21C36E] transition-colors'
                             }`}>
                               {interest}
                             </span>
@@ -476,7 +476,7 @@ const TalkNTalesRegistrationAndFAQ = () => {
                       onChange={handleChange}
                       required
                       rows={4}
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] resize-none font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] resize-none font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                       placeholder="Tell us your reason..."
                     />
                   </div>
