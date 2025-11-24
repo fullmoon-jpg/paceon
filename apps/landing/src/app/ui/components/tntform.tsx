@@ -1,21 +1,7 @@
 "use client";
 import React, { useState } from "react";
-import { CheckCircle, ChevronDown } from "lucide-react";
+import { ChevronDown, Calendar, Clock, MapPin, Users } from "lucide-react";
 import Link from "next/link";
-
-interface FormData {
-  full_name: string;
-  email: string;
-  phone: string;
-  linkedin_url: string;
-  role: string;
-  company: string;
-  company_industry: string;
-  domicile: string;
-  source: string;
-  interests: string[];
-  reason: string;
-}
 
 interface FAQItem {
   question: string;
@@ -23,41 +9,29 @@ interface FAQItem {
 }
 
 const TalkNTalesRegistrationAndFAQ = () => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const [openFAQ, setOpenFAQ] = useState<number | null>(0);
 
-  const [formData, setFormData] = useState<FormData>({
-    full_name: '',
-    email: '',
-    phone: '',
-    linkedin_url: '',
-    role: '',
-    company: '',
-    company_industry: '',
-    domicile: '',
-    source: '',
-    interests: [],
-    reason: ''
-  });
-
-  const sourceOptions = [
-    "Instagram",
-    "Website",
-    "TikTok",
-    "Teman",
-    "LinkedIn",
-    "Lainnya"
-  ];
-
-  const interestOptions = [
-    "Sustainability & Green Innovation",
-    "Social Impact & Inclusion",
-    "Tech for Change",
-    "Creative & Lifestyle Business",
-    "Funding & Collaboration",
-    "Founder Journey & Mental Health"
+  const experiences = [
+    {
+      title: "Mini Talk Show",
+      description: "Sit together with fellow founders and listen to inspiring leaders share real stories about networking in both personal and business life. You walk away with simple and practical tips you can use right away."
+    },
+    {
+      title: "Group Game Session",
+      description: "A fun icebreaker where everyone laughs, plays, and gets comfortable. The games help you open up and make conversations flow more naturally."
+    },
+    {
+      title: "Speed Networking",
+      description: "Move from table to table and meet new founders in minutes. It is fast, energizing, and often leads to unexpected collaboration opportunities based on your chosen interests."
+    },
+    {
+      title: "Free Talk Networking",
+      description: "The atmosphere becomes relaxed and open. This is where deeper conversations unfold, ideas flow naturally, and meaningful connections begin to grow."
+    },
+    {
+      title: "Community Channel",
+      description: "Join our post-event community channel where you can stay connected with fellow young founders, continue the conversations, and build relationships beyond the event."
+    }
   ];
 
   const faqs: FAQItem[] = [
@@ -111,109 +85,6 @@ const TalkNTalesRegistrationAndFAQ = () => {
     },
   ];
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleCheckboxChange = (interest: string) => {
-    setFormData(prev => {
-      const currentInterests = prev.interests;
-      
-      // If already selected, allow to uncheck
-      if (currentInterests.includes(interest)) {
-        return {
-          ...prev,
-          interests: currentInterests.filter(i => i !== interest)
-        };
-      }
-      
-      // If not selected and limit not reached, allow to check
-      if (currentInterests.length < 3) {
-        return {
-          ...prev,
-          interests: [...currentInterests, interest]
-        };
-      }
-      
-      // If limit reached, don't allow more selections
-      return prev;
-    });
-  };
-
-  // Check if form is valid
-  const isFormValid = () => {
-    return (
-      formData.full_name.trim() !== '' &&
-      formData.email.trim() !== '' &&
-      formData.phone.trim() !== '' &&
-      formData.linkedin_url.trim() !== '' &&
-      formData.role.trim() !== '' &&
-      formData.company.trim() !== '' &&
-      formData.company_industry.trim() !== '' &&
-      formData.domicile.trim() !== '' &&
-      formData.source.trim() !== '' &&
-      formData.interests.length === 3 &&
-      formData.reason.trim() !== ''
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Double check validation
-    if (!isFormValid()) {
-      setError('Please fill in all required fields and select exactly 3 interests.');
-      return;
-    }
-    
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/tntregister', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const result = await response.json();
-
-      if (!response.ok || !result.success) {
-        throw new Error(result.message || 'Registration failed');
-      }
-
-      setIsSuccess(true);
-      setFormData({
-        full_name: '',
-        email: '',
-        phone: '',
-        linkedin_url: '',
-        role: '',
-        company: '',
-        company_industry: '',
-        domicile: '',
-        source: '',
-        interests: [],
-        reason: ''
-      });
-
-    } catch (err) {
-      const errorMessage = err instanceof Error 
-        ? err.message 
-        : 'Terjadi kesalahan. Silakan coba lagi.';
-      
-      setError(errorMessage);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const toggleFAQ = (index: number) => {
     setOpenFAQ(openFAQ === index ? null : index);
   };
@@ -222,286 +93,58 @@ const TalkNTalesRegistrationAndFAQ = () => {
     <section className="w-full py-16 sm:py-16 md:py-16 lg:py-20 bg-[#f4f4ef]">
       <div className="w-full px-6 sm:px-8 lg:px-28">
         
-        {/* Skewed Header */}
-        <div className="mb-12 lg:mb-16 text-center">
-          <div className="inline-block mb-4 transform -skew-y-1">
-            <div className="bg-[#F0C946] px-12 py-4">
-              <h2 className="font-brand text-3xl sm:text-4xl md:text-5xl text-[#3f3e3d] transform skew-y-1">
-                RESERVE YOUR SPOT
-              </h2>
-            </div>
-          </div>
-          <p className="font-body text-base sm:text-lg text-[#3f3e3d]/80">
-            60 Seats Available. Fill out the form below to join us!
-          </p>
-        </div>
-
-        {/* Grid Layout */}
+        {/* Grid Layout - Description Left, FAQ Right */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
           
-          {/* Left: Registration Form */}
-          <div className="w-full">
-            {isSuccess ? (
-              // Success Message
-              <div className="border-2 border-green-200 rounded-3xl p-8 sm:p-10 text-center sticky top-8 bg-green-50/30">
-                <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-6" />
-                <h3 className="font-brand text-2xl sm:text-3xl text-[#3f3e3d] mb-4">
-                  Registration Successful!
-                </h3>
-                <p className="font-body text-sm sm:text-base text-[#3f3e3d]/80 mb-6 leading-relaxed">
-                  Thank you for registering for <strong>Talk n Tales</strong>! A confirmation email has been sent to your inbox.
-                </p>
-                <div className="bg-green-100 border-2 border-green-300 rounded-xl p-4 mb-6">
-                  <p className="font-body text-sm text-[#15803d] leading-relaxed">
-                    Announcement and investment fee details on your email at 8-11 December 2025.
-                  </p>
-                </div>
-                <button
-                  onClick={() => setIsSuccess(false)}
-                  className="w-full bg-[#FB6F7A] hover:bg-[#E55A65] text-white font-brand text-base px-8 py-3.5 rounded-full transition-all duration-300 hover:scale-105"
-                >
-                  Register Another Person
-                </button>
+          {/* Left: Event Description - Order 1 on mobile (shows first) */}
+          <div className="w-full order-1">
+            
+            {/* Title */}
+            <div className="mb-8 lg:mb-10">
+              <h2 className="font-brand text-3xl sm:text-4xl md:text-5xl text-[#3f3e3d] mb-4">
+                About This Event
+              </h2>
+              <p className="font-body text-base sm:text-lg text-[#3f3e3d]/80 leading-relaxed">
+                <span className="font-bold">Talk and Tales</span> is more than a networking event. It is a place where Gen-Z founders sit together, listen to real stories about why networking actually matters, laugh and loosen up through fun games, and connect with other founders in ways that feel natural, unforced, and genuinely enjoyable.
+              </p>
+            </div>
+
+            {/* What You'll Experience */}
+            <div className="mb-8 lg:mb-10">
+              <h3 className="font-brand text-xl sm:text-2xl md:text-3xl text-[#3f3e3d] mb-4 lg:mb-5">
+                What You Will Gain From Each Session
+              </h3>
+              <div className="space-y-4">
+                {experiences.map((item, index) => (
+                  <div key={index} className="flex gap-3">
+                    <span className="text-[#F47a49] font-bold flex-shrink-0 mt-1">•</span>
+                    <div>
+                      <h4 className="font-body font-bold text-sm sm:text-base text-[#3f3e3d] mb-1">
+                        {item.title}
+                      </h4>
+                      <p className="font-body text-sm sm:text-base text-[#3f3e3d]/80 leading-relaxed">
+                        {item.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ) : (
-              // Registration Form
-              <form
-                onSubmit={handleSubmit}
-                className="border-2 border-[#3f3e3d]/10 rounded-3xl p-6 sm:p-8 lg:p-10 sticky top-8 bg-white/30"
-              >
-                {error && (
-                  <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
-                    <p className="font-body text-sm text-red-600">{error}</p>
-                  </div>
-                )}
+            </div>
 
-                <div className="space-y-6">
-                  {/* Full Name */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      What is your full name? <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="full_name"
-                      value={formData.full_name}
-                      onChange={handleChange}
-                      required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
-                      placeholder="Your Full Name"
-                    />
-                  </div>
+            {/* Who Should Join */}
+            <div>
+              <h3 className="font-brand text-xl sm:text-2xl md:text-3xl text-[#3f3e3d] mb-2 lg:mb-3">
+                Who Can Join
+              </h3>
+              <p className="font-body text-sm sm:text-base text-[#3f3e3d] leading-relaxed mb-4">
+                <span className="bg-[#3f3e3d] px-2 py-2 text-[#F47a49] font-brand">Gen-Z Founders</span><br/>Young founders aged 18 to 27 from diverse industries who are eager to learn, connect, and grow together through meaningful conversations and collaboration.
+              </p>
+            </div>
 
-                  {/* Email */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      What is your Email? <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
-                      placeholder="you@example.com"
-                    />
-                  </div>
-
-                  {/* Phone */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      What is your phone number? <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
-                      placeholder="+62 812 3456 7890"
-                    />
-                  </div>
-
-                  {/* LinkedIn URL */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      Your LinkedIn Profile <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="url"
-                      name="linkedin_url"
-                      value={formData.linkedin_url}
-                      onChange={handleChange}
-                      required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
-                      placeholder="linkedin.com/in/yourname"
-                    />
-                  </div>
-
-                  {/* Role */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      What is your role in your company? <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="role"
-                      value={formData.role}
-                      onChange={handleChange}
-                      required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
-                      placeholder="CEO / CTO / Founder"
-                    />
-                  </div>
-
-                  {/* Company */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      What company or organization are you part of? <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="company"
-                      value={formData.company}
-                      onChange={handleChange}
-                      required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
-                      placeholder="Your Company Name"
-                    />
-                  </div>
-
-                  {/* Company Industry */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      What industry are you in? <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="company_industry"
-                      value={formData.company_industry}
-                      onChange={handleChange}
-                      required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
-                      placeholder="Tech / Creative / F&B"
-                    />
-                  </div>
-
-                  {/* Domicile */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      Where do you currently live? <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      name="domicile"
-                      value={formData.domicile}
-                      onChange={handleChange}
-                      required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
-                      placeholder="Jakarta / Bandung"
-                    />
-                  </div>
-
-                  {/* Source */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      How did you hear about this event? <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      name="source"
-                      value={formData.source}
-                      onChange={handleChange}
-                      required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none"
-                    >
-                      <option value="">Choose One</option>
-                      {sourceOptions.map(option => (
-                        <option key={option} value={option}>{option}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* Interests */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      What topics are you interested in? <span className="text-red-500">* (Must Choose Exactly 3)</span>
-                    </label>
-                    <div className="mb-2">
-                      <span className="font-body text-xs text-[#3f3e3d]/70">
-                        Selected: {formData.interests.length} / 3
-                      </span>
-                    </div>
-                    <div className="space-y-3 pl-1">
-                      {interestOptions.map(interest => {
-                        const isChecked = formData.interests.includes(interest);
-                        const isDisabled = !isChecked && formData.interests.length >= 3;
-                        
-                        return (
-                          <label 
-                            key={interest} 
-                            className={`flex items-start gap-3 group ${
-                              isDisabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'
-                            }`}
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isChecked}
-                              onChange={() => handleCheckboxChange(interest)}
-                              disabled={isDisabled}
-                              className={`mt-1 w-4 h-4 rounded border-2 border-gray-300 text-[#21C36E] focus:ring-[#21C36E] focus:ring-2 ${
-                                isDisabled ? 'cursor-not-allowed' : 'cursor-pointer'
-                              }`}
-                            />
-                            <span className={`font-body text-sm text-[#3f3e3d] leading-relaxed ${
-                              !isDisabled && 'group-hover:text-[#21C36E] transition-colors'
-                            }`}>
-                              {interest}
-                            </span>
-                          </label>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Reason (Required) */}
-                  <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                      Why do you want to join us? <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      name="reason"
-                      value={formData.reason}
-                      onChange={handleChange}
-                      required
-                      rows={4}
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] resize-none font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
-                      placeholder="Tell us your reason..."
-                    />
-                  </div>
-
-                  {/* Submit Button */}
-                  <div className="pt-4">
-                    <button
-                      type="submit"
-                      disabled={isSubmitting || !isFormValid()}
-                      className="w-full bg-[#21c36e] yellow-fill disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-brand text-base py-4 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 uppercase tracking-wide"
-                    >
-                      {isSubmitting ? 'Sending...' : 'Register Now'}
-                    </button>
-                  </div>
-
-                  <p className="text-center font-body text-xs text-[#3f3e3d]/60 pt-2">
-                    Registration is successful once the email has been sent. Be sure to check your spam/inbox regularly!
-                  </p>
-                </div>
-              </form>
-            )}
           </div>
 
-          {/* Right: FAQ Section */}
-          <div className="w-full">
+          {/* Right: FAQ Section - Order 2 on mobile (shows after description) */}
+          <div className="w-full order-2">
             <div className="mb-6">
               <h3 className="font-brand text-2xl sm:text-3xl text-[#3f3e3d] mb-2">
                 Frequently Asked Questions
