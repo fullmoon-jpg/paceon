@@ -174,8 +174,6 @@ const TalkNTalesPosterAndDescription = () => {
 
           {/* Right: Registration Form with Header - Order 2 on mobile (shows after poster) */}
           <div className="w-full order-2">
-            
-            {/* Skewed Header - Now on the right side */}
             <div className="mb-8 lg:mb-10 text-center lg:text-left">
               <div className="inline-block mb-4 transform -skew-y-1">
                 <div className="bg-[#F0C946] px-8 sm:px-10 md:px-12 py-3 sm:py-4">
