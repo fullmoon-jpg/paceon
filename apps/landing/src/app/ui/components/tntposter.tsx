@@ -20,6 +20,7 @@ const TalkNTalesPosterAndDescription = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showValidation, setShowValidation] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     full_name: '',
@@ -61,6 +62,17 @@ const TalkNTalesPosterAndDescription = () => {
     }));
   };
 
+  // Get border color - only show validation AFTER submit attempt
+  const getBorderColor = (value: string): string => {
+    if (!showValidation) {
+      return 'border-[#3f3e3d]/20 focus:border-[#21C36E]';
+    }
+    
+    return value.trim() !== '' 
+      ? 'border-green-500' 
+      : 'border-red-500';
+  };
+
   const handleCheckboxChange = (interest: string) => {
     setFormData(prev => {
       const currentInterests = prev.interests;
@@ -87,15 +99,8 @@ const TalkNTalesPosterAndDescription = () => {
   const isValidLinkedInUrl = (url: string): boolean => {
     if (!url.trim()) return false;
     
-    // Remove whitespace
     const cleanUrl = url.trim();
-    
-    // Accept patterns:
-    // - linkedin.com/in/username
-    // - www.linkedin.com/in/username
-    // - https://linkedin.com/in/username
-    // - https://www.linkedin.com/in/username
-    const linkedinPattern = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/.+/i;
+    const linkedinPattern = /^(https?:\/\/)?(www\.)?linkedin\.com\/.+/i;
     
     return linkedinPattern.test(cleanUrl);
   };
@@ -104,12 +109,10 @@ const TalkNTalesPosterAndDescription = () => {
   const normalizeLinkedInUrl = (url: string): string => {
     const cleanUrl = url.trim();
     
-    // If already has protocol, return as is
     if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
       return cleanUrl;
     }
     
-    // If starts with linkedin.com or www.linkedin.com, add https://
     if (cleanUrl.startsWith('linkedin.com') || cleanUrl.startsWith('www.linkedin.com')) {
       return `https://${cleanUrl}`;
     }
@@ -122,7 +125,7 @@ const TalkNTalesPosterAndDescription = () => {
       formData.full_name.trim() !== '' &&
       formData.email.trim() !== '' &&
       formData.phone.trim() !== '' &&
-      isValidLinkedInUrl(formData.linkedin_url) &&
+      formData.linkedin_url.trim() !== '' &&
       formData.role.trim() !== '' &&
       formData.company.trim() !== '' &&
       formData.company_industry.trim() !== '' &&
@@ -136,8 +139,13 @@ const TalkNTalesPosterAndDescription = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Show validation on submit
+    setShowValidation(true);
+    
     if (!isFormValid()) {
       setError('Please fill in all required fields correctly. Make sure LinkedIn URL is valid and you selected exactly 3 interests.');
+      // Scroll to first error
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
     
@@ -145,7 +153,6 @@ const TalkNTalesPosterAndDescription = () => {
     setError(null);
 
     try {
-      // Normalize LinkedIn URL before sending
       const normalizedData = {
         ...formData,
         linkedin_url: normalizeLinkedInUrl(formData.linkedin_url)
@@ -166,6 +173,7 @@ const TalkNTalesPosterAndDescription = () => {
       }
 
       setIsSuccess(true);
+      setShowValidation(false);
       setFormData({
         full_name: '',
         email: '',
@@ -277,7 +285,7 @@ const TalkNTalesPosterAndDescription = () => {
                       value={formData.full_name}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className={`w-full text-[#3f3e3d] pb-2 border-b-2 ${getBorderColor(formData.full_name)} font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40`}
                       placeholder="Your Full Name"
                     />
                   </div>
@@ -288,12 +296,12 @@ const TalkNTalesPosterAndDescription = () => {
                       What is your Email? <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="email"
+                      type="text"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className={`w-full text-[#3f3e3d] pb-2 border-b-2 ${getBorderColor(formData.email)} font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40`}
                       placeholder="you@example.com"
                     />
                   </div>
@@ -304,17 +312,17 @@ const TalkNTalesPosterAndDescription = () => {
                       What is your phone number? <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="tel"
+                      type="text"
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className={`w-full text-[#3f3e3d] pb-2 border-b-2 ${getBorderColor(formData.phone)} font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40`}
                       placeholder="+62 812 3456 7890"
                     />
                   </div>
 
-                  {/* LinkedIn URL - UPDATED */}
+                  {/* LinkedIn URL */}
                   <div>
                     <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
                       Your LinkedIn Profile <span className="text-red-500">*</span>
@@ -325,11 +333,11 @@ const TalkNTalesPosterAndDescription = () => {
                       value={formData.linkedin_url}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className={`w-full text-[#3f3e3d] pb-2 border-b-2 ${getBorderColor(formData.linkedin_url)} font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40`}
                       placeholder="linkedin.com/in/yourname"
                     />
                     <p className="mt-1 text-xs text-[#3f3e3d]/60 font-body">
-                      You can enter: linkedin.com/in/yourname or https://linkedin.com/in/yourname
+                      Example: linkedin.com/in/yourname or linkedin.com/yourname
                     </p>
                   </div>
 
@@ -344,7 +352,7 @@ const TalkNTalesPosterAndDescription = () => {
                       value={formData.role}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className={`w-full text-[#3f3e3d] pb-2 border-b-2 ${getBorderColor(formData.role)} font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40`}
                       placeholder="CEO / CTO / Founder"
                     />
                   </div>
@@ -360,7 +368,7 @@ const TalkNTalesPosterAndDescription = () => {
                       value={formData.company}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className={`w-full text-[#3f3e3d] pb-2 border-b-2 ${getBorderColor(formData.company)} font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40`}
                       placeholder="Your Company Name"
                     />
                   </div>
@@ -376,7 +384,7 @@ const TalkNTalesPosterAndDescription = () => {
                       value={formData.company_industry}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className={`w-full text-[#3f3e3d] pb-2 border-b-2 ${getBorderColor(formData.company_industry)} font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40`}
                       placeholder="Tech / Creative / F&B"
                     />
                   </div>
@@ -392,7 +400,7 @@ const TalkNTalesPosterAndDescription = () => {
                       value={formData.domicile}
                       onChange={handleChange}
                       required
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className={`w-full text-[#3f3e3d] pb-2 border-b-2 ${getBorderColor(formData.domicile)} font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40`}
                       placeholder="Jakarta / Bandung"
                     />
                   </div>
@@ -469,7 +477,7 @@ const TalkNTalesPosterAndDescription = () => {
                       onChange={handleChange}
                       required
                       rows={4}
-                      className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] resize-none font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
+                      className={`w-full text-[#3f3e3d] pb-2 border-b-2 ${getBorderColor(formData.reason)} resize-none font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40`}
                       placeholder="Tell us your reason..."
                     />
                   </div>
