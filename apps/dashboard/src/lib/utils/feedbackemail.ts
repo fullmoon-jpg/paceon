@@ -1,14 +1,9 @@
-// lib/utils/paymentTemplate.ts
-
-export const bookingConfirmationEmailTemplate = (data: {
+export const eventCompletedEmailTemplate = (data: {
   name: string;
   eventTitle: string;
   eventDate: string;
   eventTime: string;
   eventLocation: string;
-  invoiceNumber: string;
-  amount: string;
-  dueDate: string;
 }) => {
   return `
 <!DOCTYPE html>
@@ -16,7 +11,7 @@ export const bookingConfirmationEmailTemplate = (data: {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Booking Confirmation & Payment Invoice</title>
+  <title>Event Completed - PACE ON</title>
 </head>
 <body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif;">
   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background: linear-gradient(135deg, #f0f9ff 0%, #ffffff 100%); padding: 40px 0;">
@@ -37,7 +32,7 @@ export const bookingConfirmationEmailTemplate = (data: {
                   <!-- Judul Email Kanan -->
                   <td align="right" valign="middle">
                     <h1 style="margin: 0; font-size: 20px; font-weight: bold; color: #fb6f7a; text-transform: uppercase;">
-                      Payment Invoice
+                      Event Completed!
                     </h1>
                   </td>
                 </tr>
@@ -51,94 +46,41 @@ export const bookingConfirmationEmailTemplate = (data: {
               <p style="margin: 0 0 20px 0; font-size: 16px; color: #1f2937;">Hi <strong style="color: #ec4899;">${data.name}</strong>,</p>
               
               <p style="margin: 0 0 24px 0; font-size: 16px; color: #1f2937; line-height: 1.6;">
-                Your booking for <strong style="color: #ec4899;">${data.eventTitle}</strong> has been confirmed. Please complete your payment to finalize your registration.
+                The event <strong style="color: #ec4899;">${data.eventTitle}</strong> has been successfully completed! Thanks you for the participation on our another movement. I hope we can create another moment on our next movement.
               </p>
 
-              <!-- Event Details -->
+              <!-- Connections Box -->
               <div style="background: #f8fafc; border: 2px solid #2a6435; border-radius: 12px; padding: 24px; margin: 24px 0;">
-                <h3 style="margin: 0 0 16px 0; color: #2a6435; font-size: 18px; font-weight: bold;">Event Details</h3>
-                <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 15px; color: #111827;">
-                  <tr>
-                    <td style="padding: 8px 0; font-weight: 600; color: #374151;">Event:</td>
-                    <td style="padding: 8px 0 8px 12px;">${data.eventTitle}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; font-weight: 600; color: #374151;">Date:</td>
-                    <td style="padding: 8px 0 8px 12px;"><strong>${data.eventDate}</strong></td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; font-weight: 600; color: #374151;">Time:</td>
-                    <td style="padding: 8px 0 8px 12px;"><strong>${data.eventTime} WIB</strong></td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; font-weight: 600; color: #374151;">Location:</td>
-                    <td style="padding: 8px 0 8px 12px;">${data.eventLocation}</td>
-                  </tr>
-                </table>
-              </div>
-
-              <!-- Payment Information - HIGHLIGHTED -->
-              <div style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: 12px; padding: 24px; margin: 24px 0;">
-                <h3 style="margin: 0 0 16px 0; color: #92400e; font-size: 18px; font-weight: bold;">Payment Information</h3>
-                <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 15px; color: #78350f;">
-                  <tr>
-                    <td style="padding: 8px 0; font-weight: 600;">Invoice Number:</td>
-                    <td style="padding: 8px 0 8px 12px; font-family: monospace;"><strong>${data.invoiceNumber}</strong></td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; font-weight: 600;">Amount Due:</td>
-                    <td style="padding: 8px 0 8px 12px; color: #b45309; font-size: 18px; font-weight: bold;">${data.amount}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; font-weight: 600;">Payment Deadline:</td>
-                    <td style="padding: 8px 0 8px 12px;"><strong>${data.dueDate} 09:00 WIB</strong></td>
-                  </tr>
-                </table>
-              </div>
-
-              <!-- Bank Details - HIGHLIGHTED -->
-              <div style="background: #f0fdf4; border: 2px solid #16a34a; border-radius: 12px; padding: 24px; margin: 24px 0;">
-                <h3 style="margin: 0 0 16px 0; color: #15803d; font-size: 18px; font-weight: bold;">Bank Transfer Details</h3>
-                <table width="100%" cellpadding="0" cellspacing="0" style="font-size: 15px; color: #065f46;">
-                  <tr>
-                    <td style="padding: 8px 0; font-weight: 600;">Bank Name:</td>
-                    <td style="padding: 8px 0 8px 12px;">Sea Bank (Transfer)</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; font-weight: 600;">Account Number:</td>
-                    <td style="padding: 8px 0 8px 12px; color: #047857; font-size: 16px; font-family: monospace; font-weight: bold;">9012 8311 7886</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; font-weight: 600;">Account Name:</td>
-                    <td style="padding: 8px 0 8px 12px;">M Rifki Ramdhani S</td>
-                  </tr>
-                </table>
-              </div>
-
-              <!-- Warning Box -->
-              <div style="background: #fee2e2; border: 2px solid #ef4444; border-radius: 12px; padding: 16px 20px; margin: 24px 0;">
-                <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.6;">
-                  <strong>⚠️ Important:</strong> Please complete payment before <strong>${data.dueDate} 09:00 WIB</strong>. Late payments may affect your booking confirmation.
+                <h3 style="margin: 0 0 16px 0; color: #2a6435; font-size: 18px; font-weight: bold;">About Your Connections</h3>
+                <p style="margin: 0 0 16px 0; font-size: 15px; color: #111827;">
+                  Your connections from this event have been automatically added to your network. Start building meaningful relationships today!
                 </p>
+                <a href="https://www.app.paceon.id" style="display: inline-block; background: #15803d; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">Check On Dashboard</a>
               </div>
 
-              <!-- Instructions -->
+              <!-- Feedback & Affirmation Cube -->
+              <div style="background: #f0fdf4; border: 2px solid #16a34a; border-radius: 12px; padding: 24px; margin: 24px 0;">
+                <h3 style="margin: 0 0 16px 0; color: #15803d; font-size: 18px; font-weight: bold;">Share Your Feedback</h3>
+                <p style="margin: 0 0 16px 0; font-size: 15px; color: #111827;">
+                  We value your feedback! Please share your experience and help us improve future events.
+                </p>
+                <a href="https://www.paceon.id/satisfactionform" style="display: inline-block; background: #15803d; color: #ffffff; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">Give Feedback</a>
+              </div>
+
               <div style="background: #fffbeb; border-radius: 12px; padding: 16px 20px; border: 2px solid #fbbf24; margin: 24px 0;">
-                <h4 style="margin: 0 0 8px 0; color: #92400e; font-size: 14px; font-weight: bold;">Payment Instructions:</h4>
-                <ol style="margin: 8px 0 0 0; padding-left: 20px; color: #92400e; font-size: 14px; line-height: 1.8;">
-                  <li>Open your banking app</li>
-                  <li>Transfer to account <strong>9012 8311 7886</strong></li>
-                  <li>Amount: <strong>${data.amount}</strong></li>
-                  <li>Save your payment receipt</li>
-                </ol>
+                <h4 style="margin: 0 0 8px 0; color: #92400e; font-size: 14px; font-weight: bold;">Affirmation Cube</h4>
+                <p style="margin: 0 0 16px 0; font-size: 15px; color: #92400e;">
+                  Don't forget to check out your affirmation cube and get daily inspiration!
+                </p>
+                <a href="https://app.paceon.id/affirmation-cube" style="display: inline-block; background: #fbbf24; color: #92400e; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold;">Open Affirmation Cube</a>
               </div>
 
               <p style="margin: 24px 0 0 0; color: #1f2937; font-size: 16px;">
-                Thank you for your registration. See you at the event!
+                Thank you for being part of this experience. We can't wait to see you at the next event!
               </p>
 
               <p style="margin: 16px 0 0 0; color: #1f4381; font-size: 16px; font-weight: 600;">
-                Best regards,<br>
+                Warm regards,<br>
                 <span style="color: #2a6435; font-weight: bold;">PACE ON Team</span>
               </p>
             </td>

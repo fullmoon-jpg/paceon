@@ -83,12 +83,46 @@ const TalkNTalesPosterAndDescription = () => {
     });
   };
 
+  // Validate LinkedIn URL - lebih flexible
+  const isValidLinkedInUrl = (url: string): boolean => {
+    if (!url.trim()) return false;
+    
+    // Remove whitespace
+    const cleanUrl = url.trim();
+    
+    // Accept patterns:
+    // - linkedin.com/in/username
+    // - www.linkedin.com/in/username
+    // - https://linkedin.com/in/username
+    // - https://www.linkedin.com/in/username
+    const linkedinPattern = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/.+/i;
+    
+    return linkedinPattern.test(cleanUrl);
+  };
+
+  // Normalize LinkedIn URL - auto add https://
+  const normalizeLinkedInUrl = (url: string): string => {
+    const cleanUrl = url.trim();
+    
+    // If already has protocol, return as is
+    if (cleanUrl.startsWith('http://') || cleanUrl.startsWith('https://')) {
+      return cleanUrl;
+    }
+    
+    // If starts with linkedin.com or www.linkedin.com, add https://
+    if (cleanUrl.startsWith('linkedin.com') || cleanUrl.startsWith('www.linkedin.com')) {
+      return `https://${cleanUrl}`;
+    }
+    
+    return cleanUrl;
+  };
+
   const isFormValid = () => {
     return (
       formData.full_name.trim() !== '' &&
       formData.email.trim() !== '' &&
       formData.phone.trim() !== '' &&
-      formData.linkedin_url.trim() !== '' &&
+      isValidLinkedInUrl(formData.linkedin_url) &&
       formData.role.trim() !== '' &&
       formData.company.trim() !== '' &&
       formData.company_industry.trim() !== '' &&
@@ -103,7 +137,7 @@ const TalkNTalesPosterAndDescription = () => {
     e.preventDefault();
     
     if (!isFormValid()) {
-      setError('Please fill in all required fields and select exactly 3 interests.');
+      setError('Please fill in all required fields correctly. Make sure LinkedIn URL is valid and you selected exactly 3 interests.');
       return;
     }
     
@@ -111,12 +145,18 @@ const TalkNTalesPosterAndDescription = () => {
     setError(null);
 
     try {
+      // Normalize LinkedIn URL before sending
+      const normalizedData = {
+        ...formData,
+        linkedin_url: normalizeLinkedInUrl(formData.linkedin_url)
+      };
+
       const response = await fetch('/api/tntregister', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(normalizedData)
       });
 
       const result = await response.json();
@@ -274,13 +314,13 @@ const TalkNTalesPosterAndDescription = () => {
                     />
                   </div>
 
-                  {/* LinkedIn URL */}
+                  {/* LinkedIn URL - UPDATED */}
                   <div>
                     <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
                       Your LinkedIn Profile <span className="text-red-500">*</span>
                     </label>
                     <input
-                      type="url"
+                      type="text"
                       name="linkedin_url"
                       value={formData.linkedin_url}
                       onChange={handleChange}
@@ -288,6 +328,9 @@ const TalkNTalesPosterAndDescription = () => {
                       className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#21C36E] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                       placeholder="linkedin.com/in/yourname"
                     />
+                    <p className="mt-1 text-xs text-[#3f3e3d]/60 font-body">
+                      You can enter: linkedin.com/in/yourname or https://linkedin.com/in/yourname
+                    </p>
                   </div>
 
                   {/* Role */}
