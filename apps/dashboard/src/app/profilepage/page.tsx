@@ -17,7 +17,7 @@ import {
   Phone,
   RefreshCw,
 } from "lucide-react";
-import { supabase } from "@paceon/lib/supabase";
+import { supabase } from "@paceon/lib/supabaseclient";
 import { useDataCache } from "@/contexts/DataContext";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { format } from "date-fns";

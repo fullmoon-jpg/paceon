@@ -28,7 +28,7 @@ export default function CreatePostModal({
   currentUserCompany,
   onCreate,
   onClose,
-  creating
+  creating,
 }: CreatePostModalProps) {
   const [newPostContent, setNewPostContent] = useState("");
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
@@ -37,14 +37,13 @@ export default function CreatePostModal({
   const [sport, setSport] = useState<string>("");
   const { showToast } = useToast();
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map(n => n[0])
-      .join('')
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
       .toUpperCase()
       .substring(0, 2);
-  };
 
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -53,28 +52,28 @@ export default function CreatePostModal({
     const newFiles = Array.from(files);
     const newPreviews: string[] = [];
 
-    newFiles.forEach(file => {
+    newFiles.forEach((file) => {
       const reader = new FileReader();
       reader.onloadend = () => {
         newPreviews.push(reader.result as string);
         if (newPreviews.length === newFiles.length) {
-          setPreviewImages([...previewImages, ...newPreviews]);
+          setPreviewImages((prev) => [...prev, ...newPreviews]);
         }
       };
       reader.readAsDataURL(file);
     });
 
-    setSelectedImages([...selectedImages, ...newFiles]);
+    setSelectedImages((prev) => [...prev, ...newFiles]);
   };
 
   const removeImage = (index: number) => {
-    setSelectedImages(selectedImages.filter((_, i) => i !== index));
-    setPreviewImages(previewImages.filter((_, i) => i !== index));
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async () => {
     if (!newPostContent.trim()) {
-      showToast('warning', 'Please write something before posting');
+      showToast("warning", "Please write something before posting");
       return;
     }
 
@@ -85,7 +84,7 @@ export default function CreatePostModal({
         location: location || undefined,
         sport: sport || undefined,
       });
-      
+
       setNewPostContent("");
       setSelectedImages([]);
       setPreviewImages([]);
@@ -93,20 +92,23 @@ export default function CreatePostModal({
       setSport("");
       onClose();
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred';
-      showToast('error', 'Error creating post: ' + errorMessage);
+      const errorMessage =
+        err instanceof Error ? err.message : "An error occurred";
+      showToast("error", "Error creating post: " + errorMessage);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-[#242837] rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-[#3d4459]">
         {/* Header */}
-        <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
-          <h3 className="text-xl font-bold text-gray-800 dark:text-white">Create Post</h3>
+        <div className="sticky top-0 bg-white dark:bg-[#242837] border-b border-gray-200 dark:border-[#3d4459] p-4 flex items-center justify-between">
+          <h3 className="text-xl font-bold text-[#3F3E3D] dark:text-white">
+            Create Post
+          </h3>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+            className="p-2 hover:bg-[#F4F4EF] dark:hover:bg-[#2d3548] rounded-full transition-colors"
           >
             <X size={24} className="text-gray-600 dark:text-gray-400" />
           </button>
@@ -115,21 +117,26 @@ export default function CreatePostModal({
         <div className="p-4">
           {/* User Info */}
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#15b392] to-[#2a6435] rounded-full flex items-center justify-center text-white font-bold overflow-hidden">
+            <div className="w-12 h-12 bg-gradient-to-br from-[#FB6F7A] to-[#F47A49] rounded-full flex items-center justify-center text-white font-bold overflow-hidden">
               {avatar_url ? (
-                <img src={avatar_url} alt={currentUserName} className="w-full h-full object-cover" />
+                <img
+                  src={avatar_url}
+                  alt={currentUserName}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 getInitials(currentUserName)
               )}
             </div>
             <div>
-              <h4 className="font-bold text-gray-800 dark:text-white">{currentUserName}</h4>
+              <h4 className="font-bold text-[#3F3E3D] dark:text-white">
+                {currentUserName}
+              </h4>
               {(currentUserPosition || currentUserCompany) && (
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {currentUserPosition && currentUserCompany 
+                  {currentUserPosition && currentUserCompany
                     ? `${currentUserPosition} at ${currentUserCompany}`
-                    : currentUserPosition || currentUserCompany
-                  }
+                    : currentUserPosition || currentUserCompany}
                 </p>
               )}
             </div>
@@ -140,7 +147,7 @@ export default function CreatePostModal({
             placeholder="What's happening in your sports journey?"
             value={newPostContent}
             onChange={(e) => setNewPostContent(e.target.value)}
-            className="w-full min-h-32 p-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 focus:border-transparent resize-none text-gray-800 dark:text-gray-200 bg-white dark:bg-gray-700 placeholder-gray-400 dark:placeholder-gray-500 mb-3"
+            className="w-full min-h-32 p-3 border border-gray-300 dark:border-[#3d4459] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FB6F7A] focus:border-transparent resize-none text-[#3F3E3D] dark:text-gray-200 bg-white dark:bg-[#2d3548] placeholder-gray-400 dark:placeholder-gray-500 mb-3"
           />
 
           {/* Location & Sport */}
@@ -150,12 +157,12 @@ export default function CreatePostModal({
               placeholder="Location (optional)"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
+              className="px-3 py-2 border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A] text-sm bg-white dark:bg-[#2d3548] text-[#3F3E3D] dark:text-gray-200 placeholder-gray-400 dark:placeholder-gray-500"
             />
             <select
               value={sport}
               onChange={(e) => setSport(e.target.value)}
-              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#15b392] dark:focus:ring-green-500 text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+              className="px-3 py-2 border border-gray-300 dark:border-[#3d4459] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FB6F7A] text-sm bg-white dark:bg-[#2d3548] text-[#3F3E3D] dark:text-gray-200"
             >
               <option value="">Select Type of Event</option>
               <option value="tennis">Tennis</option>
@@ -181,7 +188,7 @@ export default function CreatePostModal({
                   />
                   <button
                     onClick={() => removeImage(index)}
-                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                    className="absolute top-2 right-2 p-1 bg-[#FB6F7A] text-white rounded-full hover:bg-[#F47A49] transition-colors"
                   >
                     <X size={16} />
                   </button>
@@ -191,15 +198,24 @@ export default function CreatePostModal({
           )}
 
           {/* Add Media Section */}
-          <div className="mt-4 p-4 border border-gray-200 dark:border-gray-700 rounded-xl bg-gray-50 dark:bg-gray-700">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Add to your post</p>
+          <div className="mt-4 p-4 border border-gray-200 dark:border-[#3d4459] rounded-xl bg-[#F4F4EF] dark:bg-[#2d3548]">
+            <p className="text-sm font-semibold text-[#3F3E3D] dark:text-gray-200 mb-3">
+              Add to your post
+            </p>
             <div className="flex gap-2">
               <button
-                onClick={() => document.getElementById("image-upload-input")?.click()}
-                className="flex-1 flex items-center justify-center gap-2 p-3 bg-green-50 dark:bg-green-900/30 hover:bg-green-100 dark:hover:bg-green-900/50 rounded-lg transition-colors"
+                onClick={() =>
+                  document.getElementById("image-upload-input")?.click()
+                }
+                className="flex-1 flex items-center justify-center gap-2 p-3 bg-white dark:bg-[#242837] hover:bg-[#F4F4EF] dark:hover:bg-[#3d4459] rounded-lg transition-colors border border-dashed border-gray-300 dark:border-[#3d4459]"
               >
-                <ImageIcon size={20} className="text-green-600 dark:text-green-400" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Photo</span>
+                <ImageIcon
+                  size={20}
+                  className="text-[#21C36E] dark:text-[#21C36E]"
+                />
+                <span className="text-sm font-medium text-[#3F3E3D] dark:text-gray-200">
+                  Photo
+                </span>
               </button>
 
               <input
@@ -217,7 +233,7 @@ export default function CreatePostModal({
           <button
             onClick={handleSubmit}
             disabled={!newPostContent.trim() || creating}
-            className="w-full mt-4 py-3 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white rounded-lg font-bold hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="w-full mt-4 py-3 bg-[#FB6F7A] hover:bg-[#F47A49] text-white rounded-lg font-bold hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
             {creating ? (
               <>
@@ -225,7 +241,7 @@ export default function CreatePostModal({
                 Posting...
               </>
             ) : (
-              'Post'
+              "Post"
             )}
           </button>
         </div>

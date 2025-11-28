@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@paceon/lib/mongodb';
 import Post from '@/lib/models/Posts';
 import Like from '@/lib/models/Like';
-import { supabaseAdmin } from '@paceon/lib/supabase';
+import { supabaseAdmin } from '@paceon/lib/supabaseadmin';
 
 interface RateLimitEntry {
   lastRequest: number;
@@ -41,17 +41,28 @@ const RATE_LIMIT_MS = 1000;
 const MAX_REQUESTS_PER_MINUTE = 10;
 const MINUTE_MS = 60 * 1000;
 
+// =====================================================
+// ⭐️ AUTO RECOVER: reset processing kalau stale
+// =====================================================
 function checkRateLimit(userId: string, postId: string): { allowed: boolean; reason?: string } {
-  const rateLimitKey = `${userId}:${postId}`;
-  const entry = rateLimitMap.get(rateLimitKey);
+  const key = `${userId}:${postId}`;
+  const entry = rateLimitMap.get(key);
   const now = Date.now();
+
+  if (entry) {
+    // ⭐️ (Fix utama) Pindah tab → request lama aborted → processing tetap true
+    // Auto-reset jika stuck > 1500ms
+    if (entry.processing && now - entry.lastRequest > 1500) {
+      entry.processing = false;
+    }
+  }
 
   if (entry?.processing) {
     return { allowed: false, reason: 'Request already in progress' };
   }
 
   if (!entry) {
-    rateLimitMap.set(rateLimitKey, {
+    rateLimitMap.set(key, {
       lastRequest: now,
       processing: true,
       requestCount: 1,
@@ -61,7 +72,7 @@ function checkRateLimit(userId: string, postId: string): { allowed: boolean; rea
   }
 
   if (now > entry.resetTime) {
-    rateLimitMap.set(rateLimitKey, {
+    rateLimitMap.set(key, {
       lastRequest: now,
       processing: true,
       requestCount: 1,
@@ -78,42 +89,38 @@ function checkRateLimit(userId: string, postId: string): { allowed: boolean; rea
     return { allowed: false, reason: 'Please wait before liking again' };
   }
 
-  rateLimitMap.set(rateLimitKey, {
-    lastRequest: now,
-    processing: true,
-    requestCount: entry.requestCount + 1,
-    resetTime: entry.resetTime,
-  });
-
+  entry.lastRequest = now;
+  entry.processing = true;
+  entry.requestCount++;
   return { allowed: true };
 }
 
 function releaseRateLimit(userId: string, postId: string) {
-  const rateLimitKey = `${userId}:${postId}`;
-  const entry = rateLimitMap.get(rateLimitKey);
-  
-  if (entry) {
-    rateLimitMap.set(rateLimitKey, {
-      ...entry,
-      processing: false,
-    });
-  }
+  const key = `${userId}:${postId}`;
+  const entry = rateLimitMap.get(key);
+  if (entry) entry.processing = false;
 }
 
 function cleanupRateLimit(userId: string, postId: string) {
-  const rateLimitKey = `${userId}:${postId}`;
-  rateLimitMap.delete(rateLimitKey);
+  rateLimitMap.delete(`${userId}:${postId}`);
 }
 
+// =====================================================
+// ⭐️ Cleanup lebih cepat → hapus stale entries tiap 10 detik
+// =====================================================
 setInterval(() => {
   const now = Date.now();
   for (const [key, entry] of rateLimitMap.entries()) {
-    if (now > entry.resetTime + MINUTE_MS) {
+    if (now - entry.lastRequest > 10000) {
       rateLimitMap.delete(key);
     }
   }
-}, 5 * 60 * 1000);
+}, 10_000);
 
+
+// =====================================================
+// API HANDLER
+// =====================================================
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -126,8 +133,8 @@ export async function POST(
 
     const resolvedParams = await params;
     postId = resolvedParams.id;
-    
-    const body = await request.json() as RequestBody;
+
+    const body = (await request.json()) as RequestBody;
     userId = body.userId;
     const clientAction = body.action;
 
@@ -146,7 +153,7 @@ export async function POST(
       );
     }
 
-    const post = await Post.findById(postId) as PostDocument | null;
+    const post = (await Post.findById(postId)) as PostDocument | null;
 
     if (!post) {
       cleanupRateLimit(userId, postId);
@@ -156,11 +163,11 @@ export async function POST(
       );
     }
 
-    const existingLike = await Like.findOne({
+    const existingLike = (await Like.findOne({
       userId,
       targetType: 'post',
       targetId: postId,
-    }) as LikeDocument | null;
+    })) as LikeDocument | null;
 
     const isCurrentlyLiked = !!existingLike;
     const postOwnerId = post.userId.toString();
@@ -168,6 +175,9 @@ export async function POST(
     let actionPerformed: 'liked' | 'unliked' | 'no-change';
     let newLikesCount = post.likesCount;
 
+    // =====================================================
+    // UNLIKE
+    // =====================================================
     if (clientAction === 'unlike') {
       if (isCurrentlyLiked) {
         await Like.deleteOne({
@@ -184,7 +194,12 @@ export async function POST(
       } else {
         actionPerformed = 'no-change';
       }
-    } else if (clientAction === 'like') {
+    }
+
+    // =====================================================
+    // LIKE
+    // =====================================================
+    else if (clientAction === 'like') {
       if (!isCurrentlyLiked) {
         try {
           await Like.create({
@@ -217,27 +232,23 @@ export async function POST(
                 is_read: false,
                 metadata: {
                   post_id: postId,
-                  post_content: post.content.substring(0, 100)
-                }
+                  post_content: post.content.substring(0, 100),
+                },
               });
-            } catch (notifError) {
-              // Silent fail
-            }
+            } catch (_) {}
           }
         } catch (error) {
           const mongoError = error as MongoError;
           if (mongoError.code === 11000) {
             actionPerformed = 'no-change';
-            
-            const actualCount = await Like.countDocuments({
+            const count = await Like.countDocuments({
               targetType: 'post',
               targetId: postId,
             });
-            
-            if (actualCount !== post.likesCount) {
-              post.likesCount = actualCount;
+            if (count !== post.likesCount) {
+              post.likesCount = count;
               await post.save();
-              newLikesCount = actualCount;
+              newLikesCount = count;
             }
           } else {
             throw error;
@@ -246,7 +257,9 @@ export async function POST(
       } else {
         actionPerformed = 'no-change';
       }
-    } else {
+    }
+
+    else {
       cleanupRateLimit(userId, postId);
       return NextResponse.json(
         { success: false, error: 'Invalid action. Must be "like" or "unlike"' },
@@ -254,25 +267,33 @@ export async function POST(
       );
     }
 
+    // =====================================================
+    // ⭐️ RELEASE ALWAYS (No deadlock)
+    // =====================================================
     releaseRateLimit(userId, postId);
 
-    const finalLike = await Like.findOne({
+    // =====================================================
+    // ⭐️ ONLY sync count if action changed
+    // =====================================================
+    if (actionPerformed !== 'no-change') {
+      const count = await Like.countDocuments({
+        targetType: 'post',
+        targetId: postId,
+      });
+
+      if (count !== post.likesCount) {
+        post.likesCount = count;
+        await post.save();
+        newLikesCount = count;
+      }
+    }
+
+    const finalLike = (await Like.findOne({
       userId,
       targetType: 'post',
       targetId: postId,
-    }) as LikeDocument | null;
+    })) as LikeDocument | null;
     const finalIsLiked = !!finalLike;
-
-    const actualCount = await Like.countDocuments({
-      targetType: 'post',
-      targetId: postId,
-    });
-
-    if (actualCount !== post.likesCount) {
-      post.likesCount = actualCount;
-      await post.save();
-      newLikesCount = actualCount;
-    }
 
     return NextResponse.json({
       success: true,
@@ -280,21 +301,21 @@ export async function POST(
         isLiked: finalIsLiked,
         likesCount: newLikesCount,
       },
-      message: actionPerformed === 'liked' 
-        ? 'Post liked' 
-        : actionPerformed === 'unliked' 
-        ? 'Post unliked' 
-        : 'State synchronized',
+      message:
+        actionPerformed === 'liked'
+          ? 'Post liked'
+          : actionPerformed === 'unliked'
+          ? 'Post unliked'
+          : 'State synchronized',
     });
-
   } catch (error) {
-    if (userId && postId) {
-      cleanupRateLimit(userId, postId);
-    }
-    
-    const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    if (userId && postId) cleanupRateLimit(userId, postId);
+
     return NextResponse.json(
-      { success: false, error: errorMessage },
+      {
+        success: false,
+        error: error instanceof Error ? error.message : 'Internal server error',
+      },
       { status: 500 }
     );
   }

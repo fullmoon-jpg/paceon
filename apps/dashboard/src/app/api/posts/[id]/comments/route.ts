@@ -3,34 +3,32 @@ import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@paceon/lib/mongodb';
 import Comment from '@/lib/models/Comment';
 import Post from '@/lib/models/Posts';
-import { supabaseAdmin } from '@paceon/lib/supabase';
+import { supabaseAdmin } from '@paceon/lib/supabaseadmin';
+
+type RouteContext = {
+  params: Promise<{ id: string }>;
+};
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
   try {
     await connectDB();
 
-    const resolvedParams = await params;
-    const postId = resolvedParams.id;
+    const { id } = await context.params;
+    const postId = id;
 
-    // Get all comments for this post
     const comments = await Comment.find({ postId })
       .sort({ createdAt: -1 })
       .lean();
 
-    if (comments.length === 0) {
-      return NextResponse.json({
-        success: true,
-        data: [],
-      });
+    if (!comments.length) {
+      return NextResponse.json({ success: true, data: [] });
     }
 
-    // Get unique user IDs
-    const userIds = [...new Set(comments.map(c => c.userId))];
+    const userIds = [...new Set(comments.map((c) => c.userId))];
 
-    // Fetch all user profiles from Supabase
     const { data: userProfiles, error: userError } = await supabaseAdmin
       .from('users_profile')
       .select('id, full_name, avatar_url')
@@ -40,13 +38,11 @@ export async function GET(
       console.error('Error fetching user profiles:', userError);
     }
 
-    // Create user lookup map
     const userMap = new Map(
-      (userProfiles || []).map(user => [user.id, user])
+      (userProfiles || []).map((user) => [user.id, user])
     );
 
-    // Combine comments with user data
-    const commentsWithUsers = comments.map(comment => ({
+    const commentsWithUsers = comments.map((comment) => ({
       ...comment,
       _id: comment._id.toString(),
       user: userMap.get(comment.userId) || {
@@ -60,16 +56,11 @@ export async function GET(
       success: true,
       data: commentsWithUsers,
     });
-
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('GET /api/posts/[id]/comments error:', error);
-    
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : 'Internal server error';
-    
+
     return NextResponse.json(
-      { success: false, error: errorMessage },
+      { success: false, error: error.message ?? 'Internal server error' },
       { status: 500 }
     );
   }
@@ -77,15 +68,15 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  context: RouteContext
 ) {
   try {
     await connectDB();
 
-    const resolvedParams = await params;
-    const postId = resolvedParams.id;
-    const body = await request.json();
-    const { userId, content } = body;
+    const { id } = await context.params;
+    const postId = id;
+
+    const { userId, content } = await request.json();
 
     if (!userId || !content) {
       return NextResponse.json(
@@ -94,7 +85,6 @@ export async function POST(
       );
     }
 
-    // Check if post exists
     const post = await Post.findById(postId);
     if (!post) {
       return NextResponse.json(
@@ -103,18 +93,15 @@ export async function POST(
       );
     }
 
-    // Create comment
     const comment = await Comment.create({
       userId,
       postId,
       content: content.trim(),
     });
 
-    // Increment comment count
     post.commentsCount = (post.commentsCount || 0) + 1;
     await post.save();
 
-    // Fetch user profile
     const { data: userProfile } = await supabaseAdmin
       .from('users_profile')
       .select('id, full_name, avatar_url')
@@ -131,7 +118,6 @@ export async function POST(
       },
     };
 
-    // Create notification (if not self-comment)
     const postOwnerId = post.userId.toString();
     if (userId !== postOwnerId) {
       try {
@@ -147,7 +133,7 @@ export async function POST(
             post_id: postId,
             comment_id: comment._id.toString(),
             comment_content: content.substring(0, 100),
-          }
+          },
         });
       } catch (notifError) {
         console.error('Failed to create notification:', notifError);
@@ -158,16 +144,11 @@ export async function POST(
       success: true,
       data: commentWithUser,
     });
-
-  } catch (error: unknown) {
+  } catch (error: any) {
     console.error('POST /api/posts/[id]/comments error:', error);
-    
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : 'Internal server error';
-    
+
     return NextResponse.json(
-      { success: false, error: errorMessage },
+      { success: false, error: error.message ?? 'Internal server error' },
       { status: 500 }
     );
   }

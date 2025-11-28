@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@paceon/lib/supabase';
-import { createClient } from '@supabase/supabase-js';
+import { supabaseAdmin } from '@paceon/lib/supabaseadmin';
 
 interface Review {
   reviewee_id: string;
@@ -12,29 +11,25 @@ export async function POST(request: NextRequest) {
   try {
     const { eventId, reviews } = await request.json();
 
-    // Get auth token
+    // --- Validate Authorization ---
     const authHeader = request.headers.get('authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const token = authHeader.substring(7);
+    const token = authHeader.replace('Bearer ', '');
 
-    // Verify user with authenticated client
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        global: { headers: { Authorization: authHeader } }
-      }
-    );
+    // --- Verify user using Admin client ---
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAdmin.auth.getUser(token);
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !user) {
+    if (authError || !user) {
       return NextResponse.json({ error: 'Auth failed' }, { status: 401 });
     }
 
-    // Use ADMIN client untuk bypass RLS
+    // --- Prepare insert payload ---
     const reviewsToInsert = reviews.map((review: Review) => ({
       event_id: eventId,
       reviewer_id: user.id,
@@ -44,17 +39,16 @@ export async function POST(request: NextRequest) {
       created_at: new Date().toISOString(),
     }));
 
-    // Insert dengan admin
-    const { data: insertData, error: insertError } = await supabaseAdmin
+    // --- Insert reviews (admin bypass RLS) ---
+    const { error: insertError } = await supabaseAdmin
       .from('affirmation_cube')
-      .insert(reviewsToInsert)
-      .select();
+      .insert(reviewsToInsert);
 
     if (insertError) {
       throw new Error(`Insert failed: ${insertError.message}`);
     }
 
-    // Update booking dengan admin
+    // --- Mark booking as completed ---
     const { error: updateError } = await supabaseAdmin
       .from('bookings')
       .update({ affirmation_completed: true })
@@ -66,14 +60,8 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({ success: true });
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error 
-      ? error.message 
-      : 'Server error';
-    
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Server error';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

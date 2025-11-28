@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { supabase } from '@paceon/lib/supabase';
+import { supabase } from '@paceon/lib/supabaseclient';
 
 interface Post {
   _id: string;

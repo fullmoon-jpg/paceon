@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@paceon/lib/supabase";
+import { supabase } from "@paceon/lib/supabaseclient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDataCache } from "@/contexts/DataContext";
 import { useNotifications } from "@/hooks/useRealtimeNotifications";
@@ -366,33 +366,144 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#242837]">
-        <div className="text-center">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 rounded-full">
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
+      <div className="min-h-screen flex flex-col bg-white dark:bg-[#242837]">
+        <main className="flex-1 grid grid-cols-1 lg:grid-cols-3 overflow-hidden">
+          {/* Main Content Skeleton */}
+          <div className="lg:col-span-2 overflow-y-auto px-4 sm:px-8 pt-8 pb-8 bg-white dark:bg-[#242837] scrollbar-hide">
+            {/* Calendar skeleton */}
+            <div className="mb-8">
+              <div className="h-6 w-40 bg-gray-200 dark:bg-[#3d4459] rounded-md mb-4 animate-pulse" />
+              <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-lg border border-gray-200 dark:border-[#3d4459] p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="h-4 w-16 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 bg-gray-200 dark:bg-[#3d4459] rounded-lg animate-pulse" />
+                    <div className="h-5 w-32 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                    <div className="h-8 w-8 bg-gray-200 dark:bg-[#3d4459] rounded-lg animate-pulse" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-7 gap-2 text-center">
+                  {Array.from({ length: 7 }).map((_, i) => (
+                    <div
+                      key={`day-${i}`}
+                      className="h-5 w-10 bg-gray-100 dark:bg-[#3d4459] rounded-md mx-auto"
+                    />
+                  ))}
+                  {Array.from({ length: 28 }).map((_, i) => (
+                    <div
+                      key={`date-${i}`}
+                      className="h-8 w-8 bg-gray-100 dark:bg-[#2d3548] rounded-lg mx-auto animate-pulse"
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="relative w-24 h-24 flex items-center justify-center rounded-full p-4">
-              <Image
-                src="/images/dark-logo.png"
-                alt="Loading"
-                width={80}
-                height={80}
-                className="object-contain dark:hidden"
-                priority
-              />
-              <Image
-                src="/images/light-logo.png"
-                alt="Loading"
-                width={80}
-                height={80}
-                className="object-contain hidden dark:block"
-                priority
-              />
+
+            {/* Your Events skeleton */}
+            <section className="mb-8">
+              <div className="flex items-center mb-4 justify-between">
+                <div className="h-5 w-32 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                <div className="h-6 w-20 bg-gray-200 dark:bg-[#3d4459] rounded-full animate-pulse" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[420px] overflow-y-auto pr-2 scrollbar-hide">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div
+                    key={`your-skel-${i}`}
+                    className="bg-white dark:bg-[#2d3548] border border-gray-200 dark:border-[#3d4459] rounded-xl shadow-sm overflow-hidden"
+                  >
+                    <div className="h-40 bg-gray-200 dark:bg-[#3d4459] animate-pulse" />
+                    <div className="p-4 space-y-2">
+                      <div className="h-4 w-40 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                      <div className="h-3 w-32 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                      <div className="h-3 w-24 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                      <div className="flex justify-between items-center pt-2">
+                        <div className="h-3 w-20 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                        <div className="h-4 w-16 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {/* Available Events skeleton */}
+            <section>
+              <div className="flex items-center mb-4 justify-between">
+                <div className="h-5 w-40 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                <div className="h-6 w-24 bg-gray-200 dark:bg-[#3d4459] rounded-full animate-pulse" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[420px] overflow-y-auto pr-2 scrollbar-hide">
+                {Array.from({ length: 2 }).map((_, i) => (
+                  <div
+                    key={`avail-skel-${i}`}
+                    className="bg-white dark:bg-[#2d3548] border border-gray-200 dark:border-[#3d4459] rounded-xl shadow-sm overflow-hidden"
+                  >
+                    <div className="h-40 bg-gray-200 dark:bg-[#3d4459] animate-pulse" />
+                    <div className="p-4 space-y-2">
+                      <div className="h-4 w-40 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                      <div className="h-3 w-32 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                      <div className="h-3 w-24 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                      <div className="flex justify-between items-center pt-2">
+                        <div className="h-3 w-20 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                        <div className="h-4 w-16 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          {/* Sidebar skeleton */}
+          <div className="overflow-y-auto p-4 sm:p-6 bg-white dark:bg-[#242837] border-l border-gray-200 dark:border-[#3d4459] scrollbar-hide">
+            <div className="space-y-6">
+              {/* Profile card */}
+              <div className="bg-gradient-to-br from-[#FB6F7A] to-[#F47A49] rounded-xl shadow-lg p-6 text-center">
+                <div className="w-20 h-20 bg-white/30 rounded-full mx-auto mb-4 animate-pulse" />
+                <div className="h-4 w-32 bg-white/70 rounded-md mx-auto mb-2 animate-pulse" />
+                <div className="h-3 w-40 bg-white/50 rounded-md mx-auto animate-pulse" />
+              </div>
+
+              {/* Stats skeleton */}
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={`stat-skel-${i}`}
+                    className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-4 border border-gray-200 dark:border-[#3d4459]"
+                  >
+                    <div className="w-8 h-8 bg-gray-200 dark:bg-[#3d4459] rounded-lg mb-2 animate-pulse" />
+                    <div className="h-6 w-10 bg-gray-200 dark:bg-[#3d4459] rounded-md mb-1 animate-pulse" />
+                    <div className="h-3 w-20 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Tabs skeleton */}
+              <div className="bg-[#F4F4EF] dark:bg-[#2d3548] rounded-xl border border-gray-200 dark:border-[#3d4459] p-2 shadow-md">
+                <div className="flex gap-2">
+                  <div className="flex-1 h-8 bg-gray-200 dark:bg-[#3d4459] rounded-lg animate-pulse" />
+                  <div className="flex-1 h-8 bg-gray-200 dark:bg-[#3d4459] rounded-lg animate-pulse" />
+                </div>
+              </div>
+
+              {/* List skeleton */}
+              <div className="bg-white dark:bg-[#2d3548] rounded-xl border border-gray-200 dark:border-[#3d4459] shadow-md p-4 space-y-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div
+                    key={`item-skel-${i}`}
+                    className="flex items-center gap-3"
+                  >
+                    <div className="w-10 h-10 bg-gray-200 dark:bg-[#3d4459] rounded-full animate-pulse" />
+                    <div className="flex-1 space-y-2">
+                      <div className="h-3 w-32 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                      <div className="h-3 w-24 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-          <p className="mt-6 text-[#3F3E3D] dark:text-white font-medium">Loading dashboard...</p>
-        </div>
+        </main>
       </div>
     );
   }

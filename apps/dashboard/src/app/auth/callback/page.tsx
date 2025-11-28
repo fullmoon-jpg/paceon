@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@paceon/lib/supabase';
+import { supabase } from '@paceon/lib/supabaseclient';
 import Image from 'next/image';
 
 interface ProfileData {

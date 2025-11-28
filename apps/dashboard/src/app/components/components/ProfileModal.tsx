@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { X, Edit2, Calendar, Users, TrendingUp, Loader2, Star } from 'lucide-react';
 import { format } from 'date-fns';
-import { supabase } from '@paceon/lib/supabase';
+import { supabase } from '@paceon/lib/supabaseclient';
 import Image from 'next/image';
 
 interface Post {

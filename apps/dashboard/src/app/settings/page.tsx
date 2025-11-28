@@ -14,7 +14,7 @@ import {
   Heart,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@paceon/lib/supabase";
+import { supabase } from "@paceon/lib/supabaseclient";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDataCache } from "@/contexts/DataContext";
 

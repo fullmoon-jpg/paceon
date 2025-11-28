@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@paceon/lib/supabase';
+import { supabase } from '@paceon/lib/supabaseclient';
 
 export default function AuthSuccessPage() {
   const router = useRouter();

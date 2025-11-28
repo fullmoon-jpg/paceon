@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@paceon/lib/supabase';
+import { supabaseAdmin } from '@paceon/lib/supabaseadmin';
 import sharp from 'sharp';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;

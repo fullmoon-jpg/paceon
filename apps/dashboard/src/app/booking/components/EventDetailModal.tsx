@@ -11,7 +11,7 @@ import {
   X,
   Loader2,
 } from "lucide-react";
-import { supabase } from "@paceon/lib/supabase";
+import { supabase } from "@paceon/lib/supabaseclient";
 
 interface BookingEvent {
   id: number | string;

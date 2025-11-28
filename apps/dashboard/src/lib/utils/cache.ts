@@ -1,4 +1,4 @@
-import { supabaseAdmin } from '@paceon/lib/supabase';
+import { supabaseAdmin } from '@paceon/lib/supabaseadmin';
 
 interface UserProfile {
   id: string;

@@ -1,34 +1,40 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, AlertCircle, ArrowUp, Bookmark, ImageIcon, Video, MapPin } from "lucide-react";
-import { ActivityFeedProps } from './types';
-import { usePostsData } from './hooks/usePostData';
-import { usePostActions } from './hooks/usePostActions';
-import { useComments } from './hooks/useComments';
-import { useRealtimeFeed } from '@/hooks/useRealtimeFeed';
-import { getInitials } from '../../lib/utils/helpers';
-import PostCard from './components/PostCard';
-import CreatePostModal from './components/CreatePostModal';
-import EditPostModal from './components/EditPostModal';
-import EditCommentModal from './components/EditCommentModal';
-import ShareModal from './components/ShareModal';
-import ProfileModal from './components/ProfileModal';
-import { useToast } from '@/contexts/ToastContext';
+import {
+  Loader2,
+  AlertCircle,
+  ArrowUp,
+  Bookmark,
+  ImageIcon,
+} from "lucide-react";
+import { ActivityFeedProps } from "./types";
+import { usePostsData } from "./hooks/usePostData";
+import { usePostActions } from "./hooks/usePostActions";
+import { useComments } from "./hooks/useComments";
+import { useRealtimeFeed } from "@/hooks/useRealtimeFeed";
+import { getInitials } from "../../lib/utils/helpers";
+import PostCard from "./components/PostCard";
+import CreatePostModal from "./components/CreatePostModal";
+import EditPostModal from "./components/EditPostModal";
+import EditCommentModal from "./components/EditCommentModal";
+import ShareModal from "./components/ShareModal";
+import ProfileModal from "./components/ProfileModal";
+import { useToast } from "@/contexts/ToastContext";
 import { Post } from "./types";
 
-export default function ActivityFeed({ 
-  currentUserId, 
+export default function ActivityFeed({
+  currentUserId,
   currentUserName,
   avatar_url,
   currentUserPosition,
   currentUserCompany,
   currentUserRole = "user",
-  activeTab
+  activeTab,
 }: ActivityFeedProps) {
   const { showToast } = useToast();
 
-  const isAdmin = currentUserRole === 'admin';
+  const isAdmin = currentUserRole === "admin";
 
   const {
     posts,
@@ -58,7 +64,16 @@ export default function ActivityFeed({
     deleting,
     liking,
     saving,
-  } = usePostActions(currentUserId, isAdmin, posts, setPosts, likedPosts, setLikedPosts, savedPosts, setSavedPosts);
+  } = usePostActions(
+    currentUserId,
+    isAdmin,
+    posts,
+    setPosts,
+    likedPosts,
+    setLikedPosts,
+    savedPosts,
+    setSavedPosts
+  );
 
   const {
     comments,
@@ -80,30 +95,30 @@ export default function ActivityFeed({
   } = useComments(currentUserId, isAdmin, posts, setPosts);
 
   const { isConnected: feedConnected } = useRealtimeFeed({
-    enabled: activeTab === 'all',
+    enabled: activeTab === "all",
     currentUserId,
     onNewPost: (newPost) => {
       if (newPost.userId !== currentUserId) {
-        setPosts(prev => {
-          const exists = prev.some(p => p._id === newPost._id);
+        setPosts((prev) => {
+          const exists = prev.some((p) => p._id === newPost._id);
           if (exists) return prev;
           return [newPost, ...prev];
         });
-        showToast('info', 'New post available');
+        showToast("info", "New post available");
       }
     },
     onUpdatePost: (postId, updates) => {
-      setPosts(prev => prev.map(p => 
-        p._id === postId ? { ...p, ...updates } : p
-      ));
+      setPosts((prev) =>
+        prev.map((p) => (p._id === postId ? { ...p, ...updates } : p))
+      );
     },
     onDeletePost: (postId) => {
-      setPosts(prev => prev.filter(p => p._id !== postId));
+      setPosts((prev) => prev.filter((p) => p._id !== postId));
     },
   });
 
   const [showCreatePost, setShowCreatePost] = useState(false);
-  const [editingPost, setEditingPost] = useState<Post | null>(null); // Ini sudah diganti
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [sharePostId, setSharePostId] = useState<string | null>(null);
   const [viewingProfile, setViewingProfile] = useState<{
     userId: string;
@@ -116,27 +131,29 @@ export default function ActivityFeed({
 
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
 
-  const handleCreatePostWithRefresh = async (postData: Parameters<typeof handleCreatePost>[0]) => {
+  const handleCreatePostWithRefresh = async (
+    postData: Parameters<typeof handleCreatePost>[0]
+  ) => {
     await handleCreatePost(postData);
-    setProfileRefreshKey(prev => prev + 1);
+    setProfileRefreshKey((prev) => prev + 1);
   };
 
   const handleDeletePostWithRefresh = async (postId: string) => {
     await handleDeletePost(postId);
-    setProfileRefreshKey(prev => prev + 1);
+    setProfileRefreshKey((prev) => prev + 1);
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-[#15b392]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#FB6F7A]" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6">
+      <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-6 border border-gray-200 dark:border-[#3d4459]">
         <div className="flex items-center gap-3 text-red-600 dark:text-red-400 mb-3">
           <AlertCircle size={24} />
           <h3 className="font-bold text-lg">Error</h3>
@@ -144,7 +161,7 @@ export default function ActivityFeed({
         <p className="text-gray-600 dark:text-gray-400">{error}</p>
         <button
           onClick={() => fetchPosts()}
-          className="mt-4 w-full py-2 bg-[#15b392] text-white rounded-lg hover:bg-[#2a6435] transition-colors"
+          className="mt-4 w-full py-2 bg-[#FB6F7A] hover:bg-[#F47A49] text-white rounded-lg transition-colors font-semibold"
         >
           Try Again
         </button>
@@ -155,56 +172,57 @@ export default function ActivityFeed({
   return (
     <>
       {/* New Posts Banner */}
-      {newPostsCount > 0 && (activeTab === 'all' || activeTab === 'yours') && (
+      {newPostsCount > 0 && (activeTab === "all" || activeTab === "yours") && (
         <div className="sticky top-0 z-40 mb-4">
           <button
             onClick={loadNewPosts}
             disabled={loadingMore}
-            className="w-full py-3 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2"
+            className="w-full py-3 bg-[#FB6F7A] hover:bg-[#F47A49] text-white rounded-lg font-semibold hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <ArrowUp size={20} />
-            {loadingMore ? 'Loading...' : `Load ${newPostsCount} New Post${newPostsCount > 1 ? 's' : ''}`}
+            {loadingMore
+              ? "Loading..."
+              : `Load ${newPostsCount} New Post${
+                  newPostsCount > 1 ? "s" : ""
+                }`}
           </button>
         </div>
       )}
 
       {/* Create Post Button */}
-      {activeTab !== 'saved' && (
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-4 mb-6">
+      {activeTab !== "saved" && (
+        <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-4 mb-6 border border-gray-200 dark:border-[#3d4459]">
           <button
             onClick={() => setShowCreatePost(true)}
-            className="w-full flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-xl transition-colors text-left"
+            className="w-full flex items-center gap-3 p-3 bg-[#F4F4EF] dark:bg-[#242837] hover:bg-[#e7e7df] dark:hover:bg-[#3d4459] rounded-xl transition-colors text-left"
           >
-            <div className="w-10 h-10 bg-gradient-to-br from-[#15b392] to-[#2a6435] rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden">
+            <div className="w-10 h-10 bg-gradient-to-br from-[#FB6F7A] to-[#F47A49] rounded-full flex items-center justify-center text-white font-bold text-sm overflow-hidden">
               {avatar_url ? (
-                <img src={avatar_url} alt={currentUserName} className="w-full h-full object-cover" />
+                <img
+                  src={avatar_url}
+                  alt={currentUserName}
+                  className="w-full h-full object-cover"
+                />
               ) : (
                 getInitials(currentUserName)
               )}
             </div>
-            <span className="text-gray-500 dark:text-gray-400">What&apos;s on your mind?</span>
+            <span className="text-gray-500 dark:text-gray-400">
+              What&apos;s on your mind?
+            </span>
           </button>
-          <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-            <button 
+          <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200 dark:border-[#3d4459]">
+            <button
               onClick={() => setShowCreatePost(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              className="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-[#F4F4EF] dark:hover:bg-[#3d4459] rounded-lg transition-colors"
             >
-              <ImageIcon size={20} className="text-green-600 dark:text-green-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Photo</span>
-            </button>
-            <button 
-              onClick={() => setShowCreatePost(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <Video size={20} className="text-red-600 dark:text-red-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Video</span>
-            </button>
-            <button 
-              onClick={() => setShowCreatePost(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <MapPin size={20} className="text-blue-600 dark:text-blue-400" />
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Location</span>
+              <ImageIcon
+                size={20}
+                className="text-[#21C36E] dark:text-[#21C36E]"
+              />
+              <span className="text-sm font-medium text-[#3F3E3D] dark:text-gray-300">
+                Photo
+              </span>
             </button>
           </div>
         </div>
@@ -213,17 +231,21 @@ export default function ActivityFeed({
       {/* Posts Feed */}
       <div className="space-y-6">
         {posts.length === 0 && !loading && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-12 text-center">
-            <Bookmark size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-            <h3 className="text-xl font-bold text-gray-800 dark:text-white mb-2">
-              {activeTab === 'saved' && 'No Saved Posts'}
-              {activeTab === 'yours' && 'No Posts Yet'}
-              {activeTab === 'all' && 'No Posts'}
+          <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-12 text-center border border-gray-200 dark:border-[#3d4459]">
+            <Bookmark
+              size={48}
+              className="mx-auto mb-4 text-gray-400 dark:text-gray-500"
+            />
+            <h3 className="text-xl font-bold text-[#3F3E3D] dark:text-white mb-2">
+              {activeTab === "saved" && "No Saved Posts"}
+              {activeTab === "yours" && "No Posts Yet"}
+              {activeTab === "all" && "No Posts"}
             </h3>
             <p className="text-gray-600 dark:text-gray-400">
-              {activeTab === 'saved' && 'Posts you save will appear here'}
-              {activeTab === 'yours' && 'Create your first post to get started'}
-              {activeTab === 'all' && 'Be the first to create a post'}
+              {activeTab === "saved" && "Posts you save will appear here"}
+              {activeTab === "yours" &&
+                "Create your first post to get started"}
+              {activeTab === "all" && "Be the first to create a post"}
             </p>
           </div>
         )}
@@ -264,12 +286,12 @@ export default function ActivityFeed({
       </div>
 
       {/* Load More */}
-      {hasMore && activeTab !== 'saved' && (
+      {hasMore && activeTab !== "saved" && (
         <div className="text-center mt-6">
           <button
             onClick={loadMorePosts}
             disabled={loadingMore}
-            className="px-6 py-3 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors shadow-md disabled:opacity-50 flex items-center gap-2 mx-auto"
+            className="px-6 py-3 bg-white dark:bg-[#2d3548] text-[#3F3E3D] dark:text-gray-300 rounded-lg font-medium hover:bg-[#F4F4EF] dark:hover:bg-[#3d4459] transition-colors shadow-md disabled:opacity-50 flex items-center gap-2 mx-auto border border-gray-200 dark:border-[#3d4459]"
           >
             {loadingMore ? (
               <>
@@ -277,7 +299,7 @@ export default function ActivityFeed({
                 Loading...
               </>
             ) : (
-              'Load More Posts'
+              "Load More Posts"
             )}
           </button>
         </div>
@@ -330,7 +352,7 @@ export default function ActivityFeed({
           onClose={() => setSharePostId(null)}
         />
       )}
-      
+
       {viewingProfile && (
         <ProfileModal
           isOpen={true}

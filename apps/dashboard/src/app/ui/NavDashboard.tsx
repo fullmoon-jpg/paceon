@@ -78,38 +78,55 @@ const ResponsiveNavbar: React.FC = () => {
   if (authLoading) {
     return (
       <>
-        {/* Desktop Loading */}
-        <div className="hidden md:flex fixed left-0 top-0 h-screen w-20 bg-white dark:bg-[#242837] shadow-2xl flex-col items-center justify-center z-50">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 rounded-full">
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
-            </div>
-            <div className="relative w-16 h-16 flex items-center justify-center rounded-full p-2">
-              <Image
-                src="/images/dark-logo.png"
-                alt="Loading"
-                width={48}
-                height={48}
-                className="object-contain dark:hidden"
-                priority
+        {/* Desktop skeleton sidebar */}
+        <div className="hidden md:flex fixed left-0 top-0 h-screen w-20 bg-white dark:bg-[#242837] shadow-2xl flex-col items-center justify-between z-50 border-r border-gray-200 dark:border-[#3d4459]">
+          {/* Logo skeleton */}
+          <div className="w-10 h-10 bg-gray-200 dark:bg-[#3d4459] rounded-2xl mt-6 animate-pulse" />
+          {/* Menu icons skeleton */}
+          <div className="flex flex-col items-center gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={`nav-skel-${i}`}
+                className="w-9 h-9 bg-gray-200 dark:bg-[#3d4459] rounded-xl animate-pulse"
               />
-              <Image
-                src="/images/light-logo.png"
-                alt="Loading"
-                width={48}
-                height={48}
-                className="object-contain hidden dark:block"
-                priority
-              />
-            </div>
+            ))}
+          </div>
+          {/* Bottom buttons skeleton */}
+          <div className="flex flex-col items-center gap-3 mb-6">
+            <div className="w-9 h-9 bg-[#F0C946]/40 rounded-xl animate-pulse" />
+            <div className="w-9 h-9 bg-[#FB6F7A]/30 rounded-xl animate-pulse" />
           </div>
         </div>
-        {/* Mobile Loading */}
-        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#242837] border-t border-gray-200 dark:border-[#3d4459] px-4 py-3 z-50">
-          <div className="flex justify-center">
-            <div className="animate-spin rounded-full h-6 w-6 border-2 border-[#FB6F7A] border-t-transparent"></div>
+
+        {/* Mobile top bar skeleton */}
+        <div className="md:hidden fixed top-0 left-0 right-0 bg-white dark:bg-[#242837] border-b border-gray-200 dark:border-[#3d4459] px-4 py-3 z-50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-gray-200 dark:bg-[#3d4459] rounded-xl animate-pulse" />
+              <div className="h-4 w-24 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+            </div>
+            <div className="w-9 h-9 bg-gray-200 dark:bg-[#3d4459] rounded-lg animate-pulse" />
           </div>
         </div>
+
+        {/* Mobile bottom nav skeleton */}
+        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#242837] border-t border-gray-200 dark:border-[#3d4459] px-2 py-2 z-50">
+          <div className="flex items-center justify-around">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={`bottom-skel-${i}`}
+                className="flex flex-col items-center gap-1"
+              >
+                <div className="w-6 h-6 bg-gray-200 dark:bg-[#3d4459] rounded-lg animate-pulse" />
+                <div className="w-10 h-3 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Spacer for mobile content */}
+        <div className="md:hidden h-[57px]" />
+        <div className="md:hidden h-[56px]" />
       </>
     );
   }

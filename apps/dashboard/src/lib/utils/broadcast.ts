@@ -1,4 +1,4 @@
-import { supabase } from '@paceon/lib/supabase';
+import { supabase } from '@paceon/lib/supabaseclient';
 
 interface BroadcastPayload {
   [key: string]: unknown;

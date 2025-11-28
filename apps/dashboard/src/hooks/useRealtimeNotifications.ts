@@ -1,6 +1,6 @@
 // src/hooks/useRealtimeNotifications.ts
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { supabase } from '@paceon/lib/supabase';
+import { supabase } from '@paceon/lib/supabaseclient';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 interface NotificationActor {

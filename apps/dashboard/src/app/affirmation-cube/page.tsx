@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "@paceon/lib/supabase";
+import { supabase } from "@paceon/lib/supabaseclient";
 import { useAuth } from "@/contexts/AuthContext";
 import { Sparkles, ChevronRight, Calendar, Users } from "lucide-react";
 

@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { format } from "date-fns";
 import { Plus, TrendingUp, Users, Calendar as CalendarIcon, Shield } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@paceon/lib/supabase";
+import { supabase } from "@paceon/lib/supabaseclient";
 import { getEventImage } from "@/lib/eventImages";
 import Image from "next/image";
 
@@ -334,35 +334,105 @@ export default function BookingPage() {
 
   if (authLoading || checkingAdmin || loading) {
     return (
-      <div className="min-h-screen bg-white dark:bg-[#242837] flex items-center justify-center">
-        <div className="text-center">
-          <div className="relative inline-block">
-            <div className="absolute inset-0 rounded-full">
-              <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
+      <div className="min-h-screen bg-white dark:bg-[#242837]">
+        {/* Header skeleton */}
+        <div className="relative text-[#3F3E3D] dark:text-white overflow-hidden">
+          <div className="absolute top-0 left-0 w-96 h-36 bg-[#FB6F7A]/10 rounded-b-full blur-2xl opacity-75 -z-10" />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 relative">
+            <div className="flex items-center justify-between mb-10">
+              <div className="space-y-3">
+                <div className="h-8 w-64 bg-gray-200 dark:bg-[#3d4459] rounded-lg animate-pulse" />
+                <div className="h-4 w-80 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                <div className="h-6 w-32 bg-[#21C36E]/20 rounded-full animate-pulse" />
+              </div>
+              <div className="h-11 w-40 bg-[#21C36E]/40 rounded-xl animate-pulse hidden sm:block" />
             </div>
-            
-            <div className="relative w-32 h-32 flex items-center justify-center rounded-full p-4">
-              <Image
-                src="/images/dark-logo.png"
-                alt="PACE ON"
-                width={120}
-                height={120}
-                className="object-contain dark:hidden"
-                priority
-              />
-              <Image
-                src="/images/light-logo.png"
-                alt="PACE ON"
-                width={120}
-                height={120}
-                className="object-contain hidden dark:block"
-                priority
-              />
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="bg-white dark:bg-[#2d3548] shadow rounded-2xl p-6 flex items-center gap-3 border border-gray-200 dark:border-[#3d4459]"
+                >
+                  <div className="w-12 h-12 bg-gray-200 dark:bg-[#3d4459] rounded-xl animate-pulse" />
+                  <div className="space-y-2 flex-1">
+                    <div className="h-3 w-20 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                    <div className="h-5 w-10 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-          
-          <p className="mt-6 text-[#3F3E3D] dark:text-white font-medium">Loading bookings...</p>
         </div>
+
+        {/* Main content skeleton */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Calendar sidebar skeleton */}
+            <div className="lg:col-span-1">
+              <div className="lg:sticky lg:top-4 space-y-4 z-10">
+                <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-lg p-4 border border-gray-200 dark:border-[#3d4459]">
+                  <div className="h-5 w-32 bg-gray-200 dark:bg-[#3d4459] rounded-md mb-4 animate-pulse" />
+                  <div className="grid grid-cols-7 gap-2 text-center">
+                    {Array.from({ length: 7 }).map((_, i) => (
+                      <div
+                        key={`day-${i}`}
+                        className="h-4 w-10 bg-gray-100 dark:bg-[#3d4459] rounded-md mx-auto"
+                      />
+                    ))}
+                    {Array.from({ length: 28 }).map((_, i) => (
+                      <div
+                        key={`date-${i}`}
+                        className="h-8 w-8 bg-gray-100 dark:bg-[#2d3548] rounded-lg mx-auto animate-pulse"
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="h-20 bg-white dark:bg-[#2d3548] rounded-xl shadow-lg border border-gray-200 dark:border-[#3d4459] animate-pulse" />
+              </div>
+            </div>
+
+            {/* Events grid skeleton */}
+            <div className="lg:col-span-2 flex flex-col h-[calc(100vh-2rem)]">
+              <div className="sticky top-4 z-20 bg-[#F4F4EF] dark:bg-[#1a1d29] pb-4 flex-shrink-0">
+                <div className="h-12 bg-white dark:bg-[#2d3548] rounded-xl border border-gray-200 dark:border-[#3d4459] animate-pulse" />
+              </div>
+
+              <div className="flex-1 overflow-y-auto overflow-x-hidden scrollbar-hide">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-6 mt-2">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div
+                      key={`card-skel-${i}`}
+                      className="bg-white dark:bg-[#2d3548] rounded-xl shadow-lg border border-gray-200 dark:border-[#3d4459] overflow-hidden"
+                    >
+                      <div className="h-32 bg-gray-200 dark:bg-[#3d4459] animate-pulse" />
+                      <div className="p-4 space-y-2">
+                        <div className="h-4 w-40 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                        <div className="h-3 w-32 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                        <div className="h-3 w-24 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                        <div className="flex justify-between items-center pt-2">
+                          <div className="h-3 w-24 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                          <div className="h-4 w-16 bg-gray-200 dark:bg-[#3d4459] rounded-md animate-pulse" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <style jsx global>{`
+          .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+          .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
       </div>
     );
   }

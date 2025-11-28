@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { FaEye, FaEyeSlash, FaCheckCircle } from "react-icons/fa";
 import { useRouter, useSearchParams } from "next/navigation";
-import { supabase } from "@paceon/lib/supabase";
+import { supabase } from "@paceon/lib/supabaseclient";
 import { AuthError } from "@supabase/supabase-js";
 
 export default function ResetPasswordForm() {
