@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { supabase } from '@paceon/lib/supabase';
+import { supabase } from '@paceon/lib/supabaseclient';
 import { User } from '@supabase/supabase-js';
 
 interface Profile {
