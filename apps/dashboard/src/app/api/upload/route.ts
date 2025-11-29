@@ -51,18 +51,22 @@ export async function POST(request: NextRequest) {
     const fileName = `${userId}/${timestamp}-${random}.${fileExt}`;
 
     const arrayBuffer = await file.arrayBuffer();
-    let buffer = Buffer.from(arrayBuffer);
+    let buffer: Buffer = Buffer.from(arrayBuffer);
 
+    // Image optimization with sharp
     try {
-      buffer = await sharp(buffer)
+      const optimizedBuffer = await sharp(buffer)
         .resize(MAX_WIDTH, MAX_HEIGHT, {
           fit: 'inside',
           withoutEnlargement: true,
         })
         .jpeg({ quality: 85 })
         .toBuffer();
+      
+      buffer = optimizedBuffer;
     } catch (err) {
-      // Silent optimization skip
+      console.warn('Image optimization skipped:', err);
+      // Continue with original buffer if optimization fails
     }
 
     const { data, error } = await supabaseAdmin.storage
@@ -95,6 +99,7 @@ export async function POST(request: NextRequest) {
       size: buffer.length,
     });
   } catch (error) {
+    console.error('POST /api/upload error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to upload image';
     return NextResponse.json(
       { success: false, error: errorMessage },
@@ -139,6 +144,7 @@ export async function DELETE(request: NextRequest) {
       message: 'Image deleted successfully',
     });
   } catch (error) {
+    console.error('DELETE /api/upload error:', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to delete image';
     return NextResponse.json(
       { success: false, error: errorMessage },
