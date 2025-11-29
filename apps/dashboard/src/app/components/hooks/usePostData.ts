@@ -121,12 +121,12 @@ export const usePostsData = (
         .map(p => {
           const post = p.data;
           
-          // Ensure user object exists - FIX: Use undefined instead of null
+          // Ensure user object exists
           if (!post.user || !post.user.id) {
             post.user = {
               id: post.userId?.toString() || 'unknown',
               full_name: 'Unknown User',
-              avatar_url: undefined // Changed from null to undefined
+              avatar_url: undefined
             };
           }
           
@@ -167,13 +167,13 @@ export const usePostsData = (
       const response = await fetch(url);
       const data: ApiResponse<Post[]> = await response.json();
 
-      if (data.success && data.data) {
+      if (data.success && data.data && Array.isArray(data.data)) {
         if (pageNum === 1) {
           setPosts(data.data);
           lastCheckRef.current = new Date();
           setNewPostsCount(0);
         } else {
-          setPosts(prev => [...prev, ...data.data]);
+          setPosts(prev => [...prev, ...data.data!]);
         }
         
         if (typeof data.hasMore === 'boolean') {
@@ -216,7 +216,7 @@ export const usePostsData = (
       const response = await fetch(url);
       const data: ApiResponse<Post[]> = await response.json();
 
-      if (data.success && data.data) {
+      if (data.success && data.data && Array.isArray(data.data)) {
         setPosts(data.data);
         setNewPostsCount(0);
         lastCheckRef.current = new Date();
@@ -248,8 +248,8 @@ export const usePostsData = (
         );
         const data: ApiResponse<Post[]> = await response.json();
 
-        if (data.success && data.data && data.data.length > 0) {
-          setNewPostsCount(prev => prev + data.data.length);
+        if (data.success && data.data && Array.isArray(data.data) && data.data.length > 0) {
+          setNewPostsCount(prev => prev + data.data!.length);
           lastCheckRef.current = new Date();
         }
       } catch (error) {

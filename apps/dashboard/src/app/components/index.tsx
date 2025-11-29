@@ -8,7 +8,7 @@ import {
   Bookmark,
   ImageIcon,
 } from "lucide-react";
-import { ActivityFeedProps } from "./types";
+import { ActivityFeedProps, Post } from "./types";
 import { usePostsData } from "./hooks/usePostData";
 import { usePostActions } from "./hooks/usePostActions";
 import { useComments } from "./hooks/useComments";
@@ -21,7 +21,6 @@ import EditCommentModal from "./components/EditCommentModal";
 import ShareModal from "./components/ShareModal";
 import ProfileModal from "./components/ProfileModal";
 import { useToast } from "@/contexts/ToastContext";
-import { Post } from "./types";
 
 // Skeleton Post Component
 function SkeletonPost() {
@@ -123,9 +122,9 @@ export default function ActivityFeed({
   const { isConnected: feedConnected } = useRealtimeFeed({
     enabled: activeTab === "all",
     currentUserId,
-    onNewPost: (newPost) => {
+    onNewPost: (newPost: Post) => {
       if (newPost.userId !== currentUserId) {
-        setPosts((prev) => {
+        setPosts((prev: Post[]) => {
           const exists = prev.some((p) => p._id === newPost._id);
           if (exists) return prev;
           return [newPost, ...prev];
@@ -133,13 +132,13 @@ export default function ActivityFeed({
         showToast("info", "New post available");
       }
     },
-    onUpdatePost: (postId, updates) => {
-      setPosts((prev) =>
+    onUpdatePost: (postId: string, updates: Partial<Post>) => {
+      setPosts((prev: Post[]) =>
         prev.map((p) => (p._id === postId ? { ...p, ...updates } : p))
       );
     },
-    onDeletePost: (postId) => {
-      setPosts((prev) => prev.filter((p) => p._id !== postId));
+    onDeletePost: (postId: string) => {
+      setPosts((prev: Post[]) => prev.filter((p) => p._id !== postId));
     },
   });
 
@@ -169,7 +168,7 @@ export default function ActivityFeed({
     setProfileRefreshKey((prev) => prev + 1);
   };
 
-  // Skeleton loading - tampilkan 3 skeleton posts
+  // Skeleton loading
   if (loading) {
     return (
       <div className="space-y-6">
@@ -359,7 +358,7 @@ export default function ActivityFeed({
           post={editingPost}
           onUpdate={handleEditPost}
           onClose={() => setEditingPost(null)}
-          updating={updating}
+          updating={updating === editingPost._id}
         />
       )}
 
@@ -371,7 +370,7 @@ export default function ActivityFeed({
             setEditingComment(null);
           }}
           onClose={() => setEditingComment(null)}
-          updating={updatingComment}
+          updating={updatingComment === editingComment._id}
         />
       )}
 
