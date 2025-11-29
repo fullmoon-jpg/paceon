@@ -22,6 +22,16 @@ interface UserProfile {
   avatar_url: string | null;
 }
 
+// Helper function for fire-and-forget stats update
+const updateStatsAsync = async (userId: string): Promise<void> => {
+  try {
+    await supabaseAdmin.rpc('increment_total_posts', { p_user_id: userId });
+    console.log('User stats updated successfully');
+  } catch (err) {
+    console.error('Stats update failed:', err);
+  }
+};
+
 export async function GET(request: NextRequest) {
   try {
     await connectDB();
@@ -179,15 +189,8 @@ export async function POST(request: NextRequest) {
       console.warn('Broadcast failed:', broadcastError);
     }
 
-    // Update user stats (fire-and-forget)
-    supabaseAdmin
-      .rpc('increment_total_posts', { p_user_id: userId })
-      .then(() => {
-        console.log('User stats updated successfully');
-      })
-      .catch((err) => {
-        console.error('Stats update failed:', err);
-      });
+    // Update user stats (fire-and-forget with helper function)
+    updateStatsAsync(userId);
 
     return NextResponse.json({
       success: true,
