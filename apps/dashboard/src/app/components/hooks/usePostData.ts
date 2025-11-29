@@ -121,12 +121,12 @@ export const usePostsData = (
         .map(p => {
           const post = p.data;
           
-          // Ensure user object exists
+          // Ensure user object exists - FIX: Use undefined instead of null
           if (!post.user || !post.user.id) {
             post.user = {
               id: post.userId?.toString() || 'unknown',
               full_name: 'Unknown User',
-              avatar_url: null
+              avatar_url:  // Changed from null to undefined
             };
           }
           
