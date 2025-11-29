@@ -123,6 +123,7 @@ export default function ActivityFeedPage() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // Simple centered loader untuk user loading
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-[#242837] flex items-center justify-center">
@@ -155,9 +156,9 @@ export default function ActivityFeedPage() {
   const isAdmin = profile?.role === "admin";
 
   return (
-    <div className="min-h-screen bg-[#F4F4EF] dark:bg-[#242837]">
+    <div className="min-h-screen bg-white dark:bg-[#242837]">
       {/* Header */}
-      <div className="bg-[#F4F4EF] dark:bg-transparent">
+      <div className="bg-transparent">
         <div className="p-4 sm:p-6 max-w-3xl mx-auto">
           <h1 className="text-3xl text-[#3F3E3D] dark:text-white font-bold mb-2">
             Activity Feed
@@ -175,7 +176,7 @@ export default function ActivityFeedPage() {
 
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         {/* Sticky Tabs */}
-        <div className="sticky top-0 z-20 bg-[#F4F4EF] dark:bg-[#242837] pb-4 -mx-4 px-4">
+        <div className="sticky top-0 z-20 bg-white dark:bg-[#242837] pb-4 -mx-4 px-4">
           <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md overflow-hidden border border-gray-200 dark:border-[#3d4459]">
             <div className="flex border-b border-gray-200 dark:border-[#3d4459]">
               {(["all", "yours", "saved"] as TabType[]).map((tab) => {
@@ -205,7 +206,7 @@ export default function ActivityFeedPage() {
           </div>
         </div>
 
-        {/* Activity Feed */}
+        {/* Activity Feed dengan skeleton loading internal */}
         <div className="pb-6">
           <ActivityFeed
             currentUserId={user.id}

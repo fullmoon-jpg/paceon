@@ -37,6 +37,47 @@ interface Booking {
   user_id: string;
 }
 
+// Skeleton Components
+function SkeletonHeader() {
+  return (
+    <div className="bg-white dark:bg-[#2d3548] rounded-2xl shadow-md p-6 mb-6 border border-gray-200 dark:border-[#3d4459] animate-pulse">
+      <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-20 mb-4" />
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-12 h-12 bg-gray-300 dark:bg-gray-700 rounded-full" />
+        <div className="flex-1">
+          <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mb-2" />
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-3/4" />
+        </div>
+      </div>
+      <div className="h-2 bg-gray-300 dark:bg-gray-700 rounded-full" />
+    </div>
+  );
+}
+
+function SkeletonCard() {
+  return (
+    <div className="bg-white dark:bg-[#2d3548] rounded-2xl shadow-md p-8 mb-6 border border-gray-200 dark:border-[#3d4459] animate-pulse">
+      <div className="text-center mb-8">
+        <div className="w-24 h-24 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-4" />
+        <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mx-auto mb-2" />
+        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mx-auto" />
+      </div>
+      <div className="mb-6">
+        <div className="h-5 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mx-auto mb-3" />
+        <div className="flex justify-center gap-2">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+          ))}
+        </div>
+      </div>
+      <div className="mb-6">
+        <div className="h-5 bg-gray-300 dark:bg-gray-700 rounded w-1/4 mb-2" />
+        <div className="h-24 bg-gray-300 dark:bg-gray-700 rounded" />
+      </div>
+    </div>
+  );
+}
+
 const AffirmationCubePage = () => {
   const router = useRouter();
   const { user, loading } = useAuth();
@@ -51,7 +92,6 @@ const AffirmationCubePage = () => {
   const [completed, setCompleted] = useState(false);
   const [pageLoading, setPageLoading] = useState(true);
 
-  // Get eventId from URL params
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const id = params.get("event_id");
@@ -62,7 +102,6 @@ const AffirmationCubePage = () => {
     }
   }, []);
 
-  // Fetch data when user & eventId ready
   useEffect(() => {
     if (!loading && user && eventId) {
       fetchEventAndTeammates();
@@ -78,7 +117,6 @@ const AffirmationCubePage = () => {
     }
 
     try {
-      // Fetch event
       const { data: eventData, error: eventError } = await supabase
         .from("events")
         .select("*")
@@ -88,7 +126,6 @@ const AffirmationCubePage = () => {
       if (eventError) throw eventError;
       setEvent(eventData as Event);
 
-      // Fetch teammates - simpler approach
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
         .select("user_id")
@@ -100,7 +137,6 @@ const AffirmationCubePage = () => {
 
       const userIds = (bookingsData || []).map((b: Booking) => b.user_id);
 
-      // Get user profiles
       const { data: profilesData, error: profilesError } = await supabase
         .from("users_profile")
         .select("id, full_name, avatar_url, email")
@@ -125,7 +161,6 @@ const AffirmationCubePage = () => {
 
       setTeammates(teammatesData);
 
-      // Initialize reviews
       const initialReviews: Record<string, Review> = {};
       teammatesData.forEach((t: Teammate) => {
         initialReviews[t.user_id] = {
@@ -136,7 +171,6 @@ const AffirmationCubePage = () => {
       });
       setReviews(initialReviews);
 
-      // Check existing reviews
       const { data: existingReviews } = await supabase
         .from("affirmation_cube")
         .select("reviewee_id")
@@ -234,13 +268,13 @@ const AffirmationCubePage = () => {
     }
   };
 
-  // Loading state
+  // Skeleton loading
   if (pageLoading || loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#15b392] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+      <div className="min-h-screen bg-white dark:bg-[#242837] py-8 px-4">
+        <div className="max-w-2xl mx-auto">
+          <SkeletonHeader />
+          <SkeletonCard />
         </div>
       </div>
     );
@@ -249,12 +283,12 @@ const AffirmationCubePage = () => {
   // Invalid access
   if (!user || !eventId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
+      <div className="min-h-screen bg-white dark:bg-[#242837] flex items-center justify-center px-4">
+        <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-8 text-center border border-gray-200 dark:border-[#3d4459] max-w-md">
           <p className="text-gray-600 dark:text-gray-400 mb-4">Invalid access. Please try again.</p>
           <button
             onClick={() => router.push("/")}
-            className="bg-[#15b392] text-white px-6 py-2 rounded-lg hover:bg-[#129176]"
+            className="bg-[#FB6F7A] text-white px-6 py-2 rounded-lg hover:bg-[#F47A49] transition-all font-medium"
           >
             Back to Dashboard
           </button>
@@ -266,19 +300,19 @@ const AffirmationCubePage = () => {
   // Completed state
   if (completed) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
-        <div className="text-center max-w-md mx-auto p-8">
-          <div className="w-24 h-24 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce">
+      <div className="min-h-screen bg-white dark:bg-[#242837] flex items-center justify-center px-4">
+        <div className="text-center max-w-md mx-auto">
+          <div className="w-24 h-24 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center mx-auto mb-6 animate-bounce border-4 border-green-200 dark:border-green-800">
             <CheckCircle className="w-12 h-12 text-green-600 dark:text-green-400" />
           </div>
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-white mb-4">Thank You!</h2>
+          <h2 className="text-3xl font-bold text-[#3F3E3D] dark:text-white mb-4">Thank You!</h2>
           <p className="text-gray-600 dark:text-gray-400 mb-2">Your reviews have been submitted successfully.</p>
           <p className="text-sm text-gray-500 dark:text-gray-500 mb-6">
             Your networking score and teammates&apos; scores will be updated shortly.
           </p>
           <button
             onClick={() => router.push("/")}
-            className="bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white px-8 py-3 rounded-lg font-bold hover:shadow-lg transition-all"
+            className="bg-gradient-to-r from-[#FB6F7A] to-[#F47A49] text-white px-8 py-3 rounded-lg font-bold hover:shadow-lg transition-all"
           >
             Back to Dashboard
           </button>
@@ -290,13 +324,14 @@ const AffirmationCubePage = () => {
   // No teammates
   if (teammates.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <Users className="w-16 h-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-          <p className="text-gray-600 dark:text-gray-400 mb-4">No teammates to review for this event.</p>
+      <div className="min-h-screen bg-white dark:bg-[#242837] flex items-center justify-center px-4">
+        <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-12 text-center border border-gray-200 dark:border-[#3d4459] max-w-md">
+          <Users className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
+          <h3 className="text-xl font-bold text-[#3F3E3D] dark:text-white mb-2">No Teammates</h3>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">No teammates to review for this event.</p>
           <button
             onClick={() => router.push("/")}
-            className="bg-[#15b392] text-white px-6 py-2 rounded-lg hover:bg-[#129176]"
+            className="bg-[#FB6F7A] text-white px-6 py-2 rounded-lg hover:bg-[#F47A49] transition-all font-medium"
           >
             Back to Dashboard
           </button>
@@ -309,66 +344,66 @@ const AffirmationCubePage = () => {
   const currentReview = reviews[currentTeammate.user_id];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 py-8 px-4">
+    <div className="min-h-screen bg-white dark:bg-[#242837] py-8 px-4">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 mb-6">
+        <div className="bg-white dark:bg-[#2d3548] rounded-2xl shadow-md p-6 mb-6 border border-gray-200 dark:border-[#3d4459]">
           <button
             onClick={() => router.push("/")}
-            className="text-gray-600 dark:text-gray-400 hover:text-[#15b392] dark:hover:text-[#15b392] mb-4 flex items-center gap-2"
+            className="text-gray-600 dark:text-gray-400 hover:text-[#FB6F7A] dark:hover:text-[#FB6F7A] mb-4 flex items-center gap-2 transition-colors"
           >
             <ArrowLeft size={20} />
             Back
           </button>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-[#FB6F7A] to-[#F47A49] rounded-full flex items-center justify-center shadow-md">
               <Sparkles className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Affirmation Cube</h1>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <h1 className="text-2xl font-bold text-[#3F3E3D] dark:text-white">Affirmation Cube</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
                 Rate your teammates from {event?.title}
               </p>
             </div>
           </div>
-          <div className="bg-gray-100 dark:bg-gray-700 rounded-full h-2 overflow-hidden">
+          <div className="bg-gray-200 dark:bg-[#3d4459] rounded-full h-2 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-[#15b392] to-[#2a6435] h-2 transition-all duration-300"
+              className="bg-gradient-to-r from-[#FB6F7A] to-[#F47A49] h-2 transition-all duration-300"
               style={{ width: `${((currentIndex + 1) / teammates.length) * 100}%` }}
             ></div>
           </div>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-2 text-center">
             {currentIndex + 1} of {teammates.length} teammates
           </p>
         </div>
 
         {/* Teammate Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-6">
+        <div className="bg-white dark:bg-[#2d3548] rounded-2xl shadow-md p-8 mb-6 border border-gray-200 dark:border-[#3d4459]">
           <div className="text-center mb-8">
             {currentTeammate.avatar_url ? (
               <img
                 src={currentTeammate.avatar_url}
                 alt={currentTeammate.full_name}
-                className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-gray-200 dark:border-gray-700 object-cover"
+                className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-gray-200 dark:border-[#3d4459] object-cover"
               />
             ) : (
-              <div className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-gray-200 dark:border-gray-700 bg-[#15b392] flex items-center justify-center">
+              <div className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-gray-200 dark:border-[#3d4459] bg-gradient-to-br from-[#FB6F7A] to-[#F47A49] flex items-center justify-center">
                 <span className="text-white text-3xl font-bold">
                   {currentTeammate.full_name.charAt(0).toUpperCase()}
                 </span>
               </div>
             )}
-            <h2 className="text-2xl font-bold text-gray-800 dark:text-white mb-1">
+            <h2 className="text-2xl font-bold text-[#3F3E3D] dark:text-white mb-1">
               {currentTeammate.full_name}
             </h2>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {currentTeammate.email}
             </p>
           </div>
 
           {/* Star Rating */}
           <div className="mb-6">
-            <label className="block text-center text-gray-700 dark:text-gray-300 font-semibold mb-3">
+            <label className="block text-center text-[#3F3E3D] dark:text-gray-300 font-semibold mb-3">
               How would you rate this player?
             </label>
             <div className="flex justify-center gap-2">
@@ -402,14 +437,14 @@ const AffirmationCubePage = () => {
 
           {/* Feedback */}
           <div className="mb-6">
-            <label className="block text-gray-700 dark:text-gray-300 font-semibold mb-2">
+            <label className="block text-[#3F3E3D] dark:text-gray-300 font-semibold mb-2">
               Feedback (Optional)
             </label>
             <textarea
               value={currentReview.feedback}
               onChange={(e) => setFeedback(currentTeammate.user_id, e.target.value)}
               placeholder="Share your thoughts about this player..."
-              className="w-full p-4 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-[#15b392] resize-none"
+              className="w-full p-4 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FB6F7A] resize-none"
               rows={4}
             />
           </div>
@@ -419,7 +454,7 @@ const AffirmationCubePage = () => {
             <button
               onClick={handlePrev}
               disabled={currentIndex === 0}
-              className="flex-1 px-6 py-3 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              className="flex-1 px-6 py-3 bg-gray-200 dark:bg-[#3d4459] text-[#3F3E3D] dark:text-gray-300 rounded-xl font-semibold hover:bg-gray-300 dark:hover:bg-[#4d5469] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               Previous
             </button>
@@ -427,7 +462,7 @@ const AffirmationCubePage = () => {
               <button
                 onClick={handleNext}
                 disabled={currentReview.rating === 0}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-[#FB6F7A] to-[#F47A49] text-white rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 Next
               </button>
@@ -435,7 +470,7 @@ const AffirmationCubePage = () => {
               <button
                 onClick={handleSubmit}
                 disabled={submitting || currentReview.rating === 0}
-                className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-[#21C36E] to-[#15b392] text-white rounded-xl font-semibold hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <>
@@ -454,8 +489,8 @@ const AffirmationCubePage = () => {
         </div>
 
         {/* Summary */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-          <h3 className="font-bold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+        <div className="bg-white dark:bg-[#2d3548] rounded-2xl shadow-md p-6 border border-gray-200 dark:border-[#3d4459]">
+          <h3 className="font-bold text-[#3F3E3D] dark:text-white mb-4 flex items-center gap-2">
             <Trophy className="text-yellow-500" />
             Review Summary
           </h3>
@@ -466,12 +501,12 @@ const AffirmationCubePage = () => {
               return (
                 <div
                   key={teammate.user_id}
-                  className={`p-3 rounded-lg border-2 ${
+                  className={`p-3 rounded-lg border-2 transition-all ${
                     idx === currentIndex
-                      ? "border-[#15b392] bg-green-50 dark:bg-green-900/30"
+                      ? "border-[#FB6F7A] bg-[#FFF5F6] dark:bg-[#3d2d2e]"
                       : isReviewed
                       ? "border-green-300 dark:border-green-700 bg-green-50 dark:bg-green-900/20"
-                      : "border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-700"
+                      : "border-gray-200 dark:border-[#3d4459] bg-[#F4F4EF] dark:bg-[#3d4459]"
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-1">
@@ -482,7 +517,7 @@ const AffirmationCubePage = () => {
                         className="w-8 h-8 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-[#15b392] flex items-center justify-center">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#FB6F7A] to-[#F47A49] flex items-center justify-center">
                         <span className="text-white text-xs font-bold">
                           {teammate.full_name.charAt(0).toUpperCase()}
                         </span>
@@ -492,7 +527,7 @@ const AffirmationCubePage = () => {
                       <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                     )}
                   </div>
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
+                  <p className="text-xs font-medium text-[#3F3E3D] dark:text-gray-300 truncate">
                     {teammate.full_name}
                   </p>
                   <div className="flex gap-0.5 mt-1">

@@ -37,6 +37,41 @@ interface MatchmakingPreferences {
   personality: string | null;
 }
 
+// Skeleton Components
+function SkeletonSidebar() {
+  return (
+    <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md border border-gray-200 dark:border-[#3d4459] overflow-hidden">
+      {[...Array(4)].map((_, i) => (
+        <div key={i} className="px-6 py-4 border-b border-gray-200 dark:border-[#3d4459] animate-pulse">
+          <div className="flex items-center space-x-3">
+            <div className="w-5 h-5 bg-gray-300 dark:bg-gray-700 rounded" />
+            <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-24" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SkeletonContent() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/3" />
+      <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459] space-y-4">
+        <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/4" />
+        <div className="space-y-3">
+          {[...Array(4)].map((_, i) => (
+            <div key={i}>
+              <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/5 mb-2" />
+              <div className="h-10 bg-gray-300 dark:bg-gray-700 rounded" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const SettingsPage: React.FC = () => {
   const router = useRouter();
   const { user, profile, loading: authLoading, refreshProfile } = useAuth();
@@ -149,7 +184,7 @@ const SettingsPage: React.FC = () => {
           setPersonality(data.personality || "");
         }
       } catch (error) {
-        // Silent fail - form stays empty
+        // Silent fail
       }
     },
     [fetchWithCache]
@@ -289,7 +324,6 @@ const SettingsPage: React.FC = () => {
 
       if (error) throw error;
 
-      // Invalidate cache
       invalidateCache(`matchmaking-${userId}`);
 
       setMessage({
@@ -297,7 +331,6 @@ const SettingsPage: React.FC = () => {
         text: "Matchmaking preferences saved!",
       });
 
-      // Reload to reflect changes
       await loadMatchmakingPreferences(userId);
     } catch (error) {
       setMessage({
@@ -349,12 +382,19 @@ const SettingsPage: React.FC = () => {
     { id: "help", label: "Help", icon: HelpCircle },
   ];
 
+  // Skeleton loading
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#15b392] mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading...</p>
+      <div className="min-h-screen bg-white dark:bg-[#242837]">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="grid grid-cols-12 gap-6">
+            <div className="col-span-12 md:col-span-3">
+              <SkeletonSidebar />
+            </div>
+            <div className="col-span-12 md:col-span-9">
+              <SkeletonContent />
+            </div>
+          </div>
         </div>
       </div>
     );
@@ -362,14 +402,13 @@ const SettingsPage: React.FC = () => {
 
   if (!user) return null;
 
-
   const renderContent = () => {
     switch (activeSection) {
       case "account":
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <h2 className="text-2xl font-bold text-[#3F3E3D] dark:text-white mb-2">
                 Account Settings
               </h2>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
@@ -390,12 +429,12 @@ const SettingsPage: React.FC = () => {
             )}
 
             {/* Profile Photo */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459]">
+              <h3 className="font-semibold text-[#3F3E3D] dark:text-white mb-4">
                 Profile Photo
               </h3>
               <div className="flex items-center space-x-4">
-                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#15b392] to-[#2a6435] flex items-center justify-center text-white text-2xl font-bold">
+                <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#FB6F7A] to-[#F47A49] flex items-center justify-center text-white text-2xl font-bold">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt="Avatar" className="w-full h-full rounded-full object-cover" />
                   ) : (
@@ -403,7 +442,7 @@ const SettingsPage: React.FC = () => {
                   )}
                 </div>
                 <div>
-                  <button className="px-4 py-2 bg-[#15b392] text-white rounded-lg hover:bg-[#129176] transition-colors text-sm font-medium flex items-center gap-2">
+                  <button className="px-4 py-2 bg-[#FB6F7A] text-white rounded-lg hover:bg-[#F47A49] transition-colors text-sm font-medium flex items-center gap-2">
                     <Camera className="w-4 h-4" />
                     Change Photo
                   </button>
@@ -415,43 +454,43 @@ const SettingsPage: React.FC = () => {
             </div>
 
             {/* Basic Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459]">
+              <h3 className="font-semibold text-[#3F3E3D] dark:text-white mb-4">
                 Basic Information
               </h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                     Full Name
                   </label>
                   <input
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                     disabled={loading}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                     Username
                   </label>
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                     disabled={loading}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                     Email
                   </label>
                   <input
                     type="email"
                     value={email}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 rounded-lg cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-gray-400 rounded-lg cursor-not-allowed"
                     disabled
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -459,19 +498,19 @@ const SettingsPage: React.FC = () => {
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                     Phone
                   </label>
                   <input
                     type="tel"
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                     disabled={loading}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                     Bio
                   </label>
                   <textarea
@@ -479,7 +518,7 @@ const SettingsPage: React.FC = () => {
                     onChange={(e) => setBio(e.target.value)}
                     placeholder="Tell us about yourself..."
                     rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392] resize-none"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A] resize-none"
                     disabled={loading}
                   />
                 </div>
@@ -487,20 +526,20 @@ const SettingsPage: React.FC = () => {
               <button
                 onClick={handleSaveBasicInfo}
                 disabled={loading}
-                className="mt-4 px-6 py-2 bg-[#15b392] text-white rounded-lg hover:bg-[#129176] transition-colors font-medium disabled:bg-gray-400"
+                className="mt-4 px-6 py-2 bg-[#FB6F7A] text-white rounded-lg hover:bg-[#F47A49] transition-colors font-medium disabled:bg-gray-400"
               >
                 {loading ? "Saving..." : "Save Changes"}
               </button>
             </div>
 
             {/* Password */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
-              <h3 className="font-semibold text-gray-900 dark:text-white mb-4">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459]">
+              <h3 className="font-semibold text-[#3F3E3D] dark:text-white mb-4">
                 Change Password
               </h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                     New Password
                   </label>
                   <input
@@ -508,12 +547,12 @@ const SettingsPage: React.FC = () => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Enter new password"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                     disabled={loading}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                     Confirm Password
                   </label>
                   <input
@@ -521,7 +560,7 @@ const SettingsPage: React.FC = () => {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm new password"
-                    className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                    className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                     disabled={loading}
                   />
                 </div>
@@ -529,7 +568,7 @@ const SettingsPage: React.FC = () => {
               <button
                 onClick={handleChangePassword}
                 disabled={loading || !newPassword || !confirmPassword}
-                className="mt-4 px-6 py-2 bg-[#15b392] text-white rounded-lg hover:bg-[#129176] transition-colors font-medium disabled:bg-gray-400"
+                className="mt-4 px-6 py-2 bg-[#FB6F7A] text-white rounded-lg hover:bg-[#F47A49] transition-colors font-medium disabled:bg-gray-400"
               >
                 {loading ? "Updating..." : "Update Password"}
               </button>
@@ -539,7 +578,7 @@ const SettingsPage: React.FC = () => {
             <div className="space-y-3">
               <button
                 onClick={handleLogout}
-                className="w-full px-6 py-3 bg-gray-600 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 transition-colors font-medium flex items-center justify-center gap-2"
+                className="w-full px-6 py-3 bg-gray-600 dark:bg-[#3d4459] text-white rounded-lg hover:bg-gray-700 dark:hover:bg-[#4d5469] transition-colors font-medium flex items-center justify-center gap-2"
               >
                 <LogOut className="w-4 h-4" />
                 Logout
@@ -568,7 +607,7 @@ const SettingsPage: React.FC = () => {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              <h2 className="text-2xl font-bold text-[#3F3E3D] dark:text-white mb-2">
                 Matchmaking Preferences
               </h2>
               <p className="text-gray-600 dark:text-gray-400 text-sm">
@@ -589,16 +628,16 @@ const SettingsPage: React.FC = () => {
             )}
 
             {/* Professional Info */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459] space-y-4">
               <div className="flex items-center gap-2 mb-4">
-                <Briefcase className="w-5 h-5 text-[#15b392]" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <Briefcase className="w-5 h-5 text-[#FB6F7A]" />
+                <h3 className="font-semibold text-[#3F3E3D] dark:text-white">
                   Professional Information
                 </h3>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                   LinkedIn Profile
                 </label>
                 <input
@@ -606,12 +645,12 @@ const SettingsPage: React.FC = () => {
                   value={linkedIn}
                   onChange={(e) => setLinkedIn(e.target.value)}
                   placeholder="linkedin.com/in/yourprofile"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                   Company
                 </label>
                 <input
@@ -619,12 +658,12 @@ const SettingsPage: React.FC = () => {
                   value={company}
                   onChange={(e) => setCompany(e.target.value)}
                   placeholder="Where do you work?"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                   Position
                 </label>
                 <input
@@ -632,18 +671,18 @@ const SettingsPage: React.FC = () => {
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
                   placeholder="Your position"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-gray-600 dark:text-gray-300 mb-2">
                   Duration in Position
                 </label>
                 <select
                   value={positionDuration}
                   onChange={(e) => setPositionDuration(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                 >
                   <option value="">Select duration</option>
                   <option value="1">Less than 1 year</option>
@@ -656,10 +695,10 @@ const SettingsPage: React.FC = () => {
             </div>
 
             {/* Location */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459] space-y-4">
               <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-[#15b392]" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <MapPin className="w-5 h-5 text-[#FB6F7A]" />
+                <h3 className="font-semibold text-[#3F3E3D] dark:text-white">
                   Location
                 </h3>
               </div>
@@ -671,8 +710,8 @@ const SettingsPage: React.FC = () => {
                     onClick={() => setLocation(loc)}
                     className={`px-4 py-3 text-left rounded-lg border transition ${
                       location === loc
-                        ? "bg-[#15b392] text-white border-[#15b392]"
-                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#15b392]"
+                        ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
+                        : "bg-white dark:bg-[#242837] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
                     }`}
                   >
                     {loc}
@@ -686,16 +725,16 @@ const SettingsPage: React.FC = () => {
                   value={locationOther}
                   onChange={(e) => setLocationOther(e.target.value)}
                   placeholder="Please specify your location"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                 />
               )}
             </div>
 
             {/* Goal */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459] space-y-4">
               <div className="flex items-center gap-2 mb-4">
-                <Target className="w-5 h-5 text-[#15b392]" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <Target className="w-5 h-5 text-[#FB6F7A]" />
+                <h3 className="font-semibold text-[#3F3E3D] dark:text-white">
                   Networking Goal
                 </h3>
               </div>
@@ -707,8 +746,8 @@ const SettingsPage: React.FC = () => {
                     onClick={() => setGoal(g)}
                     className={`w-full px-4 py-3 text-left rounded-lg border transition ${
                       goal === g
-                        ? "bg-[#15b392] text-white border-[#15b392]"
-                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#15b392]"
+                        ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
+                        : "bg-white dark:bg-[#242837] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
                     }`}
                   >
                     {g}
@@ -722,14 +761,14 @@ const SettingsPage: React.FC = () => {
                   value={goalOther}
                   onChange={(e) => setGoalOther(e.target.value)}
                   placeholder="Please specify your goal"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                 />
               )}
             </div>
 
             {/* Networking Style */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459] space-y-4">
+              <h3 className="font-semibold text-[#3F3E3D] dark:text-white">
                 Networking Style
               </h3>
 
@@ -740,8 +779,8 @@ const SettingsPage: React.FC = () => {
                     onClick={() => setNetworkingStyle(style)}
                     className={`w-full px-4 py-3 text-left rounded-lg border transition ${
                       networkingStyle === style
-                        ? "bg-[#15b392] text-white border-[#15b392]"
-                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#15b392]"
+                        ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
+                        : "bg-white dark:bg-[#242837] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
                     }`}
                   >
                     {style}
@@ -751,10 +790,10 @@ const SettingsPage: React.FC = () => {
             </div>
 
             {/* Passionate Topics */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459] space-y-4">
               <div className="flex items-center gap-2 mb-4">
-                <Heart className="w-5 h-5 text-[#15b392]" />
-                <h3 className="font-semibold text-gray-900 dark:text-white">
+                <Heart className="w-5 h-5 text-[#FB6F7A]" />
+                <h3 className="font-semibold text-[#3F3E3D] dark:text-white">
                   Passionate Topics (Select multiple)
                 </h3>
               </div>
@@ -766,8 +805,8 @@ const SettingsPage: React.FC = () => {
                     onClick={() => handleMultiSelect(topic)}
                     className={`w-full px-4 py-3 text-left rounded-lg border transition ${
                       passionateTopics.includes(topic)
-                        ? "bg-[#15b392] text-white border-[#15b392]"
-                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#15b392]"
+                        ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
+                        : "bg-white dark:bg-[#242837] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
                     }`}
                   >
                     {topic}
@@ -780,13 +819,13 @@ const SettingsPage: React.FC = () => {
                 value={passionateOther}
                 onChange={(e) => setPassionateOther(e.target.value)}
                 placeholder="Other topics (optional)"
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
               />
             </div>
 
             {/* Hobby */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459] space-y-4">
+              <h3 className="font-semibold text-[#3F3E3D] dark:text-white">
                 Favorite Hobby
               </h3>
 
@@ -797,8 +836,8 @@ const SettingsPage: React.FC = () => {
                     onClick={() => setHobby(h)}
                     className={`px-4 py-3 text-left rounded-lg border transition ${
                       hobby === h
-                        ? "bg-[#15b392] text-white border-[#15b392]"
-                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#15b392]"
+                        ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
+                        : "bg-white dark:bg-[#242837] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
                     }`}
                   >
                     {h}
@@ -812,14 +851,14 @@ const SettingsPage: React.FC = () => {
                   value={hobbyOther}
                   onChange={(e) => setHobbyOther(e.target.value)}
                   placeholder="Please specify your hobby"
-                  className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg focus:ring-2 focus:ring-[#15b392]"
+                  className="w-full px-4 py-2 border border-gray-300 dark:border-[#3d4459] dark:bg-[#242837] dark:text-white rounded-lg focus:ring-2 focus:ring-[#FB6F7A]"
                 />
               )}
             </div>
 
             {/* Personality */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 space-y-4">
-              <h3 className="font-semibold text-gray-900 dark:text-white">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl p-6 border border-gray-200 dark:border-[#3d4459] space-y-4">
+              <h3 className="font-semibold text-[#3F3E3D] dark:text-white">
                 Personality
               </h3>
 
@@ -834,8 +873,8 @@ const SettingsPage: React.FC = () => {
                     onClick={() => setPersonality(p)}
                     className={`w-full px-4 py-3 text-left rounded-lg border transition text-sm ${
                       personality === p
-                        ? "bg-[#15b392] text-white border-[#15b392]"
-                        : "bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 hover:border-[#15b392]"
+                        ? "bg-[#FB6F7A] text-white border-[#FB6F7A]"
+                        : "bg-white dark:bg-[#242837] text-[#3F3E3D] dark:text-white border-gray-300 dark:border-[#3d4459] hover:border-[#FB6F7A]"
                     }`}
                   >
                     {p}
@@ -847,7 +886,7 @@ const SettingsPage: React.FC = () => {
             <button
               onClick={handleSaveMatchmaking}
               disabled={loading}
-              className="w-full px-6 py-3 bg-[#15b392] text-white rounded-lg hover:bg-[#129176] transition-colors font-medium disabled:bg-gray-400"
+              className="w-full px-6 py-3 bg-[#FB6F7A] text-white rounded-lg hover:bg-[#F47A49] transition-colors font-medium disabled:bg-gray-400"
             >
               {loading ? "Saving..." : "Save Matchmaking Preferences"}
             </button>
@@ -856,19 +895,20 @@ const SettingsPage: React.FC = () => {
 
       default:
         return (
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-12 border border-gray-200 dark:border-gray-700 text-center">
-            <p className="text-gray-500 dark:text-gray-400">Coming soon...</p>
+          <div className="bg-white dark:bg-[#2d3548] rounded-xl p-12 border border-gray-200 dark:border-[#3d4459] text-center">
+            <p className="text-gray-600 dark:text-gray-400">Coming soon...</p>
           </div>
         );
     }
   };
 
-   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+  return (
+    <div className="min-h-screen bg-white dark:bg-[#242837]">
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-12 gap-6">
+          {/* Sidebar */}
           <div className="col-span-12 md:col-span-3">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden sticky top-8">
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md border border-gray-200 dark:border-[#3d4459] overflow-hidden sticky top-8">
               {sections.map((section) => {
                 const Icon = section.icon;
                 return (
@@ -877,8 +917,8 @@ const SettingsPage: React.FC = () => {
                     onClick={() => setActiveSection(section.id)}
                     className={`w-full px-6 py-4 flex items-center space-x-3 transition-colors ${
                       activeSection === section.id
-                        ? "bg-[#15b392] text-white"
-                        : "text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+                        ? "bg-[#FB6F7A] text-white"
+                        : "text-[#3F3E3D] dark:text-gray-300 hover:bg-[#F4F4EF] dark:hover:bg-[#3d4459]"
                     }`}
                   >
                     <Icon className="w-5 h-5" />
@@ -888,6 +928,8 @@ const SettingsPage: React.FC = () => {
               })}
             </div>
           </div>
+
+          {/* Content */}
           <div className="col-span-12 md:col-span-9">{renderContent()}</div>
         </div>
       </div>

@@ -69,6 +69,55 @@ interface Rating {
   created_at: string;
 }
 
+// Skeleton Components
+function SkeletonHeader() {
+  return (
+    <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-6 sm:p-8 border border-gray-200 dark:border-[#3d4459] animate-pulse">
+      <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
+        <div className="w-20 h-20 sm:w-24 sm:h-24 bg-gray-300 dark:bg-gray-700 rounded-full flex-shrink-0" />
+        <div className="flex-1 space-y-3 w-full">
+          <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-1/2 mx-auto md:mx-0" />
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-2/3 mx-auto md:mx-0" />
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/3 mx-auto md:mx-0" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonStats() {
+  return (
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      {[...Array(4)].map((_, i) => (
+        <div
+          key={i}
+          className="bg-white dark:bg-[#2d3548] p-4 sm:p-6 rounded-xl shadow-md border border-gray-200 dark:border-[#3d4459] animate-pulse"
+        >
+          <div className="w-12 h-12 bg-gray-300 dark:bg-gray-700 rounded-full mx-auto mb-3" />
+          <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-12 mx-auto mb-2" />
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-20 mx-auto" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function SkeletonContent() {
+  return (
+    <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-6 sm:p-8 border border-gray-200 dark:border-[#3d4459] animate-pulse">
+      <div className="h-6 bg-gray-300 dark:bg-gray-700 rounded w-1/4 mb-6" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="space-y-2">
+            <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/3" />
+            <div className="h-5 bg-gray-300 dark:bg-gray-700 rounded w-2/3" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function ProfilePage() {
   const router = useRouter();
   const { fetchWithCache, invalidateCache } = useDataCache();
@@ -292,22 +341,24 @@ export default function ProfilePage() {
 
   const isProfileComplete = userProfile && matchmakingData?.completed_at;
 
+  // Skeleton loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#15b392] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400 font-medium">Loading profile...</p>
+      <div className="min-h-screen bg-white dark:bg-[#242837] py-4 sm:py-8 px-4">
+        <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
+          <SkeletonHeader />
+          <SkeletonStats />
+          <SkeletonContent />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-4 sm:py-8 px-4 transition-colors">
+    <div className="min-h-screen bg-white dark:bg-[#242837] py-4 sm:py-8 px-4">
       <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
         {/* Header Card */}
-        <div className="bg-gradient-to-br from-[#15b392] to-[#2a6435] rounded-xl shadow-lg p-6 sm:p-8 text-white">
+        <div className="bg-gradient-to-br from-[#FB6F7A] to-[#F47A49] rounded-xl shadow-lg p-6 sm:p-8 text-white">
           <div className="flex flex-col md:flex-row items-center gap-4 sm:gap-6">
             <div className="relative flex-shrink-0">
               {userProfile?.avatar_url ? (
@@ -371,7 +422,7 @@ export default function ProfilePage() {
               </button>
               <button
                 onClick={() => router.push("/settings")}
-                className="flex items-center gap-2 bg-white text-[#15b392] hover:bg-white/90 px-4 sm:px-6 py-3 rounded-lg font-medium transition-all shadow-lg"
+                className="flex items-center gap-2 bg-white text-[#FB6F7A] hover:bg-white/90 px-4 sm:px-6 py-3 rounded-lg font-medium transition-all shadow-lg"
               >
                 <Edit size={18} />
                 <span className="hidden sm:inline">Edit</span>
@@ -387,7 +438,7 @@ export default function ProfilePage() {
               </div>
               <button
                 onClick={() => router.push("/settings")}
-                className="bg-[#2a6435] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#1f4a28] transition-colors whitespace-nowrap"
+                className="bg-[#F47A49] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-[#FB6F7A] transition-colors whitespace-nowrap"
               >
                 Complete Profile
               </button>
@@ -398,25 +449,25 @@ export default function ProfilePage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <StatCard
-            icon={<Calendar className="text-[#15b392]" size={20} />}
+            icon={<Calendar className="text-[#FB6F7A]" size={20} />}
             value={stats.eventsAttended}
             label="Events Attended"
-            bgColor="bg-[#15b392]/10 dark:bg-[#15b392]/20"
+            bgColor="bg-[#FB6F7A]/10 dark:bg-[#FB6F7A]/20"
           />
           <StatCard
-            icon={<Users className="text-blue-600 dark:text-blue-400" size={20} />}
+            icon={<Users className="text-[#21C36E]" size={20} />}
             value={stats.connectionsMade}
             label="Connections"
-            bgColor="bg-blue-100 dark:bg-blue-900/20"
+            bgColor="bg-[#21C36E]/10 dark:bg-[#21C36E]/20"
           />
           <StatCard
-            icon={<User className="text-orange-600 dark:text-orange-400" size={20} />}
+            icon={<User className="text-[#F47A49]" size={20} />}
             value={stats.upcomingEvents}
             label="Upcoming"
-            bgColor="bg-orange-100 dark:bg-orange-900/20"
+            bgColor="bg-[#F47A49]/10 dark:bg-[#F47A49]/20"
           />
           <StatCard
-            icon={<Star className="text-yellow-600 dark:text-yellow-400" size={20} />}
+            icon={<Star className="text-yellow-500" size={20} />}
             value={typeof stats.networkScore === "number" ? stats.networkScore.toFixed(1) : "0.0"}
             label="Network Score"
             bgColor="bg-yellow-100 dark:bg-yellow-900/20"
@@ -424,27 +475,33 @@ export default function ProfilePage() {
         </div>
 
         {/* Tab Navigation */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-2">
-          <div className="flex gap-2">
+        <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md overflow-hidden border border-gray-200 dark:border-[#3d4459]">
+          <div className="flex border-b border-gray-200 dark:border-[#3d4459]">
             <button
               onClick={() => setActiveTab("profile")}
-              className={`flex-1 py-2 sm:py-3 px-4 rounded-lg font-medium transition-all ${
+              className={`flex-1 py-4 px-6 font-semibold transition-colors relative ${
                 activeTab === "profile"
-                  ? "bg-[#15b392] text-white shadow-md"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  ? "text-[#FB6F7A] bg-[#F4F4EF] dark:bg-[#242837]"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-[#F4F4EF] dark:hover:bg-[#3d4459]"
               }`}
             >
               Profile Info
+              {activeTab === "profile" && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#FB6F7A]" />
+              )}
             </button>
             <button
               onClick={() => setActiveTab("ratings")}
-              className={`flex-1 py-2 sm:py-3 px-4 rounded-lg font-medium transition-all ${
+              className={`flex-1 py-4 px-6 font-semibold transition-colors relative ${
                 activeTab === "ratings"
-                  ? "bg-[#15b392] text-white shadow-md"
-                  : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
+                  ? "text-[#FB6F7A] bg-[#F4F4EF] dark:bg-[#242837]"
+                  : "text-gray-600 dark:text-gray-400 hover:bg-[#F4F4EF] dark:hover:bg-[#3d4459]"
               }`}
             >
               Ratings ({ratings.length})
+              {activeTab === "ratings" && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-[#FB6F7A]" />
+              )}
             </button>
           </div>
         </div>
@@ -452,9 +509,9 @@ export default function ProfilePage() {
         {/* Profile Information */}
         {activeTab === "profile" && (
           <div className="space-y-4 sm:space-y-6">
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
-              <h3 className="font-bold text-gray-900 dark:text-white text-lg sm:text-xl mb-6 flex items-center gap-2">
-                <User className="text-[#15b392]" size={24} />
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-6 sm:p-8 border border-gray-200 dark:border-[#3d4459]">
+              <h3 className="font-bold text-[#3F3E3D] dark:text-white text-lg sm:text-xl mb-6 flex items-center gap-2">
+                <User className="text-[#FB6F7A]" size={24} />
                 Profile Information
               </h3>
 
@@ -492,20 +549,20 @@ export default function ProfilePage() {
 
                 {userProfile?.bio && (
                   <div className="space-y-1 sm:col-span-2">
-                    <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+                    <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
                       <User size={16} />
                       Bio
                     </p>
-                    <p className="text-gray-900 dark:text-white font-medium">{userProfile.bio}</p>
+                    <p className="text-[#3F3E3D] dark:text-white font-medium">{userProfile.bio}</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Passionate Topics */}
-            <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
-              <h3 className="font-bold text-gray-900 dark:text-white text-lg sm:text-xl mb-4 flex items-center gap-2">
-                <Star className="text-[#15b392]" size={24} />
+            <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-6 sm:p-8 border border-gray-200 dark:border-[#3d4459]">
+              <h3 className="font-bold text-[#3F3E3D] dark:text-white text-lg sm:text-xl mb-4 flex items-center gap-2">
+                <Star className="text-[#FB6F7A]" size={24} />
                 Passionate Topics
               </h3>
 
@@ -514,13 +571,13 @@ export default function ProfilePage() {
                   matchmakingData.passionate_topics.map((topic: string, i: number) => (
                     <span
                       key={i}
-                      className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-[#15b392] to-[#2a6435] text-white text-sm rounded-full font-medium shadow-md"
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 bg-gradient-to-r from-[#FB6F7A] to-[#F47A49] text-white text-sm rounded-full font-medium shadow-md"
                     >
                       {topic}
                     </span>
                   ))
                 ) : (
-                  <p className="text-gray-500 dark:text-gray-400 text-center py-4 w-full text-sm">
+                  <p className="text-gray-600 dark:text-gray-400 text-center py-4 w-full text-sm">
                     No topics added yet
                   </p>
                 )}
@@ -531,7 +588,7 @@ export default function ProfilePage() {
 
         {/* Ratings Tab */}
         {activeTab === "ratings" && (
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 sm:p-8 border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-6 sm:p-8 border border-gray-200 dark:border-[#3d4459]">
             {ratings.length === 0 ? (
               <div className="text-center py-12">
                 <Star size={48} className="mx-auto mb-4 text-gray-400 dark:text-gray-500" />
@@ -554,10 +611,10 @@ export default function ProfilePage() {
   );
 }
 
-// Rating Card Component - Simplified version
+// Rating Card Component
 function RatingCard({ rating }: { rating: Rating }) {
   return (
-    <div className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4 hover:shadow-md transition-shadow">
+    <div className="bg-[#F4F4EF] dark:bg-[#3d4459] border border-gray-200 dark:border-[#4d5469] rounded-lg p-4 hover:shadow-md transition-shadow">
       <div className="flex items-start gap-3 mb-3">
         {rating.reviewer_avatar ? (
           <img
@@ -566,16 +623,16 @@ function RatingCard({ rating }: { rating: Rating }) {
             className="w-10 h-10 sm:w-12 sm:h-12 rounded-full object-cover flex-shrink-0"
           />
         ) : (
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#15b392] flex items-center justify-center text-white font-bold flex-shrink-0">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#FB6F7A] to-[#F47A49] flex items-center justify-center text-white font-bold flex-shrink-0">
             {rating.reviewer_name.charAt(0).toUpperCase()}
           </div>
         )}
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-sm sm:text-base text-gray-800 dark:text-white truncate">
+          <h4 className="font-semibold text-sm sm:text-base text-[#3F3E3D] dark:text-white truncate">
             {rating.reviewer_name}
           </h4>
           {(rating.reviewer_position || rating.reviewer_company) && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
               {rating.reviewer_position && rating.reviewer_company
                 ? `${rating.reviewer_position} at ${rating.reviewer_company}`
                 : rating.reviewer_position || rating.reviewer_company
@@ -588,21 +645,21 @@ function RatingCard({ rating }: { rating: Rating }) {
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
           <Star size={16} className="text-yellow-500 fill-yellow-500 sm:w-5 sm:h-5" />
-          <span className="font-bold text-base sm:text-lg text-gray-800 dark:text-white">
+          <span className="font-bold text-base sm:text-lg text-[#3F3E3D] dark:text-white">
             {rating.rating}
           </span>
         </div>
       </div>
 
       {rating.feedback && (
-        <div className="bg-white dark:bg-gray-600 p-3 rounded-lg">
+        <div className="bg-white dark:bg-[#2d3548] p-3 rounded-lg">
           <p className="text-xs sm:text-sm text-gray-700 dark:text-gray-300 italic">
             &quot;{rating.feedback}&quot;
           </p>
         </div>
       )}
 
-      <p className="text-xs text-gray-400 dark:text-gray-500 mt-3 text-right">
+      <p className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-right">
         {format(new Date(rating.created_at), 'MMM dd, yyyy')}
       </p>
     </div>
@@ -622,11 +679,11 @@ function StatCard({
   bgColor: string;
 }) {
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-xl shadow-lg text-center hover:shadow-xl transition-all border border-gray-200 dark:border-gray-700">
+    <div className="bg-white dark:bg-[#2d3548] p-4 sm:p-6 rounded-xl shadow-md text-center hover:shadow-lg transition-all border border-gray-200 dark:border-[#3d4459]">
       <div className={`w-10 h-10 sm:w-12 sm:h-12 ${bgColor} rounded-full flex items-center justify-center mx-auto mb-3`}>
         {icon}
       </div>
-      <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
+      <p className="text-xl sm:text-2xl font-bold text-[#3F3E3D] dark:text-white">{value}</p>
       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">{label}</p>
     </div>
   );
@@ -643,11 +700,11 @@ function InfoItem({
 }) {
   return (
     <div className="space-y-1">
-      <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-2">
+      <p className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
         {icon}
         {label}
       </p>
-      <p className="text-gray-900 dark:text-white font-medium break-words">{value || "-"}</p>
+      <p className="text-[#3F3E3D] dark:text-white font-medium break-words">{value || "-"}</p>
     </div>
   );
 }

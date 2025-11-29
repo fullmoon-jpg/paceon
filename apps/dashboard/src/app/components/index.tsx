@@ -23,6 +23,32 @@ import ProfileModal from "./components/ProfileModal";
 import { useToast } from "@/contexts/ToastContext";
 import { Post } from "./types";
 
+// Skeleton Post Component
+function SkeletonPost() {
+  return (
+    <div className="bg-white dark:bg-[#2d3548] rounded-xl shadow-md p-6 border border-gray-200 dark:border-[#3d4459] animate-pulse">
+      <div className="flex items-start gap-3 mb-4">
+        <div className="w-12 h-12 bg-gray-300 dark:bg-gray-700 rounded-full flex-shrink-0" />
+        <div className="flex-1">
+          <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-1/4 mb-2" />
+          <div className="h-3 bg-gray-300 dark:bg-gray-700 rounded w-1/3" />
+        </div>
+      </div>
+      <div className="space-y-2 mb-4">
+        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-full" />
+        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-5/6" />
+        <div className="h-4 bg-gray-300 dark:bg-gray-700 rounded w-4/5" />
+      </div>
+      <div className="h-64 bg-gray-300 dark:bg-gray-700 rounded-lg mb-4" />
+      <div className="flex gap-4">
+        <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-20" />
+        <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-20" />
+        <div className="h-8 bg-gray-300 dark:bg-gray-700 rounded w-20" />
+      </div>
+    </div>
+  );
+}
+
 export default function ActivityFeed({
   currentUserId,
   currentUserName,
@@ -143,10 +169,13 @@ export default function ActivityFeed({
     setProfileRefreshKey((prev) => prev + 1);
   };
 
+  // Skeleton loading - tampilkan 3 skeleton posts
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-[#FB6F7A]" />
+      <div className="space-y-6">
+        {[...Array(3)].map((_, i) => (
+          <SkeletonPost key={i} />
+        ))}
       </div>
     );
   }
@@ -173,7 +202,7 @@ export default function ActivityFeed({
     <>
       {/* New Posts Banner */}
       {newPostsCount > 0 && (activeTab === "all" || activeTab === "yours") && (
-        <div className="sticky top-0 z-40 mb-4">
+        <div className="mb-4">
           <button
             onClick={loadNewPosts}
             disabled={loadingMore}

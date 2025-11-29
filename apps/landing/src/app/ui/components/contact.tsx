@@ -16,9 +16,19 @@ interface ContactFormData {
   email: string;
   phone: string;
   subject: string;
+  messageType: string;
   message: string;
   submittedAt: string | null;
 }
+
+const MESSAGE_TYPES = [
+  { value: 'collaboration', label: 'Collaboration' },
+  { value: 'partnership', label: 'Partnership' },
+  { value: 'bug_report', label: 'Bug Report' },
+  { value: 'feature_request', label: 'Feature Request' },
+  { value: 'event_inquiry', label: 'Event Inquiry' },
+  { value: 'general', label: 'General Question' },
+];
 
 const ContactSection = () => {
   const [formData, setFormData] = useState<ContactFormData>({
@@ -26,6 +36,7 @@ const ContactSection = () => {
     email: '',
     phone: '',
     subject: '',
+    messageType: '',
     message: '',
     submittedAt: null,
   });
@@ -56,6 +67,7 @@ const ContactSection = () => {
       formData.name.trim() !== '' &&
       formData.email.trim() !== '' &&
       formData.subject.trim() !== '' &&
+      formData.messageType.trim() !== '' &&
       formData.message.trim() !== ''
     );
   };
@@ -86,6 +98,7 @@ const ContactSection = () => {
             email: '',
             phone: '',
             subject: '',
+            messageType: '',
             message: '',
             submittedAt: null,
           });
@@ -138,7 +151,7 @@ const ContactSection = () => {
             </div>
           </div>
           <p className="font-body text-base sm:text-lg text-[#3f3e3d]/80 max-w-2xl mx-auto leading-relaxed">
-            Have questions or want to join the PACE ON Community? We&apos;re here to help!
+            Have questions, ask for collaboration, or want to join the PACE ON Community? We&apos;re here to help!
           </p>
         </div>
 
@@ -226,7 +239,7 @@ const ContactSection = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                    Name
+                    Name <span className="text-[#FB6F7A]">*</span>
                   </label>
                   <input
                     type="text"
@@ -239,7 +252,7 @@ const ContactSection = () => {
 
                 <div>
                   <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                    Company
+                    Company <span className="text-[#FB6F7A]">*</span>
                   </label>
                   <input
                     type="text"
@@ -255,7 +268,7 @@ const ContactSection = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                    Your Email
+                    Your Email <span className="text-[#FB6F7A]">*</span>
                   </label>
                   <input
                     type="email"
@@ -280,10 +293,29 @@ const ContactSection = () => {
                 </div>
               </div>
 
+              {/* Message Type - Full width */}
+              <div>
+                <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
+                  Message Type <span className="text-[#FB6F7A]">*</span>
+                </label>
+                <select
+                  value={formData.messageType}
+                  onChange={(e) => updateFormData('messageType', e.target.value)}
+                  className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none"
+                >
+                  <option value="" disabled>Select message type</option>
+                  {MESSAGE_TYPES.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Message - Full width */}
               <div>
                 <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                  Message
+                  Message <span className="text-[#FB6F7A]">*</span>
                 </label>
                 <textarea
                   value={formData.message}
