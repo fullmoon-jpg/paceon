@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@paceon/lib/mongodb';
 import SavedPost from '@/lib/models/SavedPost';
+import { Types } from 'mongoose';
 
 interface SavedPostDocument {
+  _id: Types.ObjectId;
   userId: string;
   postId: string;
   createdAt: Date;
+  updatedAt?: Date;
+}
+
+interface SavedPostLean {
+  _id: unknown;
+  userId: string;
+  postId: string;
+  createdAt: Date;
+  updatedAt?: Date;
 }
 
 interface MongoError extends Error {
@@ -30,14 +41,20 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get('limit') || '20');
     const skip = (page - 1) * limit;
 
-    const [savedPosts, total] = await Promise.all([
+    const [savedPostsRaw, total] = await Promise.all([
       SavedPost.find({ userId })
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(limit)
-        .lean() as Promise<SavedPostDocument[]>,
+        .lean<SavedPostLean[]>(),
       SavedPost.countDocuments({ userId })
     ]);
+
+    // Transform to include _id as string
+    const savedPosts = savedPostsRaw.map(post => ({
+      ...post,
+      _id: post._id?.toString() || '',
+    }));
 
     return NextResponse.json({
       success: true,
@@ -78,11 +95,17 @@ export async function POST(request: NextRequest) {
       { userId, postId },
       { userId, postId, createdAt: new Date() },
       { upsert: true, new: true, setDefaultsOnInsert: true }
-    );
+    ).lean<SavedPostLean>();
+
+    // Transform _id to string
+    const transformedPost = savedPost ? {
+      ...savedPost,
+      _id: savedPost._id?.toString() || '',
+    } : null;
 
     return NextResponse.json({
       success: true,
-      data: savedPost,
+      data: transformedPost,
       message: 'Post saved successfully',
     });
   } catch (error) {
