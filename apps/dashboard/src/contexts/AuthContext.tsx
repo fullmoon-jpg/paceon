@@ -24,7 +24,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
-  signOut: () => Promise<void>; // Add this
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -33,7 +33,7 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   loading: true,
   refreshProfile: async () => {},
-  signOut: async () => {}, // Add this
+  signOut: async () => {},
 });
 
 export const useAuth = () => {
@@ -77,7 +77,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  // Add signOut method
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
@@ -91,10 +90,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
+    let mounted = true;
+
     const initAuth = async () => {
       try {
+        // Try to recover existing session first
         const { data: { session }, error } = await supabase.auth.getSession();
         
+        if (!mounted) return;
+
+        if (error) {
+          console.error('Session recovery error:', error);
+          setLoading(false);
+          return;
+        }
+
         setSession(session);
         setUser(session?.user ?? null);
 
@@ -104,15 +114,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Init auth error:', error);
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
+    // ✅ Safety timeout - force loading false after 5 seconds
+    const timeout = setTimeout(() => {
+      if (mounted && loading) {
+        console.warn('Auth timeout - forcing loading to false');
+        setLoading(false);
+      }
+    }, 5000);
+
     initAuth();
 
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
+      console.log('Auth state changed:', event, session ? 'Session exists' : 'No session');
+      
       setSession(session);
       setUser(session?.user ?? null);
 
@@ -120,12 +145,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await loadProfile(session.user.id);
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
+      } else if (event === 'TOKEN_REFRESHED') {
+        console.log('Token refreshed successfully');
       }
 
       setLoading(false);
     });
 
     return () => {
+      mounted = false;
+      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, []);
