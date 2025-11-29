@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@paceon/lib/supabaseclient';
 import Image from 'next/image';
@@ -14,7 +14,48 @@ interface PreferencesData {
     completed_at: string | null;
 }
 
-export default function CallbackPage() {
+// Loading fallback component
+function LoadingSpinner() {
+    return (
+        <div className="flex items-center justify-center min-h-screen bg-[#F4F4EF] dark:bg-[#3F3E3D]">
+            <div className="text-center">
+                <div className="relative">
+                    <div className="relative inline-block">
+                        <div className="absolute inset-0 rounded-full">
+                            <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
+                        </div>
+                        
+                        <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center bg-transparent rounded-full p-4">
+                            <Image
+                                src="/images/dark-logo.png"
+                                alt="PACE ON"
+                                width={120}
+                                height={120}
+                                className="object-contain dark:hidden"
+                                priority
+                            />
+                            <Image
+                                src="/images/light-logo.png"
+                                alt="PACE ON"
+                                width={120}
+                                height={120}
+                                className="object-contain hidden dark:block"
+                                priority
+                            />
+                        </div>
+                    </div>
+                    
+                    <p className="mt-6 text-[#3F3E3D] dark:text-white font-medium">
+                        Loading...
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// Callback handler component that uses useSearchParams
+function CallbackHandler() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [error, setError] = useState<string | null>(null);
@@ -149,5 +190,14 @@ export default function CallbackPage() {
                 }
             `}</style>
         </div>
+    );
+}
+
+// Main page component with Suspense boundary
+export default function CallbackPage() {
+    return (
+        <Suspense fallback={<LoadingSpinner />}>
+            <CallbackHandler />
+        </Suspense>
     );
 }
