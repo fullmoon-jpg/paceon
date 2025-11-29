@@ -126,7 +126,7 @@ export const usePostsData = (
             post.user = {
               id: post.userId?.toString() || 'unknown',
               full_name: 'Unknown User',
-              avatar_url:  // Changed from null to undefined
+              avatar_url: undefined // Changed from null to undefined
             };
           }
           
