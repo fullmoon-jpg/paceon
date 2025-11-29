@@ -10,9 +10,15 @@ interface UserData {
   email: string;
 }
 
+interface EventData {
+  id: string;
+  title: string;
+  start_time: string;
+}
+
 interface BookingWithUser {
   user_id: string;
-  users: UserData; // Single object, not array
+  users_profile: UserData;
 }
 
 export async function POST(
@@ -29,7 +35,7 @@ export async function POST(
       .update({ event_status: 'completed' })
       .eq('id', eventId)
       .select('id, title, start_time')
-      .single();
+      .single<EventData>();
 
     if (eventError) throw eventError;
 
@@ -42,7 +48,6 @@ export async function POST(
     if (bookingError) throw bookingError;
 
     // 3. Get attended bookings + user info
-    // FIX: Remove inner join, use left join with users_profile table name
     const { data: bookings, error: bookingsError } = await supabaseAdmin
       .from('bookings')
       .select(`
@@ -50,13 +55,14 @@ export async function POST(
         users_profile!inner(id, full_name, email)
       `)
       .eq('event_id', eventId)
-      .eq('booking_status', 'attended');
+      .eq('booking_status', 'attended')
+      .returns<BookingWithUser[]>();
 
     if (bookingsError) throw bookingsError;
 
     // 4. Auto-create user connections
     if (bookings && bookings.length > 1) {
-      const connections = [];
+      const connections: Array<{ user_id: string; connected_user_id: string }> = [];
 
       for (let i = 0; i < bookings.length; i++) {
         for (let j = i + 1; j < bookings.length; j++) {
@@ -77,13 +83,13 @@ export async function POST(
     }
 
     // 5. Send email to all attendees
-    if (bookings?.length > 0) {
+    if (bookings && bookings.length > 0) {
       const uniqueUsers = new Map<string, UserData>();
 
-      // FIX: Access users_profile instead of users
-      bookings.forEach((b: any) => {
-        if (b.users_profile?.id) {
-          uniqueUsers.set(b.users_profile.id, b.users_profile);
+      // Type-safe access to users_profile
+      bookings.forEach((booking: BookingWithUser) => {
+        if (booking.users_profile?.id) {
+          uniqueUsers.set(booking.users_profile.id, booking.users_profile);
         }
       });
 
