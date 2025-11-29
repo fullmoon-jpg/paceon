@@ -86,23 +86,40 @@ export async function POST(
     if (bookings && bookings.length > 0) {
       const uniqueUsers = new Map<string, UserData>();
 
-      // Type-safe access to users_profile
       bookings.forEach((booking: BookingWithUser) => {
         if (booking.users_profile?.id) {
           uniqueUsers.set(booking.users_profile.id, booking.users_profile);
         }
       });
 
-      const eventDateStr = eventData?.start_time
-        ? new Date(eventData.start_time).toLocaleDateString('id-ID')
-        : '';
+      // Format event date and time
+      const eventDate = eventData?.start_time 
+        ? new Date(eventData.start_time)
+        : new Date();
+
+      const eventDateStr = eventDate.toLocaleDateString('id-ID', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      const eventTimeStr = eventDate.toLocaleTimeString('id-ID', {
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'Asia/Jakarta'
+      });
 
       for (const user of uniqueUsers.values()) {
         try {
-          const html = eventCompletedEmailTemplate(
-            user.full_name ?? 'PACE ON Player',
-            eventDateStr
-          );
+          // FIX: Pass object with all required parameters
+          const html = eventCompletedEmailTemplate({
+            name: user.full_name ?? 'PACE ON Player',
+            eventTitle: eventData?.title ?? 'PACE ON Event',
+            eventDate: eventDateStr,
+            eventTime: eventTimeStr,
+            eventLocation: 'Online' // atau ambil dari eventData kalau ada field location
+          });
 
           await transporter.sendMail({
             from: `"PACE ON" <hi@paceon.id>`,
@@ -112,7 +129,6 @@ export async function POST(
           });
         } catch (emailError) {
           console.error(`Failed to send email to ${user.email}:`, emailError);
-          // Continue with other emails even if one fails
         }
       }
     }
