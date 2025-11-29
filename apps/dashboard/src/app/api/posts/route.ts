@@ -180,7 +180,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Update user stats (fire-and-forget)
-    void supabaseAdmin
+    supabaseAdmin
       .rpc('increment_total_posts', { p_user_id: userId })
       .then(() => {
         console.log('User stats updated successfully');
