@@ -89,6 +89,7 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    console.error('GET /api/posts error:', error);
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: 500 }
@@ -159,7 +160,7 @@ export async function POST(request: NextRequest) {
       .from('users_profile')
       .select('id, full_name, avatar_url')
       .eq('id', userId)
-      .single();
+      .single<UserProfile>();
 
     const enrichedPost = {
       ...post.toObject(),
@@ -171,14 +172,22 @@ export async function POST(request: NextRequest) {
       },
     };
 
+    // Broadcast feed update (non-blocking)
     try {
       await broadcastFeedUpdate('new_post', enrichedPost);
     } catch (broadcastError) {
       console.warn('Broadcast failed:', broadcastError);
     }
 
-    supabaseAdmin.rpc('increment_total_posts', { p_user_id: userId })
-      .catch(err => console.error('Stats update failed:', err));
+    // Update user stats (fire-and-forget)
+    void supabaseAdmin
+      .rpc('increment_total_posts', { p_user_id: userId })
+      .then(() => {
+        console.log('User stats updated successfully');
+      })
+      .catch((err) => {
+        console.error('Stats update failed:', err);
+      });
 
     return NextResponse.json({
       success: true,
@@ -188,6 +197,7 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Internal server error';
+    console.error('POST /api/posts error:', error);
     return NextResponse.json(
       { success: false, error: errorMessage },
       { status: 500 }
