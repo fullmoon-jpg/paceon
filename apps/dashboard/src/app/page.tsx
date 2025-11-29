@@ -313,13 +313,6 @@ const DashboardPage = () => {
     };
   }, [user, fetchAllEvents, fetchRegisteredEvents, fetchStats]);
 
-  useEffect(() => {
-    if (!loading) {
-      if (!user) router.replace("/auth/login");
-      else if (profile?.role === "admin") router.replace("/admin/dashboard");
-    }
-  }, [loading, user, profile?.role, router]);
-
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });

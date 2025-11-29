@@ -69,9 +69,36 @@ function CallbackHandler() {
         const handleCallback = async () => {
             try {
                 const source = searchParams.get('source');
+                const code = searchParams.get('code');
                 
                 console.log('[Callback] Starting authentication handler');
+                console.log('[Callback] Code present:', code ? 'YES' : 'NO');
+                console.log('[Callback] Source:', source);
 
+                // Exchange code for session if code exists
+                if (code) {
+                    console.log('[Callback] Exchanging code for session');
+                    const { data: { session: exchangedSession }, error: exchangeError } = 
+                        await supabase.auth.exchangeCodeForSession(code);
+
+                    if (exchangeError) {
+                        console.error('[Callback] Exchange error:', exchangeError.message);
+                        setError('Failed to authenticate with Google');
+                        setTimeout(() => router.replace('/auth/login?error=exchange_failed'), 2000);
+                        return;
+                    }
+
+                    if (!exchangedSession) {
+                        console.error('[Callback] No session after exchange');
+                        setError('Authentication failed');
+                        setTimeout(() => router.replace('/auth/login?error=no_session'), 2000);
+                        return;
+                    }
+
+                    console.log('[Callback] Code exchanged successfully for user:', exchangedSession.user.id);
+                }
+
+                // Get current session
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
                 if (sessionError) {
@@ -82,7 +109,7 @@ function CallbackHandler() {
                 }
 
                 if (!session) {
-                    console.error('[Callback] No session created');
+                    console.error('[Callback] No session found');
                     setError('No session created');
                     setTimeout(() => router.replace('/auth/login?error=no_session'), 2000);
                     return;
@@ -90,12 +117,14 @@ function CallbackHandler() {
 
                 console.log('[Callback] Session found for user:', session.user.id);
 
+                // Check if coming from signup flow
                 if (source === 'signup') {
                     console.log('[Callback] Redirecting to matchmaking form (signup source)');
                     router.replace('/auth/sign-up/matchmakingform?source=google');
                     return;
                 }
 
+                // Check if new user (created within last 10 seconds)
                 const userCreatedAt = new Date(session.user.created_at || 0).getTime();
                 const isNewUser = userCreatedAt > (Date.now() - 10000);
 
@@ -107,6 +136,7 @@ function CallbackHandler() {
 
                 console.log('[Callback] Checking user profile and preferences');
 
+                // Check profile and matchmaking preferences
                 const [profileResult, preferencesResult] = await Promise.allSettled([
                     supabase
                         .from('users_profile')
@@ -134,6 +164,7 @@ function CallbackHandler() {
                     userRole
                 });
 
+                // Route based on profile status
                 if (hasProfile && hasCompletedMatchmaking) {
                     if (userRole === 'admin') {
                         console.log('[Callback] Admin user, redirecting to admin dashboard');
@@ -155,11 +186,21 @@ function CallbackHandler() {
             }
         };
 
+        // Small delay to ensure everything is mounted
         const timeoutId = setTimeout(() => {
             handleCallback();
         }, 100);
 
-        return () => clearTimeout(timeoutId);
+        // Fallback timeout - force redirect if stuck
+        const fallbackTimeout = setTimeout(() => {
+            console.warn('[Callback] Fallback timeout reached');
+            router.replace('/');
+        }, 10000);
+
+        return () => {
+            clearTimeout(timeoutId);
+            clearTimeout(fallbackTimeout);
+        };
         
     }, []); // eslint-disable-line react-hooks/exhaustive-deps
 

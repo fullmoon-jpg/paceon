@@ -1,9 +1,16 @@
-// middleware.ts (di root project, sejajar dengan app folder)
+// middleware.ts
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { CookieOptions } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl
+
+  // ✅ Skip middleware untuk auth callback
+  if (pathname === '/auth/callback') {
+    return NextResponse.next()
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -60,13 +67,10 @@ export async function middleware(request: NextRequest) {
     data: { session },
   } = await supabase.auth.getSession()
 
-  const { pathname } = request.nextUrl
-
-  // Public routes that don't require authentication
+  // Public routes
   const publicRoutes = [
     '/auth/login',
     '/auth/sign-up',
-    '/auth/callback',
     '/auth/verify-email',
     '/auth/resetpassword',
     '/auth/success',
@@ -74,7 +78,7 @@ export async function middleware(request: NextRequest) {
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
 
-  // Protected routes that require authentication
+  // Protected routes
   const protectedRoutes = [
     '/',
     '/booking',
@@ -92,19 +96,18 @@ export async function middleware(request: NextRequest) {
   // Admin routes
   const isAdminRoute = pathname.startsWith('/admin')
 
-  // If no session and trying to access protected route
+  // Redirect logic
   if (!session && isProtectedRoute) {
     const redirectUrl = new URL('/auth/login', request.url)
     redirectUrl.searchParams.set('redirectTo', pathname)
     return NextResponse.redirect(redirectUrl)
   }
 
-  // If has session and trying to access auth pages (except callback)
-  if (session && isPublicRoute && pathname !== '/auth/callback') {
+  if (session && isPublicRoute) {
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Check admin access
+  // Admin check
   if (session && isAdminRoute) {
     try {
       const { data: profile } = await supabase
@@ -117,7 +120,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url))
       }
     } catch (error) {
-      console.error('Admin check error:', error)
+      console.error('[Middleware] Admin check error:', error)
       return NextResponse.redirect(new URL('/', request.url))
     }
   }
@@ -127,14 +130,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (public folder)
-     * - api routes
-     */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$|api).*)',
   ],
 }
