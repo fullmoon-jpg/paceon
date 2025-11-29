@@ -13,7 +13,7 @@ interface DataCache {
 }
 
 interface FetchingPromises {
-  [key: string]: Promise<unknown>;
+  [key: string]: Promise<unknown> | undefined; // Add undefined
 }
 
 interface DataContextType {
@@ -49,9 +49,10 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Check if already fetching
-      if (fetchingRef.current[key]) {
+      const existingFetch = fetchingRef.current[key];
+      if (existingFetch) {
         if (IS_DEV) console.log(`[Cache] Waiting for existing fetch: ${key}`);
-        return fetchingRef.current[key] as Promise<T>;
+        return existingFetch as Promise<T>;
       }
 
       // Start fetching

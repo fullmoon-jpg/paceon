@@ -64,12 +64,13 @@ export async function fetchUserProfiles(userIds: string[]): Promise<Map<string, 
   if (uncachedIds.length > 0) {
     try {
       const { data: profiles, error } = await supabaseAdmin
-        .from<UserProfile>('users_profile')
+        .from('users_profile')
         .select('id, full_name, avatar_url')
-        .in('id', uncachedIds);
+        .in('id', uncachedIds)
+        .returns<UserProfile[]>();
 
       if (error) {
-        // Could log error with logging system
+        console.error('Error fetching profiles:', error);
       }
 
       // Cache and add to result
@@ -81,12 +82,13 @@ export async function fetchUserProfiles(userIds: string[]): Promise<Map<string, 
       // Add fallback for missing profiles
       uncachedIds.forEach(id => {
         if (!result.has(id)) {
-          const fallback = { id, full_name: 'Unknown User', avatar_url: null };
+          const fallback: UserProfile = { id, full_name: 'Unknown User', avatar_url: null };
           profileCache.set(id, { profile: fallback, timestamp: now });
           result.set(id, fallback);
         }
       });
-    } catch {
+    } catch (err) {
+      console.error('Exception fetching profiles:', err);
       // Return fallbacks for all uncached
       uncachedIds.forEach(id => {
         if (!result.has(id)) {
@@ -114,10 +116,10 @@ export async function getUserRole(userId: string): Promise<string> {
 
   try {
     const { data: profile, error } = await supabaseAdmin
-      .from<{ role: string }>('users_profile')
+      .from('users_profile')
       .select('role')
       .eq('id', userId)
-      .single();
+      .single<{ role: string }>();
 
     if (error || !profile) {
       return 'user';
@@ -127,7 +129,8 @@ export async function getUserRole(userId: string): Promise<string> {
     roleCache.set(userId, { role, timestamp: now });
 
     return role;
-  } catch {
+  } catch (err) {
+    console.error('Error fetching role:', err);
     return 'user';
   }
 }
@@ -161,7 +164,6 @@ export async function checkAuthorization(
 export function invalidateUserCache(userId: string): void {
   profileCache.delete(userId);
   roleCache.delete(userId);
-  // Removed console.log for cleanliness
 }
 
 /**
@@ -170,7 +172,6 @@ export function invalidateUserCache(userId: string): void {
 export function clearAllCaches(): void {
   profileCache.clear();
   roleCache.clear();
-  // Removed console.log for cleanliness
 }
 
 /**

@@ -22,6 +22,25 @@ import ShareModal from "./components/ShareModal";
 import ProfileModal from "./components/ProfileModal";
 import { useToast } from "@/contexts/ToastContext";
 
+// Realtime Post interface for WebSocket events
+interface RealtimePost {
+  _id: string;
+  userId: string;
+  content: string;
+  user?: {
+    id: string;
+    full_name: string;
+    avatar_url?: string;
+  };
+  mediaUrls?: string[];
+  likesCount?: number;
+  commentsCount?: number;
+  sharesCount?: number;
+  createdAt: string;
+  updatedAt: string;
+  [key: string]: unknown;
+}
+
 // Skeleton Post Component
 function SkeletonPost() {
   return (
@@ -119,26 +138,40 @@ export default function ActivityFeed({
     setActiveCommentPost,
   } = useComments(currentUserId, isAdmin, posts, setPosts);
 
+  // Realtime feed with proper typing
   const { isConnected: feedConnected } = useRealtimeFeed({
     enabled: activeTab === "all",
     currentUserId,
-    onNewPost: (newPost: Post) => {
-      if (newPost.userId !== currentUserId) {
-        setPosts((prev: Post[]) => {
-          const exists = prev.some((p) => p._id === newPost._id);
+    onNewPost: ((post: RealtimePost) => {
+      if (post.userId !== currentUserId) {
+        const transformedPost: Post = {
+          ...post,
+          user: post.user || { 
+            id: post.userId, 
+            full_name: 'Unknown User', 
+            avatar_url: undefined 
+          },
+          mediaUrls: post.mediaUrls || [],
+          likesCount: post.likesCount || 0,
+          commentsCount: post.commentsCount || 0,
+          sharesCount: post.sharesCount || 0,
+        };
+        
+        setPosts((prev) => {
+          const exists = prev.some((p) => p._id === post._id);
           if (exists) return prev;
-          return [newPost, ...prev];
+          return [transformedPost, ...prev];
         });
         showToast("info", "New post available");
       }
-    },
-    onUpdatePost: (postId: string, updates: Partial<Post>) => {
-      setPosts((prev: Post[]) =>
+    }) as (post: unknown) => void,
+    onUpdatePost: ((postId: string, updates: Partial<RealtimePost>) => {
+      setPosts((prev) =>
         prev.map((p) => (p._id === postId ? { ...p, ...updates } : p))
       );
-    },
+    }) as (postId: string, updates: unknown) => void,
     onDeletePost: (postId: string) => {
-      setPosts((prev: Post[]) => prev.filter((p) => p._id !== postId));
+      setPosts((prev) => prev.filter((p) => p._id !== postId));
     },
   });
 
@@ -358,7 +391,7 @@ export default function ActivityFeed({
           post={editingPost}
           onUpdate={handleEditPost}
           onClose={() => setEditingPost(null)}
-          updating={updating === editingPost._id}
+          updating={typeof updating === 'string' && updating === editingPost._id}
         />
       )}
 
@@ -370,7 +403,7 @@ export default function ActivityFeed({
             setEditingComment(null);
           }}
           onClose={() => setEditingComment(null)}
-          updating={updatingComment === editingComment._id}
+          updating={typeof updatingComment === 'string' && updatingComment === editingComment._id}
         />
       )}
 
