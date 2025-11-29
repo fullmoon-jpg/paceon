@@ -16,6 +16,7 @@ import EventDetailModal from "./components/EventDetailModal";
 import CreateEventModal from "./components/CreateEventModal";
 import { useToast } from "@/contexts/ToastContext";
 
+// Unified Event interface that satisfies both BookingCalendar and internal use
 interface BookingEvent {
   id: string;
   title: string;
@@ -34,6 +35,7 @@ interface BookingEvent {
   image: string;
   createdBy: string;
   status: string;
+  [key: string]: unknown; // Add index signature for compatibility
 }
 
 interface EventData {
