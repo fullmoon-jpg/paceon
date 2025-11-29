@@ -56,11 +56,14 @@ export async function GET(
       success: true,
       data: commentsWithUsers,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('GET /api/posts/[id]/comments error:', error);
 
     return NextResponse.json(
-      { success: false, error: error.message ?? 'Internal server error' },
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Internal server error' 
+      },
       { status: 500 }
     );
   }
@@ -135,7 +138,7 @@ export async function POST(
             comment_content: content.substring(0, 100),
           },
         });
-      } catch (notifError) {
+      } catch (notifError: unknown) {
         console.error('Failed to create notification:', notifError);
       }
     }
@@ -144,11 +147,14 @@ export async function POST(
       success: true,
       data: commentWithUser,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('POST /api/posts/[id]/comments error:', error);
 
     return NextResponse.json(
-      { success: false, error: error.message ?? 'Internal server error' },
+      { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Internal server error' 
+      },
       { status: 500 }
     );
   }
