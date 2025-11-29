@@ -4,10 +4,27 @@ import connectDB from '@paceon/lib/mongodb';
 import Comment from '@/lib/models/Comment';
 import Post from '@/lib/models/Posts';
 import { supabaseAdmin } from '@paceon/lib/supabaseadmin';
+import { Types } from 'mongoose';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
+
+// Define proper types for MongoDB documents
+interface CommentDocument {
+  _id: Types.ObjectId;
+  userId: string;
+  postId: string;
+  content: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface UserProfile {
+  id: string;
+  full_name: string;
+  avatar_url: string | null;
+}
 
 export async function GET(
   request: NextRequest,
@@ -21,7 +38,7 @@ export async function GET(
 
     const comments = await Comment.find({ postId })
       .sort({ createdAt: -1 })
-      .lean();
+      .lean<CommentDocument[]>(); // Type hint for lean()
 
     if (!comments.length) {
       return NextResponse.json({ success: true, data: [] });
@@ -38,8 +55,8 @@ export async function GET(
       console.error('Error fetching user profiles:', userError);
     }
 
-    const userMap = new Map(
-      (userProfiles || []).map((user) => [user.id, user])
+    const userMap = new Map<string, UserProfile>(
+      (userProfiles || []).map((user: UserProfile) => [user.id, user])
     );
 
     const commentsWithUsers = comments.map((comment) => ({
@@ -109,11 +126,14 @@ export async function POST(
       .from('users_profile')
       .select('id, full_name, avatar_url')
       .eq('id', userId)
-      .single();
+      .single<UserProfile>();
+
+    // Convert comment to plain object with proper typing
+    const commentObj = comment.toObject() as CommentDocument;
 
     const commentWithUser = {
-      ...comment.toObject(),
-      _id: comment._id.toString(),
+      ...commentObj,
+      _id: commentObj._id.toString(),
       user: userProfile || {
         id: userId,
         full_name: 'Unknown User',
@@ -134,7 +154,7 @@ export async function POST(
           is_read: false,
           metadata: {
             post_id: postId,
-            comment_id: comment._id.toString(),
+            comment_id: commentObj._id.toString(),
             comment_content: content.substring(0, 100),
           },
         });
