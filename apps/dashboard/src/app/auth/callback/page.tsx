@@ -1,6 +1,7 @@
+// src/app/auth/callback/page.tsx
 "use client";
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@paceon/lib/supabaseclient';
 import Image from 'next/image';
@@ -59,26 +60,38 @@ function CallbackHandler() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const [error, setError] = useState<string | null>(null);
+    const hasRun = useRef(false);
 
     useEffect(() => {
+        if (hasRun.current) return;
+        hasRun.current = true;
+
         const handleCallback = async () => {
             try {
                 const source = searchParams.get('source');
+                
+                console.log('[Callback] Starting authentication handler');
+
                 const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
                 if (sessionError) {
+                    console.error('[Callback] Session error:', sessionError.message);
                     setError(sessionError.message);
                     setTimeout(() => router.replace('/auth/login?error=session_failed'), 2000);
                     return;
                 }
 
                 if (!session) {
+                    console.error('[Callback] No session created');
                     setError('No session created');
                     setTimeout(() => router.replace('/auth/login?error=no_session'), 2000);
                     return;
                 }
 
+                console.log('[Callback] Session found for user:', session.user.id);
+
                 if (source === 'signup') {
+                    console.log('[Callback] Redirecting to matchmaking form (signup source)');
                     router.replace('/auth/sign-up/matchmakingform?source=google');
                     return;
                 }
@@ -87,9 +100,12 @@ function CallbackHandler() {
                 const isNewUser = userCreatedAt > (Date.now() - 10000);
 
                 if (isNewUser) {
+                    console.log('[Callback] New user detected, redirecting to matchmaking');
                     router.replace('/auth/sign-up/matchmakingform?new=true');
                     return;
                 }
+
+                console.log('[Callback] Checking user profile and preferences');
 
                 const [profileResult, preferencesResult] = await Promise.allSettled([
                     supabase
@@ -112,25 +128,40 @@ function CallbackHandler() {
                 const hasCompletedMatchmaking = !!preferencesData?.completed_at;
                 const userRole = profileData?.role || 'user';
 
+                console.log('[Callback] Profile status:', {
+                    hasProfile,
+                    hasCompletedMatchmaking,
+                    userRole
+                });
+
                 if (hasProfile && hasCompletedMatchmaking) {
                     if (userRole === 'admin') {
+                        console.log('[Callback] Admin user, redirecting to admin dashboard');
                         router.replace('/admin/dashboard');
                     } else {
+                        console.log('[Callback] Regular user, redirecting to home');
                         router.replace('/');
                     }
                 } else {
+                    console.log('[Callback] Profile incomplete, redirecting to matchmaking form');
                     router.replace('/auth/sign-up/matchmakingform?complete=true');
                 }
 
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+                console.error('[Callback] Error during callback:', errorMessage);
                 setError(errorMessage);
                 setTimeout(() => router.replace('/auth/login?error=callback_failed'), 2000);
             }
         };
 
-        handleCallback();
-    }, [router, searchParams]);
+        const timeoutId = setTimeout(() => {
+            handleCallback();
+        }, 100);
+
+        return () => clearTimeout(timeoutId);
+        
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     return (
         <div className="flex items-center justify-center min-h-screen bg-[#F4F4EF] dark:bg-[#3F3E3D]">
@@ -143,15 +174,12 @@ function CallbackHandler() {
                     </div>
                 ) : (
                     <div className="relative">
-                        {/* Spinning Border */}
                         <div className="relative inline-block">
                             <div className="absolute inset-0 rounded-full">
                                 <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#FB6F7A] border-r-[#007AA6] animate-spin"></div>
                             </div>
                             
-                            {/* Logo Container */}
                             <div className="relative w-32 h-32 sm:w-40 sm:h-40 flex items-center justify-center bg-transparent rounded-full p-4">
-                                {/* Light mode logo (dark logo) */}
                                 <Image
                                     src="/images/dark-logo.png"
                                     alt="PACE ON"
@@ -160,7 +188,6 @@ function CallbackHandler() {
                                     className="object-contain dark:hidden"
                                     priority
                                 />
-                                {/* Dark mode logo (light logo) */}
                                 <Image
                                     src="/images/light-logo.png"
                                     alt="PACE ON"
@@ -178,17 +205,6 @@ function CallbackHandler() {
                     </div>
                 )}
             </div>
-
-            <style jsx>{`
-                @keyframes spin {
-                    from {
-                        transform: rotate(0deg);
-                    }
-                    to {
-                        transform: rotate(360deg);
-                    }
-                }
-            `}</style>
         </div>
     );
 }
