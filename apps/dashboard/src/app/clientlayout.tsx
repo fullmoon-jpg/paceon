@@ -1,20 +1,19 @@
 // apps/dashboard/src/app/clientlayout.tsx
 "use client";
 
-import React, { useEffect } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import React from "react";
+import { usePathname } from "next/navigation";
 import ResponsiveNavbar from "./ui/NavDashboard";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { DataProvider } from "@/contexts/DataContext";
 import { ToastProvider } from "@/contexts/ToastContext";
 
-// Session Guard Component
+// ✅ SIMPLIFIED: Tidak ada redirect logic, middleware yang handle
 function SessionGuard({ children }: { children: React.ReactNode }) {
+  const { loading } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
-  const { user, loading } = useAuth();
 
-  // Public pages that don't require auth
+  // Public pages (untuk hide navbar)
   const publicPages = [
     '/auth/login',
     '/auth/sign-up',
@@ -26,26 +25,8 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
 
   const isPublicPage = publicPages.some((page) => pathname?.startsWith(page));
 
-  useEffect(() => {
-    // Don't redirect while loading
-    if (loading) return;
-
-    // If not authenticated and trying to access protected page
-    if (!user && !isPublicPage) {
-      console.warn('No user found, redirecting to login');
-      router.push('/auth/login?redirectTo=' + encodeURIComponent(pathname || '/'));
-      return;
-    }
-
-    // If authenticated and trying to access auth pages, redirect to dashboard
-    if (user && isPublicPage && pathname !== '/auth/callback') {
-      console.log('User already authenticated, redirecting to dashboard');
-      router.push('/');
-      return;
-    }
-  }, [user, loading, isPublicPage, pathname, router]);
-
-  // Show loading skeleton for protected pages while checking auth
+  // ✅ HANYA tampilkan loading di protected pages
+  // Middleware sudah handle redirect, jadi kita hanya perlu tunggu context ready
   if (loading && !isPublicPage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white dark:bg-[#242837]">
@@ -55,11 +36,6 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
         </div>
       </div>
     );
-  }
-
-  // Don't render protected content if no user
-  if (!loading && !user && !isPublicPage) {
-    return null;
   }
 
   return <>{children}</>;

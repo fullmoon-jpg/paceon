@@ -1,15 +1,10 @@
-// middleware.ts
+// middleware.ts - SINGLE SOURCE OF TRUTH untuk auth routing
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import type { CookieOptions } from '@supabase/ssr'
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
-
-  // ✅ Skip middleware untuk auth callback
-  if (pathname === '/auth/callback') {
-    return NextResponse.next()
-  }
 
   let response = NextResponse.next({
     request: {
@@ -26,57 +21,44 @@ export async function middleware(request: NextRequest) {
           return request.cookies.get(name)?.value
         },
         set(name: string, value: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value,
-            ...options,
-          })
+          request.cookies.set({ name, value, ...options })
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           })
-          response.cookies.set({
-            name,
-            value,
-            ...options,
-          })
+          response.cookies.set({ name, value, ...options })
         },
         remove(name: string, options: CookieOptions) {
-          request.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
+          request.cookies.set({ name, value: '', ...options })
           response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
+            request: { headers: request.headers },
           })
-          response.cookies.set({
-            name,
-            value: '',
-            ...options,
-          })
+          response.cookies.set({ name, value: '', ...options })
         },
       },
     }
   )
 
-  const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  // Public routes
+  // ✅ SINKRONISASI: Public routes
   const publicRoutes = [
     '/auth/login',
     '/auth/sign-up',
     '/auth/verify-email',
     '/auth/resetpassword',
+    '/auth/callback',  // ⭐ Ditambahkan
     '/auth/success',
   ]
 
   const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route))
+
+  // ✅ Skip middleware untuk auth callback (biar Supabase handle)
+  if (pathname === '/auth/callback') {
+    return response
+  }
+
+  // Get session
+  const {
+    data: { session },
+  } = await supabase.auth.getSession()
 
   // Protected routes
   const protectedRoutes = [
@@ -93,21 +75,24 @@ export async function middleware(request: NextRequest) {
     pathname === route || pathname.startsWith(route + '/')
   )
 
-  // Admin routes
-  const isAdminRoute = pathname.startsWith('/admin')
-
-  // Redirect logic
+  // ✅ REDIRECT LOGIC - Single source of truth
+  
+  // 1. Tidak ada session + protected route → login
   if (!session && isProtectedRoute) {
     const redirectUrl = new URL('/auth/login', request.url)
     redirectUrl.searchParams.set('redirectTo', pathname)
+    console.log('[Middleware] No session, redirecting to login')
     return NextResponse.redirect(redirectUrl)
   }
 
-  if (session && isPublicRoute) {
+  // 2. Ada session + public route (kecuali callback) → dashboard
+  if (session && isPublicRoute && pathname !== '/auth/callback') {
+    console.log('[Middleware] Already logged in, redirecting to dashboard')
     return NextResponse.redirect(new URL('/', request.url))
   }
 
-  // Admin check
+  // 3. Admin check
+  const isAdminRoute = pathname.startsWith('/admin')
   if (session && isAdminRoute) {
     try {
       const { data: profile } = await supabase
@@ -117,6 +102,7 @@ export async function middleware(request: NextRequest) {
         .single()
 
       if (profile?.role !== 'admin') {
+        console.log('[Middleware] Not admin, redirecting')
         return NextResponse.redirect(new URL('/', request.url))
       }
     } catch (error) {

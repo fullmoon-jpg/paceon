@@ -258,7 +258,7 @@ const DashboardPage = () => {
     if (!loading && user) {
       Promise.all([fetchStats(), fetchConnections(), fetchAllEvents(), fetchRegisteredEvents()]);
     }
-  }, [loading, user, fetchStats, fetchConnections, fetchAllEvents, fetchRegisteredEvents]);
+  }, [loading, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -268,24 +268,26 @@ const DashboardPage = () => {
     }
 
     channelRef.current = supabase
-      .channel("dashboard-events-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "events" },
-        () => {
-          fetchAllEvents();
-          fetchRegisteredEvents();
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "bookings" },
-        () => {
-          fetchAllEvents();
-          fetchRegisteredEvents();
-        }
-      )
-      .subscribe();
+    .channel("dashboard-events-realtime")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "events" },
+      (payload) => {
+        console.log('[Dashboard] Events changed:', payload.eventType);
+        fetchAllEvents();
+        fetchRegisteredEvents();
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "bookings" },
+      (payload) => {
+        console.log('[Dashboard] Bookings changed:', payload.eventType);
+        fetchAllEvents();
+        fetchRegisteredEvents();
+      }
+    )
+    .subscribe();
 
     return () => {
       if (channelRef.current) {
@@ -293,16 +295,25 @@ const DashboardPage = () => {
         channelRef.current = null;
       }
     };
-  }, [user, fetchAllEvents, fetchRegisteredEvents]);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return;
 
-    const handleVisibilityChange = () => {
+    const handleVisibilityChange = async () => {
       if (document.visibilityState === "visible") {
-        fetchAllEvents();
-        fetchRegisteredEvents();
-        fetchStats();
+        console.log('[Dashboard] Tab visible, refreshing data');
+        
+        // Fetch data tanpa set loading state biar ga stuck
+        try {
+          await Promise.all([
+            fetchAllEvents(),
+            fetchRegisteredEvents(),
+            fetchStats(),
+          ]);
+        } catch (error) {
+          console.error('[Dashboard] Visibility refresh error:', error);
+        }
       }
     };
 
@@ -311,7 +322,7 @@ const DashboardPage = () => {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [user, fetchAllEvents, fetchRegisteredEvents, fetchStats]);
+  }, [user]);
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
