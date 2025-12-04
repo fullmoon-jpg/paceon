@@ -210,7 +210,7 @@ const TalkNTalesPosterAndDescription = () => {
           <div className="w-full order-1">
             <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl lg:sticky lg:top-8">
               <Image
-                src="/images/poster-tnt-collab.png"
+                src="/images/poster-5.png"
                 alt="Talk n Tales Event Poster"
                 fill
                 className="object-cover"
