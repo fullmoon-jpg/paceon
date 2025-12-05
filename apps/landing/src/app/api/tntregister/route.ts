@@ -79,7 +79,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       email: body.email,
       eventDate: 'Saturday, December 13, 2025',
       eventTime: '15:00 - 22:00',
-      eventLocation: 'TBA (will be announced soon)'
+      eventLocation: 'DeepSpace by Pemimpin.id'
     });
 
     const mailOptions = {
