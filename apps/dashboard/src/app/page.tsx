@@ -2,14 +2,16 @@
 import React, { useEffect, useRef } from 'react';
 
 const UnderConstruction = () => {
-  const canvasRef = useRef(null);
-  const animationRef = useRef(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationRef = useRef<number | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
+    if (!ctx) return; // Null check untuk getContext
+
     let width = window.innerWidth;
     let height = window.innerHeight;
     canvas.width = width;
@@ -41,6 +43,9 @@ const UnderConstruction = () => {
 
     // Grid Cell
     class Cell {
+      particles: Particle[];
+      halfNeighbors: Cell[];
+      
       constructor() {
         this.particles = [];
         this.halfNeighbors = [];
@@ -53,6 +58,12 @@ const UnderConstruction = () => {
 
     // Grid for spatial hashing
     class Grid {
+      cells: Cell[];
+      nx: number;
+      ny: number;
+      w: number;
+      h: number;
+      
       constructor() {
         this.cells = [];
         this.nx = 0;
@@ -61,7 +72,7 @@ const UnderConstruction = () => {
         this.h = 0;
       }
 
-      init(nx, ny, w, h) {
+      init(nx: number, ny: number, w: number, h: number) {
         this.nx = nx;
         this.ny = ny;
         this.w = w;
@@ -92,14 +103,14 @@ const UnderConstruction = () => {
         }
       }
 
-      getCellFromLocation(x, y) {
+      getCellFromLocation(x: number, y: number): Cell | null {
         const i = Math.floor(this.nx * x / this.w);
         const j = Math.floor(this.ny * y / this.h);
         if (i < 0 || i >= this.nx || j < 0 || j >= this.ny) return null;
         return this.cells[i + j * this.nx];
       }
 
-      addParticleToCell(p) {
+      addParticleToCell(p: Particle) {
         const c = this.getCellFromLocation(p.x, p.y);
         if (c) c.particles.push(p);
       }
@@ -113,7 +124,16 @@ const UnderConstruction = () => {
 
     // Particle
     class Particle {
-      constructor(x, y) {
+      x: number;
+      y: number;
+      vx: number;
+      vy: number;
+      fx: number;
+      fy: number;
+      rho: number;
+      p: number;
+      
+      constructor(x: number, y: number) {
         this.x = x;
         this.y = y;
         this.vx = (Math.random() - 0.5);
@@ -132,24 +152,24 @@ const UnderConstruction = () => {
     }
 
     // Kernel functions
-    const Wpoly6 = (r2) => {
+    const Wpoly6 = (r2: number): number => {
       if (r2 >= H2) return 0;
       const temp = H2 - r2;
       return WPOLY6_COEFF * temp * temp * temp;
     };
 
-    const Wspiky_grad2 = (r) => {
+    const Wspiky_grad2 = (r: number): number => {
       if (r >= H || r < 0.0001) return 0;
       const temp = H - r;
       return WSPIKY_GRAD_COEFF * temp * temp / r;
     };
 
-    const Wvisc_lapl = (r) => {
+    const Wvisc_lapl = (r: number): number => {
       if (r >= H) return 0;
       return WVISC_LAPL_COEFF * (1 - r / H);
     };
 
-    const dist2 = (p1, p2) => {
+    const dist2 = (p1: Particle, p2: Particle): number => {
       const dx = p2.x - p1.x;
       const dy = p2.y - p1.y;
       return dx * dx + dy * dy;
@@ -157,7 +177,7 @@ const UnderConstruction = () => {
 
     // Initialize
     const PARTICLE_COUNT = 700;
-    const particles = [];
+    const particles: Particle[] = [];
     const grid = new Grid();
     
     const numGridCellsX = Math.floor(xmax / H);
@@ -183,10 +203,17 @@ const UnderConstruction = () => {
     let mouseScreenY = 0;
 
     // Waterfall particles queue
-    const waterfallParticles = [];
+    interface WaterfallParticle {
+      x: number;
+      y: number;
+      life: number;
+      vx: number;
+      vy: number;
+    }
+    const waterfallParticles: WaterfallParticle[] = [];
 
     // Add density
-    const AddDensity = (p1, p2) => {
+    const AddDensity = (p1: Particle, p2: Particle) => {
       const r2 = dist2(p1, p2);
       if (r2 < H2) {
         const temp = MASS * Wpoly6(r2);
@@ -217,7 +244,7 @@ const UnderConstruction = () => {
     };
 
     // Add forces
-    const AddForces = (p1, p2) => {
+    const AddForces = (p1: Particle, p2: Particle) => {
       const r2 = dist2(p1, p2);
       if (r2 < H2) {
         const r = Math.sqrt(r2) + 1e-6;
@@ -238,7 +265,7 @@ const UnderConstruction = () => {
     };
 
     // Wall forces
-    const AddWallForces = (p) => {
+    const AddWallForces = (p: Particle) => {
       if (p.x < xmin + H) {
         const r = p.x - xmin;
         p.fx -= MASS * p.p / p.rho * Wspiky_grad2(r) * r;
@@ -287,10 +314,10 @@ const UnderConstruction = () => {
       for (const p of particles) {
         const dx = p.x - mouseX;
         const dy = p.y - mouseY;
-        const dist2 = dx * dx + dy * dy;
+        const dist2Val = dx * dx + dy * dy;
         
-        if (dist2 < interactionRadius2 && dist2 > 0.001) {
-          const dist = Math.sqrt(dist2);
+        if (dist2Val < interactionRadius2 && dist2Val > 0.001) {
+          const dist = Math.sqrt(dist2Val);
           const force = (1 - dist / interactionRadius);
           
           // Push particles away from mouse
@@ -303,7 +330,7 @@ const UnderConstruction = () => {
 
     // Waterfall effect - Lusion style
     let waterfallSpawnTimer = 0;
-    const SpawnWaterfallParticles = (dt) => {
+    const SpawnWaterfallParticles = (dt: number) => {
       if (!mouseDown) {
         waterfallSpawnTimer = 0;
         return;
@@ -361,7 +388,7 @@ const UnderConstruction = () => {
     };
 
     // Update waterfall visual particles
-    const UpdateWaterfallParticles = (dt) => {
+    const UpdateWaterfallParticles = (dt: number) => {
       for (let i = waterfallParticles.length - 1; i >= 0; i--) {
         const wp = waterfallParticles[i];
         wp.life -= dt * 2;
@@ -376,7 +403,7 @@ const UnderConstruction = () => {
 
     // Update positions
     let lastTime = performance.now();
-    const UpdatePosition = (dt) => {
+    const UpdatePosition = (dt: number) => {
       dt = Math.min(dt, 0.033);
       
       for (const p of particles) {
@@ -505,9 +532,9 @@ const UnderConstruction = () => {
     // Mouse handlers
     let lastMouseX = 0;
     let lastMouseY = 0;
-    let mouseTimeout = null;
+    let mouseTimeout: NodeJS.Timeout | null = null;
 
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
@@ -526,7 +553,7 @@ const UnderConstruction = () => {
       lastMouseX = x;
       lastMouseY = y;
       
-      clearTimeout(mouseTimeout);
+      if (mouseTimeout) clearTimeout(mouseTimeout);
       mouseTimeout = setTimeout(() => {
         mouseActive = false;
         mouseVx = 0;
@@ -534,7 +561,7 @@ const UnderConstruction = () => {
       }, 100);
     };
 
-    const handleMouseDown = (e) => {
+    const handleMouseDown = (e: MouseEvent) => {
       mouseDown = true;
       const rect = canvas.getBoundingClientRect();
       const x = e.clientX - rect.left;
@@ -580,7 +607,7 @@ const UnderConstruction = () => {
       canvas.removeEventListener('mouseup', handleMouseUp);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
       window.removeEventListener('resize', handleResize);
-      clearTimeout(mouseTimeout);
+      if (mouseTimeout) clearTimeout(mouseTimeout);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
