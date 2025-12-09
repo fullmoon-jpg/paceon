@@ -1,5 +1,7 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from 'next/image';
 
 interface FormData {
@@ -16,7 +18,15 @@ interface FormData {
   reason: string;
 }
 
+interface Poster {
+  id: number;
+  image: string;
+  alt: string;
+}
+
 const TalkNTalesPosterAndDescription = () => {
+  const [activePoster, setActivePoster] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -36,6 +46,14 @@ const TalkNTalesPosterAndDescription = () => {
     reason: ''
   });
 
+  // Array of posters - add your additional poster images here
+  const posters: Poster[] = [
+    { id: 1, image: "/images/new-poster-tnt.png", alt: "Talk n Tales Event Poster" },
+    { id: 2, image: "/images/new-poster-tnt-2.png", alt: "Event Flow" },
+    { id: 3, image: "/images/new-poster-tnt-3.png", alt: "Event Details" },
+    // Add more posters as needed
+  ];
+
   const sourceOptions = [
     "Instagram",
     "Website",
@@ -54,6 +72,26 @@ const TalkNTalesPosterAndDescription = () => {
     "Founder Journey & Mental Health"
   ];
 
+  // Auto-play carousel setiap 15 detik, pause on hover
+  useEffect(() => {
+    if (posters.length <= 1 || isHovered) return;
+
+    const interval = setInterval(() => {
+      setActivePoster((prev) => (prev + 1) % posters.length);
+    }, 7000); // 15 detik, bisa ganti ke 10000 (10 detik) atau 20000 (20 detik)
+
+    return () => clearInterval(interval);
+  }, [posters.length, isHovered]);
+
+  // Poster navigation handlers
+  const handleNextPoster = () => {
+    setActivePoster((prev) => (prev + 1) % posters.length);
+  };
+
+  const handlePrevPoster = () => {
+    setActivePoster((prev) => (prev - 1 + posters.length) % posters.length);
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -62,7 +100,6 @@ const TalkNTalesPosterAndDescription = () => {
     }));
   };
 
-  // Get border color - only show validation AFTER submit attempt
   const getBorderColor = (value: string): string => {
     if (!showValidation) {
       return 'border-[#3f3e3d]/20 focus:border-[#21C36E]';
@@ -95,7 +132,6 @@ const TalkNTalesPosterAndDescription = () => {
     });
   };
 
-  // Validate LinkedIn URL - lebih flexible
   const isValidLinkedInUrl = (url: string): boolean => {
     if (!url.trim()) return false;
     
@@ -105,7 +141,6 @@ const TalkNTalesPosterAndDescription = () => {
     return linkedinPattern.test(cleanUrl);
   };
 
-  // Normalize LinkedIn URL - auto add https://
   const normalizeLinkedInUrl = (url: string): string => {
     const cleanUrl = url.trim();
     
@@ -139,12 +174,10 @@ const TalkNTalesPosterAndDescription = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Show validation on submit
     setShowValidation(true);
     
     if (!isFormValid()) {
       setError('Please fill in all required fields correctly. Make sure LinkedIn URL is valid and you selected exactly 3 interests.');
-      // Scroll to first error
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
@@ -206,21 +239,83 @@ const TalkNTalesPosterAndDescription = () => {
         {/* Grid Layout - Poster Left, Form Right */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 xl:gap-16 items-start">
           
-          {/* Left: Poster - Order 1 on mobile (shows first) */}
+          {/* Left: Poster Carousel with Navigation - Order 1 on mobile */}
           <div className="w-full order-1">
-            <div className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl lg:sticky lg:top-8">
-              <Image
-                src="/images/poster-5.png"
-                alt="Talk n Tales Event Poster"
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 1024px) 115vw, 55vw"
-              />
+            <div className="relative lg:sticky lg:top-8">
+              {/* Poster Container with AnimatePresence */}
+              <div 
+                className="relative w-full aspect-[3/4] rounded-3xl overflow-hidden shadow-2xl"
+                onMouseEnter={() => setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+              >
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={posters[activePoster].id}
+                    initial={{ opacity: 0, x: 100 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{ duration: 0.3, ease: "easeInOut" }}
+                    className="absolute inset-0"
+                  >
+                    <Image
+                      src={posters[activePoster].image}
+                      alt={posters[activePoster].alt}
+                      fill
+                      className="object-cover"
+                      priority={activePoster === 0}
+                      sizes="(max-width: 1024px) 115vw, 55vw"
+                    />
+                  </motion.div>
+                </AnimatePresence>
+              </div>
+
+              {/* Navigation Arrows - Only show if more than 1 poster */}
+              {posters.length > 1 && (
+                <>
+                  <button
+                    onClick={handlePrevPoster}
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 bg-[#3f3e3d] hover:bg-[#f4f4ef] rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-110 active:scale-95 group"
+                    aria-label="Previous poster"
+                    type="button"
+                  >
+                    <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#f4f4ef] hover:text-[#3f3e3d] transition-transform duration-300 group-hover:-translate-x-0.5" aria-hidden="true" />
+                  </button>
+
+                  <button
+                    onClick={handleNextPoster}
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 sm:w-12 sm:h-12 bg-[#3f3e3d] hover:bg-[#f4f4ef] rounded-full flex items-center justify-center transition-all duration-300 shadow-lg hover:scale-110 active:scale-95 group"
+                    aria-label="Next poster"
+                    type="button"
+                  >
+                    <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 text-[#f4f4ef] hover:text-[#3f3e3d] transition-transform duration-300 group-hover:translate-x-0.5" aria-hidden="true" />
+                  </button>
+
+                  {/* Poster Indicators */}
+                  <div 
+                    className="flex justify-center gap-2 mt-6"
+                    role="tablist"
+                    aria-label="Poster navigation"
+                  >
+                    {posters.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setActivePoster(index)}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          index === activePoster ? 'bg-[#3f3e3d] w-8' : 'bg-gray-400 w-2 hover:bg-gray-500'
+                        }`}
+                        aria-label={`Go to poster ${index + 1}`}
+                        aria-current={index === activePoster ? 'true' : 'false'}
+                        role="tab"
+                        type="button"
+                      />
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
-          {/* Right: Registration Form with Header - Order 2 on mobile (shows after poster) */}
+          {/* Right: Registration Form with Header - Order 2 on mobile */}
           <div className="w-full order-2">
             <div className="mb-8 lg:mb-10 text-center lg:text-left">
               <div className="inline-block mb-4 transform -skew-y-1">
@@ -391,7 +486,7 @@ const TalkNTalesPosterAndDescription = () => {
 
                   {/* Domicile */}
                   <div>
-                    <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
+                    <label className="font-brand block text-sm text-sm text-[#3f3e3d] mb-3">
                       Where do you currently live? <span className="text-red-500">*</span>
                     </label>
                     <input

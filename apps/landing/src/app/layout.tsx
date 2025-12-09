@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import Navbar from "./ui/navbar"; // Sesuaikan path
+import Navbar from "./ui/navbar";
 import MainWrapper from "./ui/components/MainWrapper";
+import SmoothScroll from "./smooth-scroll";
 
 // Soulmaze font untuk seluruh body
 const soulmaze = localFont({
@@ -52,6 +53,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="id" className={soulmaze.variable}>
       <body className={outfit.className}>
+        {/* Inject smooth scroll engine */}
+        <SmoothScroll />
+
         <Navbar />
         <MainWrapper>{children}</MainWrapper>
       </body>

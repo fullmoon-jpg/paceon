@@ -1,21 +1,19 @@
-import TalkNTalesHero from '../ui/components/tnthero';
-import TalkNTalesPosterAndDescription from '../ui/components/tntposter';
-import TalkNTalesRegistrationAndFAQ from '../ui/components/tntform';
-import Footer from '../ui/footer';
-import FadeInSection from '@paceon/ui/FadeIn';
-import { Analytics } from "@vercel/analytics/next";
+"use client";
 
-export const metadata = {
-  title: "Talk n Tales - PACE ON",
-  description: "An open mic and networking night where ideas meet stories. Limited seats — save yours now.",
-};
+import TalkNTalesHero from "../ui/components/tnthero";
+import TalkNTalesPosterAndDescription from "../ui/components/tntposter";
+import TalkNTalesRegistrationAndFAQ from "../ui/components/tntform";
+import Footer from "../ui/footer";
+import FadeInSection from "@paceon/ui/FadeIn";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function TalkNTalesPage() {
   return (
     <>
-    <Analytics />
+      <Analytics />
+
       <section id="hero-section" className="relative z-10">
-          <TalkNTalesHero />
+        <TalkNTalesHero />
       </section>
 
       <section id="poster-section" className="relative z-10 bg-[#f4f4ef]">
@@ -31,7 +29,7 @@ export default function TalkNTalesPage() {
       </section>
 
       <section id="footer-section" className="relative z-10">
-          <Footer />
+        <Footer />
       </section>
     </>
   );

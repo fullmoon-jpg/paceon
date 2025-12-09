@@ -15,6 +15,7 @@ function SessionGuard({ children }: { children: React.ReactNode }) {
 
   // Public pages (untuk hide navbar)
   const publicPages = [
+    '/',
     '/auth/login',
     '/auth/sign-up',
     '/auth/verify-email',
@@ -47,6 +48,7 @@ function LayoutContent({ children }: { children: React.ReactNode }) {
 
   // Pages where navbar should NOT show
   const noNavbarPages = [
+    '/',
     '/auth/login',
     '/auth/sign-up',
     '/auth/verify-email',
