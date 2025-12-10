@@ -9,7 +9,8 @@ export default function SmoothScroll() {
       duration: 1.2,
       easing: (t) => 1 - Math.pow(1 - t, 3), // cubic ease out
       smoothWheel: true,
-      smoothTouch: false,
+      smoothTouch: true,
+      touchMultiplier: 2,
     });
 
     function raf(time: number) {

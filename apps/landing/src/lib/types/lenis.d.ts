@@ -4,6 +4,7 @@ declare module "@studio-freight/lenis" {
     easing?: (t: number) => number;
     smoothWheel?: boolean;
     smoothTouch?: boolean;
+    touchMultiplier?: number;
     lerp?: number;
     infinite?: boolean;
     orientation?: "vertical" | "horizontal";
