@@ -8,17 +8,15 @@ import {
     MapPin,
     Clock,
 } from "lucide-react";
-import { db } from "@paceon/lib/firebaseConfig";
-import { collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { createClient } from '@supabase/supabase-js';
 
 interface ContactFormData {
   name: string;
   email: string;
   phone: string;
-  subject: string;
+  company: string;
   messageType: string;
   message: string;
-  submittedAt: string | null;
 }
 
 const MESSAGE_TYPES = [
@@ -30,30 +28,47 @@ const MESSAGE_TYPES = [
   { value: 'general', label: 'General Question' },
 ];
 
+// Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 const ContactSection = () => {
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
     email: '',
     phone: '',
-    subject: '',
+    company: '',
     messageType: '',
     message: '',
-    submittedAt: null,
   });
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [submitted, setSubmitted] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const submitToFirestore = async (data: ContactFormData) => {
+  const submitToSupabase = async (data: ContactFormData) => {
     try {
-      const docRef = await addDoc(collection(db, "contacts"), {
-        ...data,
-        submittedAt: serverTimestamp(),
-      });
-      console.log("Contact message sent with ID: ", docRef.id);
-      return { success: true, id: docRef.id };
+      const { data: result, error } = await supabase
+        .from('contacts')
+        .insert([{
+          name: data.name,
+          email: data.email,
+          phone: data.phone,
+          company: data.company,
+          message_type: data.messageType,
+          message: data.message,
+          created_at: new Date().toISOString(),
+        }])
+        .select();
+
+      if (error) throw error;
+
+      console.log("Contact message sent successfully:", result);
+      return { success: true, data: result };
     } catch (e) {
-      console.error("Error sending contact message: ", e);
+      console.error("Error sending contact message:", e);
       return { success: false, error: e };
     }
   };
@@ -66,7 +81,7 @@ const ContactSection = () => {
     return (
       formData.name.trim() !== '' &&
       formData.email.trim() !== '' &&
-      formData.subject.trim() !== '' &&
+      formData.company.trim() !== '' &&
       formData.messageType.trim() !== '' &&
       formData.message.trim() !== ''
     );
@@ -76,18 +91,15 @@ const ContactSection = () => {
     e.preventDefault();
     
     if (!isFormValid()) {
-      alert('Please fill all required fields!');
+      setError('Please fill all required fields!');
       return;
     }
 
     setIsSubmitting(true);
-    try {
-      const submissionData: ContactFormData = {
-        ...formData,
-        submittedAt: new Date().toISOString(),
-      };
+    setError(null);
 
-      const result = await submitToFirestore(submissionData);
+    try {
+      const result = await submitToSupabase(formData);
 
       if (result.success) {
         setSubmitted(true);
@@ -97,16 +109,17 @@ const ContactSection = () => {
             name: '',
             email: '',
             phone: '',
-            subject: '',
+            company: '',
             messageType: '',
             message: '',
-            submittedAt: null,
           });
         }, 4000);
+      } else {
+        throw new Error('Failed to submit contact form');
       }
     } catch (error) {
       console.error("Error submitting contact form:", error);
-      alert("An error occurred while sending the message. Please try again.");
+      setError("An error occurred while sending the message. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -157,7 +170,7 @@ const ContactSection = () => {
 
         {/* Two Column Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16">
-          {/* Contact Information - No header icon */}
+          {/* Contact Information */}
           <div>
             <div className="mb-8">
               <h2 className="font-brand text-2xl sm:text-3xl text-[#3f3e3d]">
@@ -166,7 +179,7 @@ const ContactSection = () => {
             </div>
 
             <div className="space-y-6">
-              {/* Email - Border only, no bg */}
+              {/* Email */}
               <div className="flex items-start gap-4 p-4 border-2 border-[#3f3e3d]/10 rounded-2xl hover:border-[#FB6F7A]/30 hover:shadow-md transition-all">
                 <div className="w-12 h-12 bg-[#FB6F7A] rounded-xl flex items-center justify-center flex-shrink-0">
                   <Mail className="w-6 h-6 text-white" />
@@ -178,7 +191,7 @@ const ContactSection = () => {
                 </div>
               </div>
 
-              {/* Phone - Border only, no bg */}
+              {/* Phone */}
               <div className="flex items-start gap-4 p-4 border-2 border-[#3f3e3d]/10 rounded-2xl hover:border-[#F0C946]/30 hover:shadow-md transition-all">
                 <div className="w-12 h-12 bg-[#F0C946] rounded-xl flex items-center justify-center flex-shrink-0">
                   <Phone className="w-6 h-6 text-[#3f3e3d]" />
@@ -190,7 +203,7 @@ const ContactSection = () => {
                 </div>
               </div>
 
-              {/* Location - Border only, no bg */}
+              {/* Location */}
               <div className="flex items-start gap-4 p-4 border-2 border-[#3f3e3d]/10 rounded-2xl hover:border-[#FB6F7A]/30 hover:shadow-md transition-all">
                 <div className="w-12 h-12 bg-[#FB6F7A] rounded-xl flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-6 h-6 text-white" />
@@ -202,7 +215,7 @@ const ContactSection = () => {
                 </div>
               </div>
 
-              {/* Office Hours - Border only, no bg */}
+              {/* Office Hours */}
               <div className="flex items-start gap-4 p-4 border-2 border-[#3f3e3d]/10 rounded-2xl hover:border-[#F0C946]/30 hover:shadow-md transition-all">
                 <div className="w-12 h-12 bg-[#F0C946] rounded-xl flex items-center justify-center flex-shrink-0">
                   <Clock className="w-6 h-6 text-[#3f3e3d]" />
@@ -215,7 +228,7 @@ const ContactSection = () => {
               </div>
             </div>
 
-            {/* Customer Support Box - No icon */}
+            {/* Customer Support Box */}
             <div className="mt-8 bg-[#FB6F7A]/10 border-2 border-[#FB6F7A]/20 rounded-2xl p-5">
               <p className="font-brand text-[#3f3e3d] mb-2 text-base">
                 Our customer support will help you
@@ -226,13 +239,19 @@ const ContactSection = () => {
             </div>
           </div>
 
-          {/* Contact Form - No header icon */}
+          {/* Contact Form */}
           <div>
             <div className="mb-8">
               <h2 className="font-brand text-2xl sm:text-3xl text-[#3f3e3d]">
                 Send Message
               </h2>
             </div>
+
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+                <p className="font-body text-sm text-red-600">{error}</p>
+              </div>
+            )}
 
             <div className="space-y-8">
               {/* Name & Company - Grid 2 cols */}
@@ -256,8 +275,8 @@ const ContactSection = () => {
                   </label>
                   <input
                     type="text"
-                    value={formData.subject}
-                    onChange={(e) => updateFormData('subject', e.target.value)}
+                    value={formData.company}
+                    onChange={(e) => updateFormData('company', e.target.value)}
                     className="w-full text-[#3f3e3d] pb-2 border-b-2 border-[#3f3e3d]/20 focus:border-[#FB6F7A] font-body text-base transition-all bg-transparent outline-none placeholder:text-[#3f3e3d]/40"
                     placeholder="Your Company"
                   />
@@ -329,7 +348,7 @@ const ContactSection = () => {
               {/* Info Box */}
               <div className="bg-[#21c36e]/10 border-2 border-[#21c36e]/30 rounded-2xl p-4">
                 <p className="font-body text-sm text-[#3f3e3d]/80 leading-relaxed">
-                  🔒 <strong>Your information is secure.</strong> We keep all data confidential and use it only to respond to your inquiry.
+                  <strong>Your information is secure.</strong> We keep all data confidential and use it only to respond to your inquiry.
                 </p>
               </div>
 
