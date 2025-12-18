@@ -38,7 +38,7 @@ const TalkNTalesHero = () => {
               aria-hidden="true"
             >
               <span className="font-brand text-sm sm:text-base md:text-lg lg:text-xl text-[#3f3e3d] uppercase tracking-wider">
-                Upcoming Movement
+                Our Movement
               </span>
             </div>
           </div>
@@ -48,44 +48,6 @@ const TalkNTalesHero = () => {
         <h1 className="font-brand text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl text-white mb-2 sm:mb-3 leading-none tracking-tight">
           TALK N TALES
         </h1>
-
-        {/* CTA Buttons - Mobile (Stacked) */}
-        <div className="lg:hidden flex flex-col gap-3 items-center mt-4">
-          <button
-            onClick={scrollToForm}
-            className="inline-flex items-center gap-2 bg-[#F0C946] text-[#3f3e3d] font-brand text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-3.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 uppercase tracking-wide group w-full max-w-xs"
-          >
-            Register Here
-            <ArrowDown className="w-4 h-4 animate-bounce group-hover:translate-y-1 transition-transform" />
-          </button>
-          
-          <button
-            onClick={goToContact}
-            className="inline-flex items-center gap-2 bg-white text-[#F47a49] font-brand text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-3.5 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 uppercase tracking-wide group w-full max-w-xs"
-          >
-            For Collaboration
-            <Mail className="w-4 h-4 group-hover:rotate-12 transition-transform" />
-          </button>
-        </div>
-
-        {/* CTA Buttons - Desktop (Side by Side) */}
-        <div className="hidden lg:flex gap-4 items-center justify-center mt-6">
-          <button
-            onClick={scrollToForm}
-            className="green-fill inline-flex items-center gap-2 bg-[#F0C946] text-[#3f3e3d] font-brand text-base md:text-lg px-8 md:px-10 py-3.5 md:py-4 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 uppercase tracking-wide group"
-          >
-            Register Here
-            <ArrowDown className="w-5 h-5 animate-bounce group-hover:translate-y-1 transition-transform" />
-          </button>
-          
-          <button
-            onClick={goToContact}
-            className="yellow-fill inline-flex items-center gap-2 bg-white text-[#F47a49] font-brand text-base md:text-lg px-8 md:px-10 py-3.5 md:py-4 rounded-full transition-all duration-300 hover:scale-105 hover:shadow-xl active:scale-95 uppercase tracking-wide group"
-          >
-            For Collaboration
-            <Mail className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-          </button>
-        </div>
       </div>
     </section>
   );
