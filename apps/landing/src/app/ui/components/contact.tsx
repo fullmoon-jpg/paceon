@@ -8,7 +8,6 @@ import {
     MapPin,
     Clock,
 } from "lucide-react";
-import { createClient } from '@supabase/supabase-js';
 
 interface ContactFormData {
   name: string;
@@ -28,12 +27,6 @@ const MESSAGE_TYPES = [
   { value: 'general', label: 'General Question' },
 ];
 
-// Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 const ContactSection = () => {
   const [formData, setFormData] = useState<ContactFormData>({
     name: '',
@@ -48,25 +41,32 @@ const ContactSection = () => {
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  const submitToSupabase = async (data: ContactFormData) => {
+  // Submit via API route (BUKAN langsung ke Supabase!)
+  const submitToAPI = async (data: ContactFormData) => {
     try {
-      const { data: result, error } = await supabase
-        .from('contacts')
-        .insert([{
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
           name: data.name,
           email: data.email,
           phone: data.phone,
           company: data.company,
           message_type: data.messageType,
           message: data.message,
-          created_at: new Date().toISOString(),
-        }])
-        .select();
+        }),
+      });
 
-      if (error) throw error;
+      const result = await response.json();
 
-      console.log("Contact message sent successfully:", result);
-      return { success: true, data: result };
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || 'Failed to submit contact form');
+      }
+
+      console.log("Contact message sent successfully:", result.data);
+      return { success: true, data: result.data };
     } catch (e) {
       console.error("Error sending contact message:", e);
       return { success: false, error: e };
@@ -99,7 +99,7 @@ const ContactSection = () => {
     setError(null);
 
     try {
-      const result = await submitToSupabase(formData);
+      const result = await submitToAPI(formData);
 
       if (result.success) {
         setSubmitted(true);
@@ -198,7 +198,7 @@ const ContactSection = () => {
                 </div>
                 <div>
                   <h3 className="font-brand text-[#3f3e3d] text-lg mb-1">Telephone</h3>
-                  <p className="font-body text-[#3f3e3d] text-base font-medium">+62 855-8451-534</p>
+                  <p className="font-body text-[#3f3e3d] text-base font-medium">+62 811-1933-301</p>
                   <p className="font-body text-[#3f3e3d]/60 text-sm mt-1">Monday - Friday, 09:00 - 17:00</p>
                 </div>
               </div>

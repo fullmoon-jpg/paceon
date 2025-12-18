@@ -17,17 +17,23 @@ interface ApiResponse {
   error?: string;
 }
 
-// Supabase client with service role key
+// Supabase client dengan SERVICE ROLE KEY (bypass RLS)
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.SUPABASE_SERVICE_ROLE_KEY!, // Pastikan env var ini ada!
+  {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false
+    }
+  }
 );
 
 export async function POST(request: NextRequest): Promise<NextResponse<ApiResponse>> {
   try {
     const body = await request.json() as ContactData;
 
-    // Validate required fields
+    // Validasi required fields
     if (!body.name || !body.email || !body.company || !body.message_type || !body.message) {
       return NextResponse.json({
         success: false,
@@ -35,21 +41,31 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
       }, { status: 400 });
     }
 
-    // Insert to Supabase
+    // Validasi format email sederhana
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(body.email)) {
+      return NextResponse.json({
+        success: false,
+        message: 'Invalid email format'
+      }, { status: 400 });
+    }
+
+    // Insert ke Supabase (service role bypass RLS)
     const { data, error: supabaseError } = await supabase
       .from('contacts')
-      .insert([{
-        name: body.name,
-        email: body.email,
-        phone: body.phone || null,
-        company: body.company,
+      .insert({
+        name: body.name.trim(),
+        email: body.email.trim().toLowerCase(),
+        phone: body.phone?.trim() || null,
+        company: body.company.trim(),
         message_type: body.message_type,
-        message: body.message,
-        created_at: new Date().toISOString(),
-      }])
-      .select();
+        message: body.message.trim(),
+      })
+      .select()
+      .single();
 
     if (supabaseError) {
+      console.error('Supabase error:', supabaseError);
       throw new Error(`Database error: ${supabaseError.message}`);
     }
 
@@ -60,6 +76,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     }, { status: 200 });
 
   } catch (error) {
+    console.error('API error:', error);
     const errorMessage = error instanceof Error 
       ? error.message 
       : 'Submission failed';
