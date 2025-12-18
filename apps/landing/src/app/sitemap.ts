@@ -7,7 +7,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: new Date(),
     },
     {
-      url: 'https://paceon.id/talk-n-tales',
+      url: 'https://paceon.id/Talk-n-Tales',
       lastModified: new Date(),
     },
   ];
