@@ -70,7 +70,7 @@ const CommunitySensingPage = () => {
   ];
 
   const casualMediumOptions = [
-    "Aktivitas olahraga",
+    "Olahraga",
     "Coffee chat / ngobrol bareng",
     "Kombinasi keduanya",
     "Lainnya",
@@ -530,7 +530,7 @@ const CommunitySensingPage = () => {
               {/* 6. Casual Medium */}
               <div>
                 <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
-                  6. Untuk sesi obrolan santai, media apa yang paling lo
+                  6. Untuk sesi obrolan santai, aktivitas apa yang paling lo
                   pilih? <span className="text-red-500">*</span>
                 </label>
                 <div className="space-y-2">
