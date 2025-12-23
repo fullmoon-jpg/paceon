@@ -15,7 +15,7 @@ interface FormData {
   serious_format_other?: string;
   preferred_locations: string[];
   current_needs: string;
-  gathering_topic: string;
+  gathering_topic: string[]; // CHANGED: dari string ke string[]
   gathering_topic_other?: string;
   small_group_interest: string;
   community_expectations: string;
@@ -100,7 +100,9 @@ export async function POST(
         formData.get('preferred_locations') as string
       ) as string[],
       current_needs: formData.get('current_needs') as string,
-      gathering_topic: formData.get('gathering_topic') as string,
+      gathering_topic: JSON.parse(
+        formData.get('gathering_topic') as string
+      ) as string[], // CHANGED: sekarang parse sebagai array
       gathering_topic_other:
         (formData.get('gathering_topic_other') as string) || undefined,
       small_group_interest: formData.get('small_group_interest') as string,

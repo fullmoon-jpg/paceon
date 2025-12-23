@@ -15,7 +15,7 @@ interface FormData {
   serious_format_other: string;
   preferred_locations: string[];
   current_needs: string;
-  gathering_topic: string;
+  gathering_topic: string[]; // CHANGED: dari string ke string[]
   gathering_topic_other: string;
   small_group_interest: string;
   community_expectations: string;
@@ -46,7 +46,7 @@ const CommunitySensingPage = () => {
     serious_format_other: "",
     preferred_locations: [],
     current_needs: "",
-    gathering_topic: "",
+    gathering_topic: [], // CHANGED: dari "" ke []
     gathering_topic_other: "",
     small_group_interest: "",
     community_expectations: "",
@@ -174,7 +174,7 @@ const CommunitySensingPage = () => {
   };
 
   const handleCheckboxChange = (
-    field: "serious_format" | "preferred_locations",
+    field: "serious_format" | "preferred_locations" | "gathering_topic", // ADDED gathering_topic
     value: string
   ) => {
     setFormData((prev) => {
@@ -205,7 +205,7 @@ const CommunitySensingPage = () => {
       formData.serious_format.length > 0 &&
       formData.preferred_locations.length > 0 &&
       formData.current_needs.trim() !== "" &&
-      formData.gathering_topic.trim() !== "" &&
+      formData.gathering_topic.length > 0 && // CHANGED: dari trim() ke length > 0
       formData.small_group_interest.trim() !== "" &&
       formData.community_expectations.trim() !== "" &&
       formData.podcast_interest.trim() !== "" &&
@@ -235,58 +235,40 @@ const CommunitySensingPage = () => {
       submitData.append("full_name", formData.full_name);
       submitData.append("company", formData.company);
       submitData.append("role", formData.role);
-      submitData.append(
-        "gathering_frequency",
-        formData.gathering_frequency
-      );
+      submitData.append("gathering_frequency", formData.gathering_frequency);
       submitData.append(
         "gathering_frequency_other",
         formData.gathering_frequency_other
       );
       submitData.append("conversation_type", formData.conversation_type);
       submitData.append("casual_medium", formData.casual_medium);
-      submitData.append(
-        "casual_medium_other",
-        formData.casual_medium_other
-      );
+      submitData.append("casual_medium_other", formData.casual_medium_other);
       submitData.append(
         "serious_format",
         JSON.stringify(formData.serious_format)
       );
-      submitData.append(
-        "serious_format_other",
-        formData.serious_format_other
-      );
+      submitData.append("serious_format_other", formData.serious_format_other);
       submitData.append(
         "preferred_locations",
         JSON.stringify(formData.preferred_locations)
       );
       submitData.append("current_needs", formData.current_needs);
-      submitData.append("gathering_topic", formData.gathering_topic);
       submitData.append(
-        "gathering_topic_other",
-        formData.gathering_topic_other
+        "gathering_topic",
+        JSON.stringify(formData.gathering_topic) // CHANGED: sekarang JSON.stringify array
       );
-      submitData.append(
-        "small_group_interest",
-        formData.small_group_interest
-      );
+      submitData.append("gathering_topic_other", formData.gathering_topic_other);
+      submitData.append("small_group_interest", formData.small_group_interest);
       submitData.append(
         "community_expectations",
         formData.community_expectations
       );
-      submitData.append(
-        "podcast_interest",
-        formData.podcast_interest
-      );
+      submitData.append("podcast_interest", formData.podcast_interest);
       submitData.append(
         "founder_content_interest",
         formData.founder_content_interest
       );
-      submitData.append(
-        "project_openness",
-        formData.project_openness
-      );
+      submitData.append("project_openness", formData.project_openness);
 
       if (formData.company_logo) {
         submitData.append("company_logo", formData.company_logo);
@@ -320,7 +302,7 @@ const CommunitySensingPage = () => {
         serious_format_other: "",
         preferred_locations: [],
         current_needs: "",
-        gathering_topic: "",
+        gathering_topic: [], // CHANGED
         gathering_topic_other: "",
         small_group_interest: "",
         community_expectations: "",
@@ -659,26 +641,28 @@ const CommunitySensingPage = () => {
                 />
               </div>
 
-              {/* 10. Gathering Topic */}
+              {/* 10. Gathering Topic - NOW MULTIPLE CHOICE */}
               <div>
                 <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
                   10. Kalau ada gathering besar dengan satu komunitas, topik
                   apa yang paling bikin lo tertarik?{" "}
-                  <span className="text-red-500">*</span>
+                  <span className="text-red-500">
+                    * (Bisa pilih lebih dari satu)
+                  </span>
                 </label>
-                <div className="space-y-2">
+                <div className="space-y-3 pl-1">
                   {gatheringTopicOptions.map((option) => (
                     <label
                       key={option}
-                      className="flex items-center gap-3 cursor-pointer group"
+                      className="flex items-start gap-3 cursor-pointer group"
                     >
                       <input
-                        type="radio"
-                        name="gathering_topic"
-                        value={option}
-                        checked={formData.gathering_topic === option}
-                        onChange={handleChange}
-                        className="w-4 h-4 text-[#21C36E] focus:ring-[#21C36E] focus:ring-2 cursor-pointer"
+                        type="checkbox"
+                        checked={formData.gathering_topic.includes(option)}
+                        onChange={() =>
+                          handleCheckboxChange("gathering_topic", option)
+                        }
+                        className="mt-1 w-4 h-4 rounded border-2 border-gray-300 text-[#21C36E] focus:ring-[#21C36E] focus:ring-2 cursor-pointer"
                       />
                       <span className="font-body text-sm text-[#3f3e3d] group-hover:text-[#21C36E] transition-colors">
                         {option}
@@ -686,7 +670,7 @@ const CommunitySensingPage = () => {
                     </label>
                   ))}
                 </div>
-                {formData.gathering_topic === "Lainnya" && (
+                {formData.gathering_topic.includes("Lainnya") && (
                   <input
                     type="text"
                     name="gathering_topic_other"
@@ -740,7 +724,7 @@ const CommunitySensingPage = () => {
                 />
               </div>
 
-              {/* 13. Podcast Interest (sekarang jadi nomor di UI setelah lu hapus price) */}
+              {/* 13. Podcast Interest */}
               <div>
                 <label className="font-brand block text-sm text-[#3f3e3d] mb-3">
                   13. Apakah lo tertarik jika diundang sebagai guest untuk
