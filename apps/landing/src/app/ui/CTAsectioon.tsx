@@ -140,7 +140,7 @@ const CTASection = memo(({
             {/* Left: Text Content */}
             <div className="flex-1">
               <h3 className="font-brand text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[#3f3e3d] mb-4 sm:mb-6 uppercase">
-                Upcoming Event — Talk n Tales
+                Upcoming Event — LOOP
               </h3>
 
               <motion.p
@@ -151,7 +151,7 @@ const CTASection = memo(({
                 transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.5 : 0 }}
                 className="font-body text-sm sm:text-base lg:text-lg text-[#3f3e3d]/80 mb-2 leading-relaxed"
               >
-                An open mic and networking night where ideas meet stories. 60 Seats Available. Save yours now!
+                A space for young people to learn business. Seats Available. Save yours now!
               </motion.p>
 
               <motion.p
@@ -162,7 +162,7 @@ const CTASection = memo(({
                 transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.6 : 0 }}
                 className="font-body text-sm sm:text-base text-[#3f3e3d] font-semibold"
               >
-                Part talkshow, part hangout. 100% PACE ON energy.
+                #1 LOOP Series will discuss about "How To Create Content Like Creator".
               </motion.p>
             </div>
 

@@ -71,7 +71,7 @@ const TestimonialCTASection = ({
   };
 
   const handleTalkNTalesClick = () => {
-    window.location.href = '/Talk-n-Tales';
+    window.location.href = '/LOOP';
   };
 
   return (
@@ -218,13 +218,13 @@ const TestimonialCTASection = ({
 
             <div className="mb-4">
               <h4 className="font-brand text-lg sm:text-xl md:text-2xl text-[#3f3e3d] mb-2 uppercase">
-                Upcoming Event — Talk n Tales
+                Upcoming Event — LOOP #1
               </h4>
               <p className="font-body text-xs sm:text-sm text-[#3f3e3d]/80 mb-2">
-                An open mic and networking night where ideas meet stories. Limited seats — save yours now.
+                A space for young people to learn business. Limited seats — save yours now.
               </p>
               <p className="font-body text-xs sm:text-sm font-semibold text-[#3f3e3d]">
-                Part talkshow, part hangout — 100% PaceOn energy.
+                #1 LOOP Series will discuss about "How To Create Content Like Creator".
               </p>
             </div>
 
@@ -385,13 +385,13 @@ const TestimonialCTASection = ({
 
               <div className="mb-6">
                 <h4 className="font-brand text-2xl sm:text-3xl text-[#3f3e3d] mb-2 uppercase">
-                  Upcoming Event — Talk n Tales
+                  Upcoming Event — LOOP #1
                 </h4>
                 <p className="font-body text-sm sm:text-base lg:text-lg text-[#3f3e3d]/80 mb-2 leading-relaxed">
-                  An open mic and networking night where ideas meet stories. 60 Seats Available. Save yours now!
+                  A space for young people to learn business. Limited seats — save yours now.
                 </p>
                 <p className="font-body text-sm sm:text-base text-[#3f3e3d] font-semibold">
-                  Part talkshow, part hangout. 100% PACE ON energy.
+                  #1 LOOP Series will discuss about "How To Create Content Like Creator".
                 </p>
               </div>
 

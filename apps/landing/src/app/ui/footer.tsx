@@ -29,7 +29,7 @@ const Footer = () => {
                 Keep The Pace On
               </p>
               <p className="font-body text-white/80">
-                (+62) 855-8451-534
+                (+62) 819-9553-8939
               </p>
             </div>
           </div>
@@ -51,10 +51,10 @@ const Footer = () => {
                 House Rules
               </Link>
               <Link 
-                href="/Talk-n-Tales"
+                href="/upcoming-event"
                 className="font-semibold font-outfit sm:text-md text-md md:text-xl lg:text-xl text-white hover:text-white/70 transition-colors"
               >
-                Talk n Tales
+                Upcoming Event
               </Link>
               <Link 
                 href="https://www.app.paceon.id"
@@ -75,7 +75,7 @@ const Footer = () => {
                 <Instagram className="w-6 h-6" />
               </Link>
               <Link 
-                href="https://wa.me/+628558451534"
+                href="https://wa.me/+6281995538939"
                 target="_blank"
                 className="w-12 h-12 border-2 border-white rounded-lg flex items-center justify-center hover:bg-white hover:text-black transition-colors"
                 aria-label="whatsapp-link"
