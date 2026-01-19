@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 
 export default function Navbar() {
   const router = useRouter();
@@ -10,11 +10,12 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isEventDropdownOpen, setIsEventDropdownOpen] = useState(false);
   const [isMobileEventOpen, setIsMobileEventOpen] = useState(false);
-  const dropdownRef = useRef(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Check if we're on homepage
   const isHomePage = pathname === '/';
 
+  // Scroll handler
   useEffect(() => {
     const handleScroll = () => {
       if (window.scrollY > 100) {
@@ -30,10 +31,10 @@ export default function Navbar() {
     };
   }, []);
 
-  // Close dropdown when clicking outside
+  // Close dropdown when clicking outside - ✅ FIXED TYPE ERROR
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsEventDropdownOpen(false);
       }
     };
