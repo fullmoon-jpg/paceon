@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   ArrowRight, Star, Zap, MapPin, Calendar, 
   Sparkles, CheckCircle2, Asterisk, Upload, CreditCard, Instagram,
-  Coffee, UtensilsCrossed
+  Coffee, UtensilsCrossed, Award, Phone
 } from 'lucide-react';
 import Footer from '../ui/footer';
 import { Analytics } from "@vercel/analytics/next";
@@ -186,7 +186,6 @@ export default function LoopGenZPage() {
     setError(null);
 
     try {
-      // Create FormData for file upload
       const submitData = new FormData();
       submitData.append('fullName', formData.fullName);
       submitData.append('email', formData.email);
@@ -202,28 +201,18 @@ export default function LoopGenZPage() {
         submitData.append('paymentProof', formData.paymentProof);
       }
 
-      console.log('🚀 Sending to:', '/api/loop-registration');
-      console.log('📦 FormData keys:', Array.from(submitData.keys()));
-
-      // Call API endpoint
       const response = await fetch('/api/loop-registration', {
         method: 'POST',
         body: submitData,
       });
 
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', response.headers.get('content-type'));
-
-      // Check if response is JSON before parsing
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const text = await response.text();
-        console.error('❌ Response bukan JSON:', text.substring(0, 200));
-        throw new Error(`Server error: ${response.status}. Check console untuk detail.`);
+        throw new Error(`Server error: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log('✅ Response data:', result);
 
       if (!response.ok || !result.success) {
         throw new Error(result.message || 'Gagal mendaftar. Coba lagi ya!');
@@ -231,7 +220,6 @@ export default function LoopGenZPage() {
 
       setIsSubmitted(true);
     } catch (err) {
-      console.error("❌ Error submitting registration:", err);
       setError(err instanceof Error ? err.message : "Terjadi kesalahan. Coba lagi ya!");
     } finally {
       setIsSubmitting(false);
@@ -241,15 +229,12 @@ export default function LoopGenZPage() {
   return (
     <div ref={containerRef} className="min-h-screen bg-[#f0f2eb] text-black overflow-x-hidden selection:bg-[#d23a7d] selection:text-white font-sans">
       <Analytics />
-      {/* NOISE TEXTURE */}
       <div className="fixed inset-0 pointer-events-none opacity-[0.03] z-50 mix-blend-multiply" 
            style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E")` }}>
       </div>
 
-      {/* --- HERO SECTION --- */}
-      <section className="relative pt-16 md:pt-20 pb-16 md:pb-24 px-4 md:px-8 border-b-4 border-black bg-[#f0f2eb]">
-        <div className="max-w-[1400px] mx-auto relative">
-          
+      <section className="relative pt-16 md:pt-20 pb-16 md:pb-24 px-4 sm:px-6 lg:px-28 border-b-4 border-black bg-[#f0f2eb]">
+        <div className="relative">
           <div className="absolute top-0 right-4 md:right-10 rotate-12 animate-pulse scale-75 md:scale-100">
              <div className="bg-[#d23a7d] text-white font-black p-3 md:p-4 rounded-full border-3 md:border-4 border-black shadow-[3px_3px_0px_black] md:shadow-[4px_4px_0px_black] text-xs md:text-base">
                 GEN-Z ONLY
@@ -262,18 +247,24 @@ export default function LoopGenZPage() {
               <p className="font-bold tracking-widest uppercase text-sm md:text-base">Pace On Presents</p>
             </div>
             
-            <h1 className="text-[18vw] md:text-[14vw] leading-[0.85] font-black tracking-tighter uppercase hero-text opacity-0 translate-y-4 transition-all duration-500 mix-blend-darken text-[#ef6d77]">
-              LOOP <span className="text-transparent stroke-black stroke-2" style={{ WebkitTextStroke: '2px black' }}>SERIES</span>
-            </h1>
+            <div className="flex flex-wrap items-center gap-3 md:gap-4">
+              <h1 className="text-[18vw] md:text-[14vw] leading-[0.85] font-black tracking-tighter uppercase hero-text opacity-0 translate-y-4 transition-all duration-500 mix-blend-darken text-[#ef6d77]">
+                LOOP <span className="text-transparent stroke-black stroke-2" style={{ WebkitTextStroke: '2px black' }}>SERIES</span>
+              </h1>
+              <div className="hero-text opacity-0 translate-y-4 transition-all duration-500 bg-[#37c35f] text-white font-black px-3 py-2 md:px-4 md:py-2 border-3 md:border-4 border-black shadow-[4px_4px_0px_black] rotate-[-2deg] text-xs md:text-sm uppercase flex items-center gap-2">
+                <Award size={16} className="md:w-5 md:h-5" />
+                Beginner Friendly
+              </div>
+            </div>
             
             <div className="flex flex-col md:flex-row justify-between items-start md:items-end mt-6 md:mt-8 gap-6 md:gap-8">
-              <div className="max-w-xl hero-text opacity-0 translate-y-4 transition-all duration-500">
+              <div className="max-w-3xl hero-text opacity-0 translate-y-4 transition-all duration-500">
                 <p className="text-lg md:text-3xl font-bold leading-tight border-l-4 md:border-l-8 border-[#37c35f] pl-4 md:pl-6">
-                  Belajar skill nyata. <br/>
-                  Dapet insight dari founder. <br/>
-                  <span className="bg-black text-white px-2 py-1">Lo GAK CUMA DAPET TEORI.</span><br/>
-                  Kita belajar dari praktikal <br/>
-                  langsung dari  <span className="bg-black text-white px-2 py-1">FOUNDER AGENCY</span>
+                  Takut salah pas bikin konten? <br/>
+                  itu normal<br/>
+                  <span className="bg-[#d23a7d] text-white px-2 py-1 text-xl md:text-4xl">LOOP itu hands-on lab, bukan kelas teori.</span><br/>
+                  Circle kecil. Real Case <br/>
+                  langsung dari  <span className="bg-[#d23a7d] text-white px-2 py-1 text-xl md:text-4xl">FOUNDER & PRACTITIONERS</span>
                 </p>
               </div>
               <div className="hero-text opacity-0 translate-y-4 transition-all duration-500 w-full md:w-auto">
@@ -284,13 +275,11 @@ export default function LoopGenZPage() {
         </div>
       </section>
 
-      <Marquee text="Slot Terbatas // Amankan Masa Depan Lo //" />
+      <Marquee text="SLOT TERBATAS // NO JUDGING, JUST PRACTICE //" />
 
-      {/* --- CONTENT GRID --- */}
-      <section className="px-4 md:px-8 py-16 max-w-[1400px] mx-auto">
+      <section className="px-4 sm:px-6 lg:px-28 py-16">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
           
-          {/* LEFT: Benefits / Context */}
           <div className="md:col-span-12 lg:col-span-4 space-y-8 h-fit lg:sticky lg:top-10">
             <div className="reveal-up opacity-0 translate-y-8 transition-all duration-500 bg-[#fadccc] border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_black]">
               <h2 className="text-2xl md:text-4xl font-black mb-4 md:mb-6 uppercase flex items-center gap-2 md:gap-3">
@@ -299,11 +288,11 @@ export default function LoopGenZPage() {
               </h2>
               <ul className="space-y-4 md:space-y-6">
                 {[
-                  { title: "Portfolio & Sertifikat Ready", desc: "Project nyata yang bisa lo pamer ke mana-mana." },
-                  { title: "Berjejaring w/ Founder", desc: "Lo bisa kenalan langsung dengan Founder Agency dan sharing experience mereka." },
-                  { title: "ON SPOT Mentorship", desc: " Bisa bebas nanya dan dapet feedback langsung terkait hasil design lo sambil ngopi." },
-                  { title: "Makanan dan Minuman", desc: "Biar lu enjoy dan tetep fresh!" },
-                  { title: "PACE ON Student Community", desc: "Networking bareng temen LOOP lain." }
+                  { title: "OUTPUT KONTEN + E-SERTIFIKAT", desc: "Pulang bawa draft konten yang bisa lo lanjutin posting." },
+                  { title: "REVIEW LANGSUNG (NO JUDGING)", desc: "Konten lo dibedah & dibenerin di tempat, step-by-step." },
+                  { title: "CIRCLE KECIL, PRAKTEK BARENG", desc: "Nggak sendirian. Kerja bareng temen selevel biar lebih pede." },
+                  { title: "KENALAN & Q&A BARENG FOUNDER/PRAKTISI", desc: "Dapet insight yang kepake + bisa tanya kasus lo." },
+                  { title: "SNACK/DRINK + LOOP COMMUNITY", desc: "Habis event tetap nyambung lewat circle/temen LOOP." }
                 ].map((item, i) => (
                   <li key={i} className="flex gap-3 md:gap-4 items-start">
                     <div className="bg-black text-white p-1 rounded-sm mt-1 flex-shrink-0">
@@ -349,13 +338,20 @@ export default function LoopGenZPage() {
                    <p className="text-xs md:text-sm font-bold">a.n. M RIFKI RAMDHANI S</p>
                  </div>
                </div>
+               {/* Contact Info */}
+                   <div className="bg-white/10 p-3 md:p-4 rounded border-2 border-white/30 mt-4 md:mt-6 pt-4 md:pt-6 border-t-2">
+                     <p className="text-xs font-bold mb-2 opacity-90">Ada kendala atau pertanyaan?</p>
+                     <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" className="font-black text-base md:text-lg hover:underline flex items-center gap-2">
+                       <Phone size={18} className="md:w-5 md:h-5" />
+                       0812-3456-7890
+                     </a>
+                  <p className="text-xs mt-1 opacity-80">Hubungi via WhatsApp</p>
+                </div>
             </div>
           </div>
 
-          {/* RIGHT: Big Poster & Form */}
           <div className="md:col-span-12 lg:col-span-8 flex flex-col gap-8">
             
-            {/* 1. GIANT POSTER SECTION */}
             <div ref={posterRef} className="reveal-up opacity-0 translate-y-8 transition-all duration-500 group relative w-full aspect-[3/4] md:aspect-video border-4 border-black overflow-hidden shadow-[8px_8px_0px_black] md:shadow-[12px_12px_0px_black] bg-black">
               <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20 flex gap-2">
                  <span className="bg-[#fbd249] px-2 py-1 md:px-3 md:py-1 font-black border-2 border-black text-xs md:text-sm uppercase">LOOP</span>
@@ -376,7 +372,6 @@ export default function LoopGenZPage() {
               </div>
             </div>
 
-            {/* 2. EMBEDDED FORM */}
             <div ref={formRef} className="reveal-up opacity-0 translate-y-8 transition-all duration-500 relative bg-white border-4 border-black p-6 md:p-10 shadow-[8px_8px_0px_black] md:shadow-[12px_12px_0px_black]">
                <div className="absolute -top-4 -right-2 md:-top-6 md:-right-6 bg-[#fbd249] p-2 md:p-4 border-3 md:border-4 border-black rotate-3 shadow-[3px_3px_0px_black] md:shadow-[4px_4px_0px_black] z-10">
                   <span className="font-black text-xs md:text-xl">BURUAN DAFTAR YA CHAT SEBELUM KEDULUAN!</span>
@@ -663,7 +658,7 @@ export default function LoopGenZPage() {
       <Marquee text="Ada Pertanyaan? Email ke hi@paceon.id // Ayo Connect //" direction="right" color="bg-[#fbd249] text-black" />
 
       {/* --- FAQ SECTION --- */}
-      <section className="py-12 md:py-20 px-4 md:px-8 bg-black text-white">
+      <section className="py-12 md:py-20 px-4 sm:px-6 lg:px-28 bg-black text-white">
         <div className="max-w-[1400px] mx-auto">
           <h2 className="text-4xl md:text-8xl font-black text-center mb-8 md:mb-12 text-transparent stroke-white stroke-2" style={{ WebkitTextStroke: '1px white' }}>
              F.A.Q.
