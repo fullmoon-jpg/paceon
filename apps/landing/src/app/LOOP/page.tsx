@@ -343,7 +343,7 @@ export default function LoopGenZPage() {
                      <p className="text-xs font-bold mb-2 opacity-90">Ada kendala atau pertanyaan?</p>
                      <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" className="font-black text-base md:text-lg hover:underline flex items-center gap-2">
                        <Phone size={18} className="md:w-5 md:h-5" />
-                       0812-3456-7890
+                       0819-9553-8939
                      </a>
                   <p className="text-xs mt-1 opacity-80">Hubungi via WhatsApp</p>
                 </div>
