@@ -278,108 +278,26 @@ export default function LoopGenZPage() {
       <Marquee text="SLOT TERBATAS // NO JUDGING, JUST PRACTICE //" />
 
       <section className="px-4 sm:px-6 lg:px-28 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
           
-          <div className="md:col-span-12 lg:col-span-4 space-y-8 h-fit lg:sticky lg:top-10">
-            <div className="reveal-up opacity-0 translate-y-8 transition-all duration-500 bg-[#fadccc] border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_black]">
-              <h2 className="text-2xl md:text-4xl font-black mb-4 md:mb-6 uppercase flex items-center gap-2 md:gap-3">
-                <Asterisk size={28} className="md:w-8 md:h-8 animate-spin-slow" />
-                Yang Lo Dapet
-              </h2>
-              <ul className="space-y-4 md:space-y-6">
-                {[
-                  { title: "OUTPUT KONTEN + E-SERTIFIKAT", desc: "Pulang bawa draft konten yang bisa lo lanjutin posting." },
-                  { title: "REVIEW LANGSUNG (NO JUDGING)", desc: "Konten lo dibedah & dibenerin di tempat, step-by-step." },
-                  { title: "CIRCLE KECIL, PRAKTEK BARENG", desc: "Nggak sendirian. Kerja bareng temen selevel biar lebih pede." },
-                  { title: "KENALAN & Q&A BARENG FOUNDER/PRAKTISI", desc: "Dapet insight yang kepake + bisa tanya kasus lo." },
-                  { title: "SNACK/DRINK + LOOP COMMUNITY", desc: "Habis event tetap nyambung lewat circle/temen LOOP." }
-                ].map((item, i) => (
-                  <li key={i} className="flex gap-3 md:gap-4 items-start">
-                    <div className="bg-black text-white p-1 rounded-sm mt-1 flex-shrink-0">
-                      <CheckCircle2 size={14} className="md:w-4 md:h-4" />
-                    </div>
-                    <div>
-                      <h4 className="font-black text-base md:text-lg uppercase">{item.title}</h4>
-                      <p className="font-medium text-black/70 leading-tight text-xs md:text-sm">{item.desc}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <div className="reveal-up opacity-0 translate-y-8 transition-all duration-500 bg-[#d23a7d] border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_black] text-white">
-               <div className="flex items-center gap-3 md:gap-4 mb-3 md:mb-4">
-                 <Calendar className="w-6 h-6 md:w-8 md:h-8 flex-shrink-0" />
-                 <div>
-                   <p className="font-bold text-xs md:text-sm opacity-90">KAPAN</p>
-                   <p className="font-black text-lg md:text-xl uppercase">7 Februari 2026</p>
-                 </div>
-               </div>
-               <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-4">
-                 <MapPin className="w-6 h-6 md:w-8 md:h-8 flex-shrink-0" />
-                 <div>
-                   <p className="font-bold text-xs md:text-sm opacity-90">DIMANA</p>
-                   <p className="font-black text-lg md:text-xl uppercase">Kopi Kina Cikini</p>
-                 </div>
-               </div>
-               
-               <div className="mt-4 md:mt-6 pt-4 md:pt-6 border-t-2 border-white/30">
-                 <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-3">
-                   <CreditCard className="w-5 h-5 md:w-6 md:h-6" />
-                   <p className="font-black text-xl md:text-2xl">Rp 165.000</p>
-                 </div>
-                 <p className="font-bold text-xs md:text-sm opacity-90 mb-3 md:mb-4 bg-black/20 p-2 rounded">
-                   ⚠️ TRANSFER KESINI YA CHAT!
-                 </p>
-                 <div className="bg-black/30 p-3 md:p-4 rounded border-2 border-white/30">
-                   <p className="text-xs font-bold mb-2 opacity-80">Transfer ke:</p>
-                   <p className="font-black text-base md:text-lg mb-1">BCA - 5735326594</p>
-                   <p className="font-black text-base md:text-lg mb-1">SEABANK - 9012 8311 7886</p>
-                   <p className="text-xs md:text-sm font-bold">a.n. M RIFKI RAMDHANI S</p>
-                 </div>
-               </div>
-               {/* Contact Info */}
-                   <div className="bg-white/10 p-3 md:p-4 rounded border-2 border-white/30 mt-4 md:mt-6 pt-4 md:pt-6 border-t-2">
-                     <p className="text-xs font-bold mb-2 opacity-90">Ada kendala atau pertanyaan?</p>
-                     <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" className="font-black text-base md:text-lg hover:underline flex items-center gap-2">
-                       <Phone size={18} className="md:w-5 md:h-5" />
-                       0819-9553-8939
-                     </a>
-                  <p className="text-xs mt-1 opacity-80">Hubungi via WhatsApp</p>
-                </div>
+          {/* KOLOM KIRI - POSTER */}
+          <div className="lg:col-span-3 h-fit lg:sticky lg:top-10">
+            <div ref={posterRef} className="reveal-up opacity-0 translate-y-8 transition-all duration-500 group relative w-full aspect-[4/5] border-4 border-black overflow-hidden shadow-[8px_8px_0px_black] bg-black">
+              
+              <img 
+                src="/images/Poster_LOOP.png" 
+                alt="Event Poster" 
+                className="poster-image w-full h-full"
+              />
             </div>
           </div>
 
-          <div className="md:col-span-12 lg:col-span-8 flex flex-col gap-8">
-            
-            <div ref={posterRef} className="reveal-up opacity-0 translate-y-8 transition-all duration-500 group relative w-full aspect-[3/4] md:aspect-video border-4 border-black overflow-hidden shadow-[8px_8px_0px_black] md:shadow-[12px_12px_0px_black] bg-black">
-              <div className="absolute top-4 left-4 md:top-6 md:left-6 z-20 flex gap-2">
-                 <span className="bg-[#fbd249] px-2 py-1 md:px-3 md:py-1 font-black border-2 border-black text-xs md:text-sm uppercase">LOOP</span>
-                 <span className="bg-white px-2 py-1 md:px-3 md:py-1 font-black border-2 border-black text-xs md:text-sm uppercase">#1</span>
-              </div>
-              
-              <img 
-                src="/images/bg-loop.png" 
-                alt="Event Poster" 
-                className="poster-image w-full h-full object-cover opacity-90 grayscale group-hover:grayscale-0 transition-all duration-500"
-              />
-              
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-              <div className="absolute bottom-4 left-4 right-4 md:bottom-6 md:left-6 md:right-6 z-20">
-                <h3 className="text-white text-3xl md:text-6xl font-black uppercase leading-none tracking-tighter drop-shadow-[4px_4px_0px_#d23a7d]">
-                  How To Build <br/>Content Like Creator.
-                </h3>
-              </div>
-            </div>
-
-            <div ref={formRef} className="reveal-up opacity-0 translate-y-8 transition-all duration-500 relative bg-white border-4 border-black p-6 md:p-10 shadow-[8px_8px_0px_black] md:shadow-[12px_12px_0px_black]">
-               <div className="absolute -top-4 -right-2 md:-top-6 md:-right-6 bg-[#fbd249] p-2 md:p-4 border-3 md:border-4 border-black rotate-3 shadow-[3px_3px_0px_black] md:shadow-[4px_4px_0px_black] z-10">
-                  <span className="font-black text-xs md:text-xl">BURUAN DAFTAR YA CHAT SEBELUM KEDULUAN!</span>
-               </div>
-
-               <div className="mb-6 md:mb-8">
-                 <h2 className="text-3xl md:text-5xl font-black uppercase tracking-tighter mb-2">Gabung ke Loop</h2>
-                 <p className="font-bold text-sm md:text-base text-gray-500">Buat isi formnya lu bisa tranfer dulu lalu upload buktinya ya chat!!</p>
+          {/* KOLOM TENGAH - FORM */}
+          <div className="lg:col-span-5">
+            <div ref={formRef} className="reveal-up opacity-0 translate-y-8 transition-all duration-500 relative bg-white border-4 border-black p-6 md:p-8 shadow-[8px_8px_0px_black]">
+               <div className="mb-6">
+                 <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tighter mb-2">Gabung ke Loop</h2>
+                 <p className="font-bold text-sm text-gray-500">Buat isi formnya lu bisa tranfer dulu lalu upload buktinya ya chat!!</p>
                </div>
 
                {isSubmitted ? (
@@ -402,33 +320,33 @@ export default function LoopGenZPage() {
                    </button>
                  </div>
                ) : (
-                 <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
+                 <form onSubmit={handleSubmit} className="space-y-4">
                     {error && (
-                      <div className="bg-red-100 border-4 border-red-500 p-4 rounded">
-                        <p className="font-bold text-red-700 text-sm">{error}</p>
+                      <div className="bg-red-100 border-4 border-red-500 p-3 rounded">
+                        <p className="font-bold text-red-700 text-xs">{error}</p>
                       </div>
                     )}
 
-                    <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <label className="font-black uppercase text-xs md:text-sm">Nama Lengkap *</label>
+                        <label className="font-black uppercase text-xs">Nama Lengkap *</label>
                         <input 
                           type="text" 
                           name="fullName"
                           required
-                          className="w-full bg-[#f0f2eb] border-3 md:border-4 border-black p-3 md:p-4 font-bold text-sm md:text-base focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
+                          className="w-full bg-[#f0f2eb] border-3 border-black p-3 font-bold text-sm focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
                           placeholder="NAMA LENGKAP LO"
                           value={formData.fullName}
                           onChange={handleInputChange}
                         />
                       </div>
                       <div className="space-y-2">
-                        <label className="font-black uppercase text-xs md:text-sm">No HP (WhatsApp) *</label>
+                        <label className="font-black uppercase text-xs">No HP (WhatsApp) *</label>
                         <input 
                           type="tel" 
                           name="phone"
                           required
-                          className="w-full bg-[#f0f2eb] border-3 md:border-4 border-black p-3 md:p-4 font-bold text-sm md:text-base focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
+                          className="w-full bg-[#f0f2eb] border-3 border-black p-3 font-bold text-sm focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
                           placeholder="0812..."
                           value={formData.phone}
                           onChange={handleInputChange}
@@ -437,12 +355,12 @@ export default function LoopGenZPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="font-black uppercase text-xs md:text-sm">Email *</label>
+                      <label className="font-black uppercase text-xs">Email *</label>
                       <input 
                         type="email" 
                         name="email"
                         required
-                        className="w-full bg-[#f0f2eb] border-3 md:border-4 border-black p-3 md:p-4 font-bold text-sm md:text-base focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
+                        className="w-full bg-[#f0f2eb] border-3 border-black p-3 font-bold text-sm focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
                         placeholder="email@kamu.com"
                         value={formData.email}
                         onChange={handleInputChange}
@@ -450,26 +368,26 @@ export default function LoopGenZPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="font-black uppercase text-xs md:text-sm">Institusi / Perusahaan *</label>
+                      <label className="font-black uppercase text-xs">Institusi / Perusahaan *</label>
                       <input 
                         type="text" 
                         name="institution"
                         required
-                        className="w-full bg-[#f0f2eb] border-3 md:border-4 border-black p-3 md:p-4 font-bold text-sm md:text-base focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
+                        className="w-full bg-[#f0f2eb] border-3 border-black p-3 font-bold text-sm focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
                         placeholder="SEKOLAH / KAMPUS / PERUSAHAAN"
                         value={formData.institution}
                         onChange={handleInputChange}
                       />
                     </div>
 
-                    <div className="grid md:grid-cols-2 gap-4 md:gap-6">
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <label className="font-black uppercase text-xs md:text-sm">Status Sekarang *</label>
+                        <label className="font-black uppercase text-xs">Status Sekarang *</label>
                         <div className="relative">
                           <select 
                             name="currentRole"
                             required
-                            className="w-full bg-[#f0f2eb] border-3 md:border-4 border-black p-3 md:p-4 font-bold text-sm md:text-base appearance-none focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all"
+                            className="w-full bg-[#f0f2eb] border-3 border-black p-3 font-bold text-sm appearance-none focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all"
                             value={formData.currentRole}
                             onChange={handleInputChange}
                           >
@@ -479,21 +397,21 @@ export default function LoopGenZPage() {
                             <option value="professional">Fresh Graduate/Profesional</option>
                             <option value="founder">Founder / Entrepreneur</option>
                           </select>
-                          <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                            <Zap className="fill-black" size={20} />
+                          <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                            <Zap className="fill-black" size={18} />
                           </div>
                         </div>
                       </div>
 
                       <div className="space-y-2">
-                        <label className="font-black uppercase text-xs md:text-sm flex items-center gap-2">
-                          <Instagram size={16} /> Akun Instagram *
+                        <label className="font-black uppercase text-xs flex items-center gap-2">
+                          <Instagram size={14} /> Akun Instagram *
                         </label>
                         <input 
                           type="text" 
                           name="instagram"
                           required
-                          className="w-full bg-[#f0f2eb] border-3 md:border-4 border-black p-3 md:p-4 font-bold text-sm md:text-base focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
+                          className="w-full bg-[#f0f2eb] border-3 border-black p-3 font-bold text-sm focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
                           placeholder="@username"
                           value={formData.instagram}
                           onChange={handleInputChange}
@@ -502,12 +420,12 @@ export default function LoopGenZPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <label className="font-black uppercase text-xs md:text-sm">Tau LOOP dari mana? *</label>
+                      <label className="font-black uppercase text-xs">Tau LOOP dari mana? *</label>
                       <div className="relative">
                         <select 
                           name="hearFrom"
                           required
-                          className="w-full bg-[#f0f2eb] border-3 md:border-4 border-black p-3 md:p-4 font-bold text-sm md:text-base appearance-none focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all"
+                          className="w-full bg-[#f0f2eb] border-3 border-black p-3 font-bold text-sm appearance-none focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all"
                           value={formData.hearFrom}
                           onChange={handleInputChange}
                         >
@@ -518,19 +436,19 @@ export default function LoopGenZPage() {
                             </option>
                           ))}
                         </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <Zap className="fill-black" size={20} />
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <Zap className="fill-black" size={18} />
                         </div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <label className="font-black uppercase text-xs md:text-sm">Kenapa pengen ikut LOOP? *</label>
+                      <label className="font-black uppercase text-xs">Kenapa pengen ikut LOOP? *</label>
                       <textarea 
                         name="reason"
                         required
-                        rows={4}
-                        className="w-full bg-[#f0f2eb] border-3 md:border-4 border-black p-3 md:p-4 font-bold text-sm md:text-base resize-none focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
+                        rows={3}
+                        className="w-full bg-[#f0f2eb] border-3 border-black p-3 font-bold text-sm resize-none focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all placeholder:text-gray-400"
                         placeholder="Ceritain alasan lo pengen join LOOP Series..."
                         value={formData.reason}
                         onChange={handleInputChange}
@@ -538,22 +456,22 @@ export default function LoopGenZPage() {
                     </div>
 
                     {/* Food & Drink Selection */}
-                    <div className="bg-[#37c35f]/10 border-3 md:border-4 border-[#37c35f] p-4 md:p-6 rounded space-y-4">
+                    <div className="bg-[#37c35f]/10 border-3 border-[#37c35f] p-4 rounded space-y-3">
                       <div className="flex items-center gap-2 mb-2">
-                        <UtensilsCrossed size={20} className="text-[#37c35f]" />
-                        <h3 className="font-black uppercase text-base md:text-lg">Pilihan Makanan & Minuman</h3>
+                        <UtensilsCrossed size={18} className="text-[#37c35f]" />
+                        <h3 className="font-black uppercase text-sm">Pilihan Makanan & Minuman</h3>
                       </div>
                       
-                      <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
                         <div className="space-y-2">
-                          <label className="font-black uppercase text-xs md:text-sm flex items-center gap-2">
-                            <UtensilsCrossed size={14} /> Pilih Makanan *
+                          <label className="font-black uppercase text-xs flex items-center gap-2">
+                            <UtensilsCrossed size={12} /> Pilih Makanan *
                           </label>
                           <div className="relative">
                             <select 
                               name="foodChoice"
                               required
-                              className="w-full bg-white border-3 border-black p-3 font-bold text-sm md:text-base appearance-none focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all"
+                              className="w-full bg-white border-3 border-black p-2.5 font-bold text-xs appearance-none focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all"
                               value={formData.foodChoice}
                               onChange={handleInputChange}
                             >
@@ -565,20 +483,20 @@ export default function LoopGenZPage() {
                               ))}
                             </select>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                              <UtensilsCrossed className="fill-black" size={18} />
+                              <UtensilsCrossed className="fill-black" size={16} />
                             </div>
                           </div>
                         </div>
 
                         <div className="space-y-2">
-                          <label className="font-black uppercase text-xs md:text-sm flex items-center gap-2">
-                            <Coffee size={14} /> Pilih Minuman *
+                          <label className="font-black uppercase text-xs flex items-center gap-2">
+                            <Coffee size={12} /> Pilih Minuman *
                           </label>
                           <div className="relative">
                             <select 
                               name="drinkChoice"
                               required
-                              className="w-full bg-white border-3 border-black p-3 font-bold text-sm md:text-base appearance-none focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all"
+                              className="w-full bg-white border-3 border-black p-2.5 font-bold text-xs appearance-none focus:outline-none focus:shadow-[4px_4px_0px_#37c35f] transition-all"
                               value={formData.drinkChoice}
                               onChange={handleInputChange}
                             >
@@ -590,7 +508,7 @@ export default function LoopGenZPage() {
                               ))}
                             </select>
                             <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                              <Coffee className="fill-black" size={18} />
+                              <Coffee className="fill-black" size={16} />
                             </div>
                           </div>
                         </div>
@@ -603,10 +521,10 @@ export default function LoopGenZPage() {
 
                     {/* Upload Payment Proof */}
                     <div className="space-y-2">
-                      <label className="font-black uppercase text-xs md:text-sm">Upload Bukti Bayar *</label>
+                      <label className="font-black uppercase text-xs">Upload Bukti Bayar *</label>
                       <div 
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full bg-[#f0f2eb] border-3 md:border-4 border-dashed border-black p-4 md:p-8 font-bold cursor-pointer hover:bg-[#fbd249]/20 transition-all text-center"
+                        className="w-full bg-[#f0f2eb] border-3 border-dashed border-black p-6 font-bold cursor-pointer hover:bg-[#fbd249]/20 transition-all text-center"
                       >
                         <input 
                           ref={fileInputRef}
@@ -616,42 +534,113 @@ export default function LoopGenZPage() {
                           className="hidden"
                         />
                         {previewUrl ? (
-                          <div className="space-y-3">
-                            <img src={previewUrl} alt="Preview" className="max-h-32 md:max-h-48 mx-auto border-2 border-black" />
-                            <p className="text-xs md:text-sm text-green-600 font-black">✓ File ter-upload! Klik buat ganti</p>
+                          <div className="space-y-2">
+                            <img src={previewUrl} alt="Preview" className="max-h-32 mx-auto border-2 border-black" />
+                            <p className="text-xs text-green-600 font-black">✓ File ter-upload! Klik buat ganti</p>
                           </div>
                         ) : (
-                          <div className="flex flex-col items-center gap-2 md:gap-3">
-                            <Upload size={32} className="md:w-10 md:h-10 text-gray-400" />
-                            <p className="text-sm md:text-base text-gray-600">Klik buat upload bukti transfer</p>
+                          <div className="flex flex-col items-center gap-2">
+                            <Upload size={28} className="text-gray-400" />
+                            <p className="text-xs text-gray-600">Klik buat upload bukti transfer</p>
                             <p className="text-xs text-gray-500">JPG, PNG, atau WebP (maks 5MB)</p>
                           </div>
                         )}
                       </div>
                     </div>
 
-                    <div className="bg-[#fbd249]/20 border-3 md:border-4 border-[#fbd249] p-3 md:p-4 rounded">
-                      <p className="font-bold text-xs md:text-sm text-black">
-                        📌 <strong>PENTING:</strong> Jangan lupa TF dulu ke BCA - 5735326594 atau SEABANK - 9012 8311 7886 (A/N M RIFKI RAMDHANI S) ya chat! Jangan sampe seats lu diambil orang.
+                    <div className="bg-[#fbd249]/20 border-3 border-[#fbd249] p-3 rounded">
+                      <p className="font-bold text-xs text-black">
+                        📌 <strong>PENTING:</strong> Jangan lupa TF dulu ke BCA - 5735326594 atau SEABANK - 9012 8311 7886 (A/N M RIFKI RAMDHANI S) ya chat!
                       </p>
                     </div>
 
-                    <div className="pt-2 md:pt-4">
+                    <div className="pt-2">
                       <BrutalButton 
                         text={isSubmitting ? "MENGIRIM..." : "DAFTAR SEKARANG"} 
                         type="submit"
-                        className="w-full py-4 md:py-6 text-base md:text-xl" 
+                        className="w-full py-4 text-base" 
                         disabled={!isFormValid() || isSubmitting}
                       />
-                      <p className="text-center mt-3 md:mt-4 text-xs font-bold text-gray-500 uppercase tracking-wide">
+                      <p className="text-center mt-3 text-xs font-bold text-gray-500 uppercase tracking-wide">
                         * Terbatas 60 kursi chat. Jangan sampe nyesel!
                       </p>
                     </div>
                  </form>
                )}
             </div>
-
           </div>
+
+          {/* KOLOM KANAN - INFO */}
+          <div className="lg:col-span-4 space-y-6 h-fit lg:sticky lg:top-10">
+            <div className="reveal-up opacity-0 translate-y-8 transition-all duration-500 bg-[#fadccc] border-4 border-black p-6 shadow-[8px_8px_0px_black]">
+              <h2 className="text-2xl md:text-3xl font-black mb-4 uppercase flex items-center gap-2">
+                <Asterisk size={24} className="animate-spin-slow" />
+                Yang Lo Dapet
+              </h2>
+              <ul className="space-y-4">
+                {[
+                  { title: "OUTPUT KONTEN + E-SERTIFIKAT", desc: "Pulang bawa draft konten yang bisa lo lanjutin posting." },
+                  { title: "REVIEW LANGSUNG (NO JUDGING)", desc: "Konten lo dibedah & dibenerin di tempat, step-by-step." },
+                  { title: "CIRCLE KECIL, PRAKTEK BARENG", desc: "Nggak sendirian. Kerja bareng temen selevel biar lebih pede." },
+                  { title: "KENALAN & Q&A BARENG FOUNDER/PRAKTISI", desc: "Dapet insight yang kepake + bisa tanya kasus lo." },
+                  { title: "SNACK/DRINK + LOOP COMMUNITY", desc: "Habis event tetap nyambung lewat circle/temen LOOP." }
+                ].map((item, i) => (
+                  <li key={i} className="flex gap-3 items-start">
+                    <div className="bg-black text-white p-1 rounded-sm mt-1 flex-shrink-0">
+                      <CheckCircle2 size={14} />
+                    </div>
+                    <div>
+                      <h4 className="font-black text-sm uppercase leading-tight">{item.title}</h4>
+                      <p className="font-medium text-black/70 leading-tight text-xs mt-1">{item.desc}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="reveal-up opacity-0 translate-y-8 transition-all duration-500 bg-[#d23a7d] border-4 border-black p-6 shadow-[8px_8px_0px_black] text-white">
+               <div className="flex items-center gap-3 mb-3">
+                 <Calendar className="w-6 h-6 flex-shrink-0" />
+                 <div>
+                   <p className="font-bold text-xs opacity-90">KAPAN</p>
+                   <p className="font-black text-lg uppercase">7 Februari 2026</p>
+                 </div>
+               </div>
+               <div className="flex items-center gap-3 mb-4">
+                 <MapPin className="w-6 h-6 flex-shrink-0" />
+                 <div>
+                   <p className="font-bold text-xs opacity-90">DIMANA</p>
+                   <p className="font-black text-lg uppercase">Kopi Kina Cikini</p>
+                 </div>
+               </div>
+               
+               <div className="mt-6 pt-6 border-t-2 border-white/30">
+                 <div className="flex items-center gap-2 mb-2">
+                   <CreditCard className="w-5 h-5" />
+                   <p className="font-black text-xl">Rp 165.000</p>
+                 </div>
+                 <p className="font-bold text-xs opacity-90 mb-3 bg-black/20 p-2 rounded">
+                   ⚠️ TRANSFER KESINI YA CHAT!
+                 </p>
+                 <div className="bg-black/30 p-3 rounded border-2 border-white/30">
+                   <p className="text-xs font-bold mb-2 opacity-80">Transfer ke:</p>
+                   <p className="font-black text-base mb-1">BCA - 5735326594</p>
+                   <p className="font-black text-base mb-1">SEABANK - 9012 8311 7886</p>
+                   <p className="text-xs font-bold">a.n. M RIFKI RAMDHANI S</p>
+                 </div>
+               </div>
+               
+               <div className="bg-white/10 p-3 rounded border-2 border-white/30 mt-6 pt-6 border-t-2">
+                 <p className="text-xs font-bold mb-2 opacity-90">Ada kendala atau pertanyaan?</p>
+                 <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" className="font-black text-base hover:underline flex items-center gap-2">
+                   <Phone size={18} />
+                   0819-9553-8939
+                 </a>
+                 <p className="text-xs mt-1 opacity-80">Hubungi via WhatsApp</p>
+               </div>
+            </div>
+          </div>
+
         </div>
       </section>
 
