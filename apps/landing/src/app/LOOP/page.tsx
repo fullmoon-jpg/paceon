@@ -604,6 +604,7 @@ export default function LoopGenZPage() {
                  <div>
                    <p className="font-bold text-xs opacity-90">KAPAN</p>
                    <p className="font-black text-lg uppercase">7 Februari 2026</p>
+                   <p className="font-black text-lg uppercase">Jam 08.30 - 13.30</p>
                  </div>
                </div>
                <div className="flex items-center gap-3 mb-4">
