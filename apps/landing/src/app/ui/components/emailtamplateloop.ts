@@ -155,7 +155,6 @@ export const loopRegistrationConfirmationTemplate = (data: {
                 <ul style="margin: 10px 0 0 0; padding-left: 20px; font-size: 14px; color: #000000; line-height: 1.8;">
                   <li>Event dimulai <strong>TEPAT JAM 08:30 WIB</strong>. Dateng on-time ya!</li>
                   <li>Makanan & minuman sesuai pilihan kamu akan disediakan</li>
-                  <li>Detail rundown lengkap akan dikirim H-3</li>
                 </ul>
               </div>
             </td>

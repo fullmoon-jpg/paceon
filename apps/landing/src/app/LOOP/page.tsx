@@ -34,21 +34,11 @@ const HEAR_FROM_OPTIONS = [
 ];
 
 const FOOD_OPTIONS = [
-  { value: 'tuna_sandwich', label: 'Tuna Savory Sandwich' },
-  { value: 'chicken_mushroom_sandwich', label: 'Chicken Mushroom Savory Sandwich' },
   { value: 'beef_sandwich', label: 'Beef Savory Sandwich' },
-  { value: 'cheese_toast', label: 'Cheese Burnt Butter Toast' },
-  { value: 'banana_toast', label: 'Banana Burnt Butter Toast' },
-  { value: 'chocolate_toast', label: 'Chocolate Burnt Butter Toast' },
 ];
 
 const DRINK_OPTIONS = [
-  { value: 'cappuccino', label: 'Cappuccino' },
-  { value: 'latte', label: 'Latte' },
-  { value: 'magic', label: 'Magic' },
   { value: 'piccolo', label: 'Piccolo' },
-  { value: 'americano', label: 'Americano' },
-  { value: 'flat_white', label: 'Flat White' },
 ];
 
 // --- Components ---
