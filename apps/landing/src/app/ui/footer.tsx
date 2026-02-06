@@ -103,7 +103,7 @@ const Footer = () => {
           
           {/* Copyright */}
           <p className="font-body text-sm text-white/70">
-            © 2025 PACEON. All rights reserved.
+            © 2025 PACEON. All rights reserved. Build with Tech no Phi Agency
           </p>
 
           {/* Email + Back to Top */}

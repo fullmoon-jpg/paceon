@@ -38,7 +38,7 @@ const FOOD_OPTIONS = [
 ];
 
 const DRINK_OPTIONS = [
-  { value: 'piccolo', label: 'Piccolo' },
+  { value: 'latte', label: 'Latte' },
 ];
 
 // --- Components ---
