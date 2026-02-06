@@ -1,10 +1,10 @@
-import FeedbackForm from "../ui/components/FeedbackForm";
+import LoopSatisfactionForm from "../ui/loopfeedbackform"
 
 export default function SatisfactionForm() {
   return (
     <main>
       <section>
-        <FeedbackForm />
+        <LoopSatisfactionForm />
       </section>
     </main>
   )
