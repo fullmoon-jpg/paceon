@@ -6,8 +6,6 @@ export const loopRegistrationConfirmationTemplate = (data: {
   phone: string;
   institution: string;
   instagram: string;
-  foodChoice: string;
-  drinkChoice: string;
 }) => {
   return `
 <!DOCTYPE html>
@@ -90,26 +88,6 @@ export const loopRegistrationConfirmationTemplate = (data: {
                     <td style="font-size: 14px; font-weight: 900; color: #000000;">${data.instagram}</td>
                   </tr>
                 </table>
-              </div>
-
-              <!-- Food & Drink Choices -->
-              <div style="background-color: #37c35f; border: 4px solid #000000; padding: 25px; margin-bottom: 30px;">
-                <h3 style="margin: 0 0 15px 0; font-size: 20px; font-weight: 900; text-transform: uppercase; color: #FFFFFF;">
-                  PILIHAN MAKANAN & MINUMAN
-                </h3>
-                <table width="100%" cellpadding="8" cellspacing="0">
-                  <tr>
-                    <td style="font-size: 14px; font-weight: bold; color: rgba(255,255,255,0.8); width: 40%;">Makanan:</td>
-                    <td style="font-size: 16px; font-weight: 900; color: #FFFFFF;">${data.foodChoice}</td>
-                  </tr>
-                  <tr>
-                    <td style="font-size: 14px; font-weight: bold; color: rgba(255,255,255,0.8);">Minuman:</td>
-                    <td style="font-size: 16px; font-weight: 900; color: #FFFFFF;">${data.drinkChoice}</td>
-                  </tr>
-                </table>
-                <p style="margin: 15px 0 0 0; font-size: 12px; color: rgba(255,255,255,0.9); font-weight: bold;">
-                  ☕ Pesanan kamu akan disiapkan di hari event!
-                </p>
               </div>
 
               <!-- Event Details -->

@@ -34,11 +34,11 @@ const HEAR_FROM_OPTIONS = [
 ];
 
 const FOOD_OPTIONS = [
-  { value: 'beef_sandwich', label: 'Beef Savory Sandwich' },
+  { value: 'beef_sandwich', label: 'no option' },
 ];
 
 const DRINK_OPTIONS = [
-  { value: 'latte', label: 'Latte' },
+  { value: 'latte', label: 'no option' },
 ];
 
 // --- Components ---
