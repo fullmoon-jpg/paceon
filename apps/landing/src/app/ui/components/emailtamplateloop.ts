@@ -6,6 +6,8 @@ export const loopRegistrationConfirmationTemplate = (data: {
   phone: string;
   institution: string;
   instagram: string;
+  foodChoice: string;
+  drinkChoice: string;
 }) => {
   return `
 <!DOCTYPE html>
