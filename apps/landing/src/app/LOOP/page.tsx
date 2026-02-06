@@ -101,6 +101,7 @@ export default function LoopGenZPage() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [isRegistrationClosed, setIsRegistrationClosed] = useState(true); // SET TRUE UNTUK TUTUP PENDAFTARAN
   
   // Refs
   const containerRef = useRef<HTMLDivElement>(null);
@@ -308,6 +309,34 @@ export default function LoopGenZPage() {
                    >
                      Daftarkan orang lain
                    </button>
+                 </div>
+               ) : isRegistrationClosed ? (
+                 <div className="flex flex-col items-center justify-center py-12 md:py-16 text-center">
+                   <div className="bg-red-500 p-6 rounded-full border-4 border-black mb-6 animate-pulse">
+                     <Calendar size={48} className="text-white" />
+                   </div>
+                   <h3 className="text-3xl md:text-4xl font-black uppercase mb-4 text-red-500">Pendaftaran Ditutup</h3>
+                   <p className="font-bold text-base md:text-lg max-w-md mb-3 px-4">
+                     Terima kasih atas antusiasme kalian! Slot untuk event ini sudah penuh.
+                   </p>
+                   <p className="text-sm text-gray-600 mb-6">
+                     Stay tuned untuk event LOOP berikutnya! 🎉
+                   </p>
+                   <div className="bg-[#fbd249]/20 border-3 border-[#fbd249] p-5 rounded max-w-md w-full">
+                     <p className="font-black text-sm mb-2 uppercase">
+                       📢 Jangan Sampai Ketinggalan!
+                     </p>
+                     <p className="font-bold text-xs text-gray-700">
+                       Follow Instagram <a href="https://instagram.com/paceon.id" target="_blank" rel="noopener noreferrer" className="text-[#d23a7d] underline hover:text-[#ef6d77]">@paceon.id</a> untuk info event selanjutnya!
+                     </p>
+                   </div>
+                   <div className="mt-8 bg-white/50 p-4 rounded border-2 border-black/10">
+                     <p className="text-xs font-bold text-gray-600">Ada pertanyaan?</p>
+                     <a href="https://wa.me/6281995538939" target="_blank" rel="noopener noreferrer" className="font-black text-sm hover:underline flex items-center justify-center gap-2 mt-2 text-[#d23a7d]">
+                       <Phone size={16} />
+                       Hubungi Kami
+                     </a>
+                   </div>
                  </div>
                ) : (
                  <form onSubmit={handleSubmit} className="space-y-4">
@@ -623,7 +652,7 @@ export default function LoopGenZPage() {
                
                <div className="bg-white/10 p-3 rounded border-2 border-white/30 mt-6 pt-6 border-t-2">
                  <p className="text-xs font-bold mb-2 opacity-90">Ada kendala atau pertanyaan?</p>
-                 <a href="https://wa.me/6281234567890" target="_blank" rel="noopener noreferrer" className="font-black text-base hover:underline flex items-center gap-2">
+                 <a href="https://wa.me/6281995538939" target="_blank" rel="noopener noreferrer" className="font-black text-base hover:underline flex items-center gap-2">
                    <Phone size={18} />
                    0819-9553-8939
                  </a>
