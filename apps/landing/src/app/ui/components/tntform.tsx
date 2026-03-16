@@ -1,215 +1,1077 @@
 "use client";
 import React, { useState } from "react";
-import { ChevronDown, Calendar, Clock, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 
-interface FAQItem {
-  question: string;
-  answer: string;
+/* ─── Types ─────────────────────────────────────────────── */
+interface FormData {
+  fullName: string;
+  email: string;
+  whatsapp: string;
+  instagram: string;
+  linkedin: string;
+  businessName: string;
+  industry: string;
+  topicInterest: string;
+  mainReason: string;
+  lookingFor: string[];
+  agreeToTerms: boolean;
 }
 
-const TalkNTalesRegistrationAndFAQ = () => {
-  const [openFAQ, setOpenFAQ] = useState<number | null>(0);
+const INDUSTRIES = [
+  "Technology",
+  "Creative & Media",
+  "E-commerce",
+  "Fashion & Lifestyle",
+  "Food & Beverage",
+  "Education",
+  "Sustainability & Climate",
+  "Social Impact / NGO",
+  "Finance & Fintech",
+  "Legal & Compliance",
+  "Health & Wellness",
+  "Professional Services & Consulting",
+  "Other",
+];
 
-  const experiences = [
-    {
-      title: "Mini Talk Show",
-      description: "Sit together with fellow founders and listen to inspiring leaders share real stories about networking in both personal and business life. You walk away with simple and practical tips you can use right away."
-    },
-    {
-      title: "Group Game Session",
-      description: "A fun icebreaker where everyone laughs, plays, and gets comfortable. The games help you open up and make conversations flow more naturally."
-    },
-    {
-      title: "Speed Networking",
-      description: "Move from table to table and meet new founders in minutes. It is fast, energizing, and often leads to unexpected collaboration opportunities based on your chosen interests."
-    },
-    {
-      title: "Free Talk Networking",
-      description: "The atmosphere becomes relaxed and open. This is where deeper conversations unfold, ideas flow naturally, and meaningful connections begin to grow."
-    },
-    {
-      title: "Community Channel",
-      description: "Join our post-event community channel where you can stay connected with fellow young founders, continue the conversations, and build relationships beyond the event."
+const TOPIC_INTERESTS = [
+  "Fundraising & working with investors",
+  "Growing a startup from early traction",
+  "Building consumer brands & creative businesses",
+  "Founder journey & leadership",
+  "Collaboration & partnership opportunities",
+];
+
+const LOOKING_FOR_OPTIONS = [
+  "Business partners / collaborators",
+  "Investors",
+  "New connections",
+  "Learning from other founders",
+  "Potential clients",
+];
+
+/* ─── Reusable field components ─────────────────────────── */
+const FieldLabel = ({
+  children,
+  required,
+}: {
+  children: React.ReactNode;
+  required?: boolean;
+}) => (
+  <label
+    style={{
+      fontFamily: "'Poppins', sans-serif",
+      fontWeight: 700,
+      fontSize: "clamp(10px, 1vw, 12px)",
+      textTransform: "uppercase",
+      letterSpacing: "0.18em",
+      color: "#2B3EBF",
+      display: "block",
+      marginBottom: "8px",
+    }}
+  >
+    {children}
+    {required && (
+      <span style={{ color: "#E8121A", marginLeft: "4px" }}>*</span>
+    )}
+  </label>
+);
+
+const inputBase: React.CSSProperties = {
+  width: "100%",
+  fontFamily: "'Poppins', sans-serif",
+  fontWeight: 600,
+  fontSize: "clamp(13px, 1.3vw, 15px)",
+  color: "#1a1a1a",
+  background: "#fff",
+  border: "3px solid #2B3EBF",
+  borderRadius: 0,
+  padding: "12px 14px",
+  outline: "none",
+  transition: "border-color 0.15s, box-shadow 0.15s",
+  appearance: "none" as const,
+  WebkitAppearance: "none" as const,
+  boxSizing: "border-box" as const,
+};
+
+const InputField = ({
+  label,
+  name,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+  required,
+}: {
+  label: string;
+  name: keyof FormData;
+  type?: string;
+  placeholder?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  required?: boolean;
+}) => (
+  <div style={{ marginBottom: "24px" }}>
+    <FieldLabel required={required}>{label}</FieldLabel>
+    <input
+      type={type}
+      name={name}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      required={required}
+      style={inputBase}
+      onFocus={(e) => {
+        e.currentTarget.style.borderColor = "#E8C12A";
+        e.currentTarget.style.boxShadow = "4px 4px 0px #2B3EBF";
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.borderColor = "#2B3EBF";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    />
+  </div>
+);
+
+const TextareaField = ({
+  label,
+  name,
+  placeholder,
+  value,
+  onChange,
+  required,
+  rows = 4,
+}: {
+  label: string;
+  name: keyof FormData;
+  placeholder?: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
+  required?: boolean;
+  rows?: number;
+}) => (
+  <div style={{ marginBottom: "24px" }}>
+    <FieldLabel required={required}>{label}</FieldLabel>
+    <textarea
+      name={name}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      required={required}
+      rows={rows}
+      style={{ ...inputBase, resize: "vertical", minHeight: "110px" }}
+      onFocus={(e) => {
+        e.currentTarget.style.borderColor = "#E8C12A";
+        e.currentTarget.style.boxShadow = "4px 4px 0px #2B3EBF";
+      }}
+      onBlur={(e) => {
+        e.currentTarget.style.borderColor = "#2B3EBF";
+        e.currentTarget.style.boxShadow = "none";
+      }}
+    />
+  </div>
+);
+
+/* Radio group (single select) */
+const RadioGroup = ({
+  label,
+  name,
+  options,
+  value,
+  onChange,
+  required,
+}: {
+  label: string;
+  name: keyof FormData;
+  options: string[];
+  value: string;
+  onChange: (val: string) => void;
+  required?: boolean;
+}) => (
+  <div style={{ marginBottom: "28px" }}>
+    <FieldLabel required={required}>{label}</FieldLabel>
+    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      {options.map((opt) => {
+        const selected = value === opt;
+        return (
+          <label
+            key={opt}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              cursor: "pointer",
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: selected ? 700 : 500,
+              fontSize: "clamp(12px, 1.2vw, 14px)",
+              color: selected ? "#2B3EBF" : "rgba(0,0,0,0.65)",
+              padding: "10px 14px",
+              border: `2px solid ${selected ? "#2B3EBF" : "rgba(43,62,191,0.2)"}`,
+              background: selected ? "rgba(43,62,191,0.06)" : "#fff",
+              transition: "all 0.12s",
+            }}
+          >
+            <input
+              type="radio"
+              name={name}
+              value={opt}
+              checked={selected}
+              onChange={() => onChange(opt)}
+              required={required}
+              style={{ display: "none" }}
+            />
+            {/* Custom radio dot */}
+            <div
+              style={{
+                width: "18px",
+                height: "18px",
+                border: `3px solid ${selected ? "#2B3EBF" : "rgba(43,62,191,0.35)"}`,
+                borderRadius: "50%",
+                flexShrink: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#fff",
+              }}
+            >
+              {selected && (
+                <div
+                  style={{
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    background: "#2B3EBF",
+                  }}
+                />
+              )}
+            </div>
+            {opt}
+          </label>
+        );
+      })}
+    </div>
+  </div>
+);
+
+/* Checkbox group (multi select) */
+const CheckboxGroup = ({
+  label,
+  options,
+  values,
+  onChange,
+  required,
+}: {
+  label: string;
+  options: string[];
+  values: string[];
+  onChange: (vals: string[]) => void;
+  required?: boolean;
+}) => {
+  const toggle = (opt: string) => {
+    if (values.includes(opt)) {
+      onChange(values.filter((v) => v !== opt));
+    } else {
+      onChange([...values, opt]);
     }
-  ];
-
-  const faqs: FAQItem[] = [
-    {
-      question: "Who can join Talk n Tales?",
-      answer: "Talk n Tales is open for Gen-Z business founders from any kind of background or industry who want to build real connections and share their stories. You're welcome to join!"
-    },
-    {
-      question: "Is there a registration fee?",
-      answer: "Yes, there is an investment fee, and the details will be sent to your email once you are selected to join the event."
-    },
-    {
-      question: "What should I prepare?",
-      answer: "Just bring yourself! If you want, you can prepare a short story about your journey. Business cards are also recommended for networking."
-    },
-    {
-      question: "What's the dress code?",
-      answer: "Be yourself but stay presentable. The vibe is relaxed, yet still professional."
-    },
-    {
-      question: "Can I bring a friend?",
-      answer: "Of course! Just make sure they are also Gen-Z business founders. Each must register individually, as seats are limited."
-    },
-    {
-      question: "When will I get the confirmation?",
-      answer: "You'll get an automatic confirmation right after submitting the form. The official announcement and payment instructions will be sent between December 8th — 11th, 2025. Don't forget to check your inbox and spam folder!"
-    },
-    {
-      question: "What if I can't attend?",
-      answer: "Please inform us at least 2 days before the event via email or Instagram DM paceon.id so we can give your spot to someone else."
-    },
-    {
-      question: "How does the registration process work?",
-      answer: "You can register anytime before the deadline through our website. After registration closes, our team will review all submissions. If you're selected, you'll receive an announcement email along with payment details. Make sure to keep an eye on your inbox!"
-    },
-    {
-      question: "How does the selection process work?",
-      answer: "Once the registration period ends, the Pace On team will shortlist participants based on profile relevance (whether you're truly a young founder), alignment with the Talk & Tales theme, and the motivation you wrote in the form. Selected participants will receive an official confirmation via email."
-    },
-    {
-      question: "Is there any chance for collaboration after the event?",
-      answer: "Definitely! One of the main goals of Talk & Tales is to spark collaboration between participants and even with Pace On itself."
-    },
-    {
-      question: "What if I'm not selected?",
-      answer: "No worries, all registrants will automatically be added to the Pace On community database and will receive priority for future events. You'll still get updates and opportunities through our community email."
-    },
-    {
-      question: "How can I stay updated about Talk & Tales?",
-      answer: "Follow us on Instagram paceon.id or check the Pace On website for the latest news and updates."
-    },
-  ];
-
-  const toggleFAQ = (index: number) => {
-    setOpenFAQ(openFAQ === index ? null : index);
   };
 
   return (
-    <section className="w-full py-16 sm:py-16 md:py-16 lg:py-20 bg-[#f4f4ef]">
-      <div className="w-full px-6 sm:px-8 lg:px-28">
-        
-        {/* Grid Layout - Description Left, FAQ Right */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-start">
-          
-          {/* Left: Event Description - Order 1 on mobile (shows first) */}
-          <div className="w-full order-1">
-            
-            {/* Title */}
-            <div className="mb-8 lg:mb-10">
-              <h2 className="font-brand text-3xl sm:text-4xl md:text-5xl text-[#3f3e3d] mb-4">
-                About This Event
-              </h2>
-              <p className="font-body text-base sm:text-lg text-[#3f3e3d]/80 leading-relaxed">
-                <span className="font-bold">Talk and Tales</span> is more than a networking event. It is a place where Gen-Z founders sit together, listen to real stories about why networking actually matters, laugh and loosen up through fun games, and connect with other founders in ways that feel natural, unforced, and genuinely enjoyable.
-              </p>
+    <div style={{ marginBottom: "28px" }}>
+      <FieldLabel required={required}>{label}</FieldLabel>
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {options.map((opt) => {
+          const checked = values.includes(opt);
+          return (
+            <label
+              key={opt}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                cursor: "pointer",
+                fontFamily: "'Poppins', sans-serif",
+                fontWeight: checked ? 700 : 500,
+                fontSize: "clamp(12px, 1.2vw, 14px)",
+                color: checked ? "#2B3EBF" : "rgba(0,0,0,0.65)",
+                padding: "10px 14px",
+                border: `2px solid ${checked ? "#2B3EBF" : "rgba(43,62,191,0.2)"}`,
+                background: checked ? "rgba(43,62,191,0.06)" : "#fff",
+                transition: "all 0.12s",
+              }}
+            >
+              <input
+                type="checkbox"
+                value={opt}
+                checked={checked}
+                onChange={() => toggle(opt)}
+                style={{ display: "none" }}
+              />
+              <div
+                style={{
+                  width: "18px",
+                  height: "18px",
+                  border: `3px solid ${checked ? "#2B3EBF" : "rgba(43,62,191,0.35)"}`,
+                  flexShrink: 0,
+                  background: checked ? "#2B3EBF" : "#fff",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "background 0.12s",
+                }}
+              >
+                {checked && (
+                  <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                    <path
+                      d="M1 3.5L3.8 6.5L9 1"
+                      stroke="#E8C12A"
+                      strokeWidth="2.2"
+                      strokeLinecap="square"
+                    />
+                  </svg>
+                )}
+              </div>
+              {opt}
+            </label>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+/* Section divider */
+const SectionDivider = ({ title }: { title: string }) => (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: "14px",
+      margin: "36px 0 28px",
+    }}
+  >
+    <div
+      style={{
+        background: "#E8121A",
+        fontFamily: "'Poppins', sans-serif",
+        fontWeight: 900,
+        fontSize: "10px",
+        color: "#fff",
+        textTransform: "uppercase",
+        letterSpacing: "0.2em",
+        padding: "4px 12px",
+        flexShrink: 0,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {title}
+    </div>
+    <div
+      style={{ flex: 1, height: "2px", background: "rgba(43,62,191,0.2)" }}
+    />
+  </div>
+);
+
+/* ─── Main Page ─────────────────────────────────────────── */
+const TalkNTalesRegisterPage = () => {
+  const [formData, setFormData] = useState<FormData>({
+    fullName: "",
+    email: "",
+    whatsapp: "",
+    instagram: "",
+    linkedin: "",
+    businessName: "",
+    industry: "",
+    topicInterest: "",
+    mainReason: "",
+    lookingFor: [],
+    agreeToTerms: false,
+  });
+
+  const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) => {
+    const { name, value, type } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]:
+        type === "checkbox"
+          ? (e.target as HTMLInputElement).checked
+          : value,
+    }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.lookingFor.length === 0) {
+      setError("Please select at least one option for what you're looking for.");
+      return;
+    }
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/talk-n-tales-2/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.whatsapp,
+          instagram: formData.instagram,
+          linkedin_url: formData.linkedin,
+          company: formData.businessName,
+          company_industry: formData.industry,
+          topic_interest: formData.topicInterest,
+          reason: formData.mainReason,
+          looking_for: formData.lookingFor,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Registration failed");
+      }
+      setSubmitted(true);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Something went wrong. Please try again."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /* ── Success state ── */
+  if (submitted) {
+    return (
+      <>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Poppins:wght@400;700;900&family=Shrikhand&display=swap"
+          rel="stylesheet"
+        />
+        <div
+          style={{
+            minHeight: "100vh",
+            background: "#2B3EBF",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "40px 24px",
+          }}
+        >
+          <div style={{ textAlign: "center", maxWidth: "560px" }}>
+            <div
+              style={{
+                display: "inline-flex",
+                flexDirection: "column",
+                alignItems: "center",
+                background: "#E8C12A",
+                border: "6px solid #fff",
+                padding: "28px 36px",
+                marginBottom: "32px",
+                transform: "rotate(-2deg)",
+              }}
+            >
+              <span
+                style={{
+                  fontFamily: "'Alfa Slab One', serif",
+                  fontSize: "clamp(48px, 10vw, 80px)",
+                  color: "#2B3EBF",
+                  lineHeight: 1,
+                  textTransform: "uppercase",
+                }}
+              >
+                ✓ DONE
+              </span>
+              <div
+                style={{
+                  width: "100%",
+                  height: "3px",
+                  background: "#2B3EBF",
+                  margin: "10px 0",
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 900,
+                  fontSize: "11px",
+                  color: "#2B3EBF",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.2em",
+                }}
+              >
+                Registration Submitted
+              </span>
             </div>
 
-            {/* What You'll Experience */}
-            <div className="mb-8 lg:mb-10">
-              <h3 className="font-brand text-xl sm:text-2xl md:text-3xl text-[#3f3e3d] mb-4 lg:mb-5">
-                What You Will Gain From Each Session
-              </h3>
-              <div className="space-y-4">
-                {experiences.map((item, index) => (
-                  <div key={index} className="flex gap-3">
-                    <span className="text-[#F47a49] font-bold flex-shrink-0 mt-1">•</span>
-                    <div>
-                      <h4 className="font-body font-bold text-sm sm:text-base text-[#3f3e3d] mb-1">
-                        {item.title}
-                      </h4>
-                      <p className="font-body text-sm sm:text-base text-[#3f3e3d]/80 leading-relaxed">
-                        {item.description}
-                      </p>
+            <p
+              style={{
+                fontFamily: "'Shrikhand', serif",
+                fontSize: "clamp(18px, 3vw, 26px)",
+                color: "#E8C12A",
+                letterSpacing: "0.04em",
+                marginBottom: "16px",
+              }}
+            >
+              You&apos;re on the list. We&apos;ll be in touch.
+            </p>
+            <p
+              style={{
+                fontFamily: "'Poppins', sans-serif",
+                fontSize: "clamp(13px, 1.4vw, 15px)",
+                color: "rgba(255,255,255,0.75)",
+                lineHeight: 1.75,
+                marginBottom: "36px",
+              }}
+            >
+              Check your inbox for a confirmation email. Official announcement will follow. Don&apos;t forget to check your spam folder!
+            </p>
+
+            <Link
+              href="/Talk-n-Tales"
+              style={{
+                fontFamily: "'Alfa Slab One', serif",
+                fontSize: "clamp(13px, 1.5vw, 16px)",
+                background: "#E8C12A",
+                color: "#2B3EBF",
+                textTransform: "uppercase",
+                letterSpacing: "0.12em",
+                border: "3px solid #E8C12A",
+                padding: "14px 36px",
+                display: "inline-block",
+                textDecoration: "none",
+              }}
+            >
+              ← Back to Event Page
+            </Link>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  /* ── Form ── */
+  return (
+    <>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Poppins:wght@400;700;900&family=Shrikhand&display=swap"
+        rel="stylesheet"
+      />
+
+      <style>{`
+        .tnt-form-page { min-height: 100vh; background: #f7e6d4; }
+        .tnt-reg-hero {
+          background: #2B3EBF;
+          padding: clamp(40px,7vh,80px) clamp(20px,6vw,80px) clamp(32px,5vh,56px);
+          position: relative; overflow: hidden;
+        }
+        .tnt-reg-hero::before {
+          content: ''; position: absolute; inset: 0;
+          background-image: repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(232,193,42,0.06) 39px,rgba(232,193,42,0.06) 40px);
+          pointer-events: none;
+        }
+        .tnt-form-grid {
+          display: grid; grid-template-columns: 1fr; gap: 0 40px;
+        }
+        @media (min-width: 768px) {
+          .tnt-form-grid { grid-template-columns: 1fr 1fr; }
+        }
+        .tnt-form-outer { display: block; }
+        @media (min-width: 1024px) {
+          .tnt-form-outer {
+            display: grid; grid-template-columns: 1fr 300px;
+            gap: 40px; align-items: start;
+          }
+          .tnt-sidebar { display: block !important; position: sticky; top: 24px; }
+        }
+        input::placeholder, textarea::placeholder { color: #aaa; font-weight: 400; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+      `}</style>
+
+      <div className="tnt-form-page">
+
+        {/* Hero */}
+        <div className="tnt-reg-hero">
+          <div style={{ maxWidth: "900px", position: "relative", zIndex: 1 }}>
+            {/* Back link */}
+            <div style={{ marginBottom: "24px" }}>
+              <Link
+                href="/Talk-n-Tales"
+                style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 700,
+                  fontSize: "clamp(10px, 1vw, 12px)",
+                  color: "rgba(255,255,255,0.5)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.18em",
+                  textDecoration: "none",
+                }}
+              >
+                ← Back to Event
+              </Link>
+            </div>
+
+            {/* Headline only */}
+            <div style={{ position: "relative", display: "inline-block", lineHeight: 0.88 }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  fontFamily: "'Alfa Slab One', serif",
+                  fontSize: "clamp(52px, 10vw, 110px)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.02em",
+                  color: "#E8C12A",
+                  WebkitTextStroke: "5px #E8C12A",
+                  position: "absolute",
+                  top: "5px",
+                  left: "5px",
+                  zIndex: 0,
+                  whiteSpace: "nowrap",
+                  display: "block",
+                }}
+              >
+                Register
+              </span>
+              <span
+                style={{
+                  fontFamily: "'Alfa Slab One', serif",
+                  fontSize: "clamp(52px, 10vw, 110px)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.02em",
+                  color: "#fff",
+                  WebkitTextStroke: "4px #2B3EBF",
+                  position: "relative",
+                  zIndex: 1,
+                  whiteSpace: "nowrap",
+                  display: "block",
+                  // @ts-ignore
+                  paintOrder: "stroke fill",
+                }}
+              >
+                Register
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div
+          style={{
+            maxWidth: "1200px",
+            margin: "0 auto",
+            padding:
+              "clamp(32px, 5vh, 64px) clamp(20px, 6vw, 80px)",
+          }}
+        >
+          <div className="tnt-form-outer">
+
+            {/* Form */}
+            <form onSubmit={handleSubmit} noValidate>
+
+              <SectionDivider title="Personal Info" />
+              <div className="tnt-form-grid">
+                <InputField
+                  label="Full Name"
+                  name="fullName"
+                  placeholder="e.g. Budi Santoso"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  required
+                />
+                <InputField
+                  label="Email Address"
+                  name="email"
+                  type="email"
+                  placeholder="you@email.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                />
+                <InputField
+                  label="WhatsApp Number"
+                  name="whatsapp"
+                  type="tel"
+                  placeholder="+62 812 xxxx xxxx"
+                  value={formData.whatsapp}
+                  onChange={handleChange}
+                  required
+                />
+                <InputField
+                  label="Instagram Handle"
+                  name="instagram"
+                  placeholder="@yourhandle"
+                  value={formData.instagram}
+                  onChange={handleChange}
+                  required
+                />
+                <InputField
+                  label="LinkedIn Profile"
+                  name="linkedin"
+                  placeholder="linkedin.com/in/yourname"
+                  value={formData.linkedin}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <SectionDivider title="Business Info" />
+              <div className="tnt-form-grid">
+                <InputField
+                  label="Business / Startup Name"
+                  name="businessName"
+                  placeholder="e.g. Kopiku, Toko Kreatif"
+                  value={formData.businessName}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+
+              <RadioGroup
+                label="Industry"
+                name="industry"
+                options={INDUSTRIES}
+                value={formData.industry}
+                onChange={(val) =>
+                  setFormData((prev) => ({ ...prev, industry: val }))
+                }
+                required
+              />
+
+              <SectionDivider title="Your Interests" />
+
+              <RadioGroup
+                label="Which discussion would interest you the most at Talk N Tales?"
+                name="topicInterest"
+                options={TOPIC_INTERESTS}
+                value={formData.topicInterest}
+                onChange={(val) =>
+                  setFormData((prev) => ({ ...prev, topicInterest: val }))
+                }
+                required
+              />
+
+              <TextareaField
+                label="What is your main reason for joining Talk N Tales?"
+                name="mainReason"
+                placeholder="Tell us briefly — be genuine, we read every submission."
+                value={formData.mainReason}
+                onChange={handleChange}
+                required
+                rows={4}
+              />
+
+              <CheckboxGroup
+                label="What are you currently looking for?"
+                options={LOOKING_FOR_OPTIONS}
+                values={formData.lookingFor}
+                onChange={(vals) =>
+                  setFormData((prev) => ({ ...prev, lookingFor: vals }))
+                }
+                required
+              />
+
+              {/* Terms */}
+              <div style={{ marginBottom: "32px", marginTop: "8px" }}>
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: "12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  <div style={{ position: "relative", flexShrink: 0, marginTop: "2px" }}>
+                    <input
+                      type="checkbox"
+                      name="agreeToTerms"
+                      checked={formData.agreeToTerms}
+                      onChange={handleChange}
+                      required
+                      style={{
+                        opacity: 0,
+                        position: "absolute",
+                        width: "22px",
+                        height: "22px",
+                        cursor: "pointer",
+                        zIndex: 1,
+                      }}
+                    />
+                    <div
+                      style={{
+                        width: "22px",
+                        height: "22px",
+                        border: "3px solid #2B3EBF",
+                        background: formData.agreeToTerms ? "#2B3EBF" : "#fff",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        transition: "background 0.15s",
+                      }}
+                    >
+                      {formData.agreeToTerms && (
+                        <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                          <path
+                            d="M1 4L4.5 7.5L11 1"
+                            stroke="#E8C12A"
+                            strokeWidth="2.5"
+                            strokeLinecap="square"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      fontFamily: "'Poppins', sans-serif",
+                      fontSize: "clamp(12px, 1.2vw, 14px)",
+                      color: "rgba(0,0,0,0.7)",
+                      lineHeight: 1.65,
+                    }}
+                  >
+                    I understand that registration does not guarantee a spot. Selected participants will be notified via email. I agree to the event terms and conditions.
+                  </span>
+                </label>
+              </div>
+
+              {/* Error message */}
+              {error && (
+                <div
+                  style={{
+                    background: "#E8121A",
+                    color: "#fff",
+                    fontFamily: "'Poppins', sans-serif",
+                    fontWeight: 700,
+                    fontSize: "13px",
+                    padding: "12px 16px",
+                    marginBottom: "20px",
+                    border: "3px solid #a00",
+                  }}
+                >
+                  ⚠ {error}
+                </div>
+              )}
+
+              {/* Submit */}
+              <button
+                type="submit"
+                disabled={loading || !formData.agreeToTerms}
+                style={{
+                  fontFamily: "'Alfa Slab One', serif",
+                  fontSize: "clamp(14px, 1.8vw, 18px)",
+                  background: formData.agreeToTerms ? "#2B3EBF" : "#aaa",
+                  color: "#E8C12A",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.12em",
+                  border: `4px solid ${formData.agreeToTerms ? "#2B3EBF" : "#aaa"}`,
+                  padding:
+                    "clamp(14px, 2vh, 20px) clamp(36px, 5vw, 64px)",
+                  cursor: formData.agreeToTerms ? "pointer" : "not-allowed",
+                  transition: "all 0.15s ease",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "12px",
+                  opacity: loading ? 0.75 : 1,
+                }}
+                onMouseEnter={(e) => {
+                  if (!formData.agreeToTerms) return;
+                  const el = e.currentTarget;
+                  el.style.background = "transparent";
+                  el.style.color = "#2B3EBF";
+                  el.style.transform = "translate(-4px,-4px)";
+                  el.style.boxShadow = "8px 8px 0px #2B3EBF";
+                }}
+                onMouseLeave={(e) => {
+                  if (!formData.agreeToTerms) return;
+                  const el = e.currentTarget;
+                  el.style.background = "#2B3EBF";
+                  el.style.color = "#E8C12A";
+                  el.style.transform = "translate(0,0)";
+                  el.style.boxShadow = "none";
+                }}
+              >
+                {loading ? (
+                  <>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        animation: "spin 0.8s linear infinite",
+                      }}
+                    >
+                      ⟳
+                    </span>
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Registration →"
+                )}
+              </button>
+
+              <p
+                style={{
+                  fontFamily: "'Poppins', sans-serif",
+                  fontWeight: 700,
+                  fontSize: "11px",
+                  color: "rgba(0,0,0,0.35)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.18em",
+                  marginTop: "14px",
+                }}
+              >
+                ✦ Community Early bird: IDR 199K until 30 March 2026 ✦
+              </p>
+            </form>
+
+            {/* Sidebar */}
+            <aside className="tnt-sidebar" style={{ display: "none" }}>
+              <div
+                style={{
+                  background: "#2B3EBF",
+                  border: "4px solid #E8C12A",
+                  padding: "24px",
+                  marginBottom: "20px",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "'Poppins', sans-serif",
+                    fontWeight: 900,
+                    fontSize: "10px",
+                    color: "#E8C12A",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.2em",
+                    marginBottom: "16px",
+                  }}
+                >
+                  Event Details
+                </div>
+                {[
+                  { label: "Date", value: "Saturday, 9 May 2026" },
+                  { label: "Time", value: "19.00 WIB – End" },
+                  { label: "Location", value: "South Jakarta\n(TBA)" },
+                  { label: "Price", value: "IDR 199K\n(Community Early Bird)" },
+                ].map(({ label, value }) => (
+                  <div key={label} style={{ marginBottom: "14px" }}>
+                    <div
+                      style={{
+                        fontFamily: "'Poppins', sans-serif",
+                        fontWeight: 700,
+                        fontSize: "9px",
+                        color: "rgba(232,193,42,0.6)",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.18em",
+                        marginBottom: "3px",
+                      }}
+                    >
+                      {label}
+                    </div>
+                    <div
+                      style={{
+                        fontFamily: "'Poppins', sans-serif",
+                        fontWeight: 700,
+                        fontSize: "13px",
+                        color: "#fff",
+                        lineHeight: 1.4,
+                        whiteSpace: "pre-line",
+                      }}
+                    >
+                      {value}
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
 
-            {/* Who Should Join */}
-            <div>
-              <h3 className="font-brand text-xl sm:text-2xl md:text-3xl text-[#3f3e3d] mb-2 lg:mb-3">
-                Who Can Join
-              </h3>
-              <p className="font-body text-sm sm:text-base text-[#3f3e3d] leading-relaxed mb-4">
-                <span className="bg-[#3f3e3d] px-2 py-2 text-[#F47a49] font-brand">Gen-Z Founders</span><br/>Young founders aged 18 to 27 from diverse industries who are eager to learn, connect, and grow together through meaningful conversations and collaboration.
-              </p>
-            </div>
-
-          </div>
-
-          {/* Right: FAQ Section - Order 2 on mobile (shows after description) */}
-          <div className="w-full order-2">
-            <div className="mb-6">
-              <h3 className="font-brand text-2xl sm:text-3xl text-[#3f3e3d] mb-2">
-                Frequently Asked Questions
-              </h3>
-              <p className="font-body text-sm sm:text-base text-[#3f3e3d]/70">
-                Got questions? We&apos;ve got answers!
-              </p>
-            </div>
-
-            {/* FAQ List */}
-            <div className="space-y-0">
-              {faqs.map((faq, index) => (
-                <div 
-                  key={index} 
-                  className={`py-6 ${index !== faqs.length - 1 ? 'border-b-2 border-[#3f3e3d]/30' : ''}`}
-                >
-                  <button
-                    onClick={() => toggleFAQ(index)}
-                    className="w-full flex items-start justify-between gap-4 text-left group"
-                  >
-                    <h4 className="font-brand text-sm sm:text-base text-[#3f3e3d] flex-1 group-hover:text-[#F47a49] transition-colors">
-                      {faq.question}
-                    </h4>
-                    <ChevronDown 
-                      className={`w-5 h-5 text-[#3f3e3d]/60 flex-shrink-0 transition-transform duration-300 ${
-                        openFAQ === index ? 'rotate-180 text-[#F47a49]' : ''
-                      }`}
-                    />
-                  </button>
-                  
-                  <div
-                    className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                      openFAQ === index ? 'max-h-96 mt-3' : 'max-h-0'
-                    }`}
-                  >
-                    <p className="font-body text-xs sm:text-sm text-[#3f3e3d]/80 leading-relaxed">
-                      {faq.answer}
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {/* Contact CTA */}
-            <div className="mt-8 p-6 border-2 border-[#FB6F7A]/20 rounded-2xl text-center bg-[#FB6F7A]/5">
-              <h4 className="font-brand text-lg text-[#3f3e3d] mb-2">
-                Any More Question?
-              </h4>
-              <p className="font-body text-sm text-[#3f3e3d]/70 mb-4">
-                Click the button below!
-              </p>
-              <Link
-                href="/contact"
-                className="inline-flex items-center justify-center gap-2 bg-[#FB6F7A] green-fill text-white font-brand text-sm px-8 py-3 rounded-full transition-all duration-300 hover:scale-105"
+              <div
+                style={{
+                  background: "#E8C12A",
+                  border: "4px solid #2B3EBF",
+                  padding: "24px",
+                  marginBottom: "20px",
+                }}
               >
-                Contact Us
-              </Link>
-            </div>
+                <div
+                  style={{
+                    fontFamily: "'Alfa Slab One', serif",
+                    fontSize: "16px",
+                    color: "#2B3EBF",
+                    textTransform: "uppercase",
+                    marginBottom: "14px",
+                  }}
+                >
+                  Highlights
+                </div>
+                {[
+                  "Roundtable with Senior Founder",
+                  "Curated Founder Networking",
+                  "Speed Networking Session",
+                  "Selected Founders Elevator Pitch",
+                ].map((item) => (
+                  <div
+                    key={item}
+                    style={{
+                      fontFamily: "'Poppins', sans-serif",
+                      fontWeight: 700,
+                      fontSize: "12px",
+                      color: "#2B3EBF",
+                      marginBottom: "8px",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "8px",
+                    }}
+                  >
+                    <span
+                      style={{ color: "#E8121A", fontWeight: 900, flexShrink: 0 }}
+                    >
+                      ✦
+                    </span>
+                    {item}
+                  </div>
+                ))}
+              </div>
+
+              <div
+                style={{
+                  background: "#E8121A",
+                  padding: "16px 20px",
+                  textAlign: "center",
+                }}
+              >
+                <div
+                  style={{
+                    fontFamily: "'Poppins', sans-serif",
+                    fontWeight: 900,
+                    fontSize: "9px",
+                    color: "rgba(255,255,255,0.7)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.2em",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Early Bird Until
+                </div>
+                <div
+                  style={{
+                    fontFamily: "'Alfa Slab One', serif",
+                    fontSize: "20px",
+                    color: "#E8C12A",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                  }}
+                >
+                  30 March 2026
+                </div>
+              </div>
+            </aside>
           </div>
-
         </div>
-
       </div>
-    </section>
+    </>
   );
 };
 
-export default TalkNTalesRegistrationAndFAQ;
+export default TalkNTalesRegisterPage;
