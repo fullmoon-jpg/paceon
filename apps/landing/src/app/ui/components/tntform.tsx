@@ -952,7 +952,7 @@ const TalkNTalesRegisterPage = () => {
                 </div>
                 {[
                   { label: "Date", value: "Saturday, 9 May 2026" },
-                  { label: "Time", value: "19.00 WIB – End" },
+                  { label: "Time", value: "13.00 WIB – End" },
                   { label: "Location", value: "South Jakarta\n(TBA)" },
                   { label: "Price", value: "IDR 199K\n(Community Early Bird)" },
                 ].map(({ label, value }) => (
