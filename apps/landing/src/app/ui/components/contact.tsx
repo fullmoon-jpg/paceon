@@ -198,7 +198,7 @@ const ContactSection = () => {
                 </div>
                 <div>
                   <h3 className="font-brand text-[#3f3e3d] text-lg mb-1">Telephone</h3>
-                  <p className="font-body text-[#3f3e3d] text-base font-medium">+62 811-1933-301</p>
+                  <p className="font-body text-[#3f3e3d] text-base font-medium">+62 819-9553-8939</p>
                   <p className="font-body text-[#3f3e3d]/60 text-sm mt-1">Monday - Friday, 09:00 - 17:00</p>
                 </div>
               </div>
