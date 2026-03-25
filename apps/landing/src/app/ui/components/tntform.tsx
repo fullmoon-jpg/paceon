@@ -34,11 +34,12 @@ const INDUSTRIES = [
 ];
 
 const TOPIC_INTERESTS = [
-  "Fundraising & working with investors",
-  "Growing a startup from early traction",
-  "Building consumer brands & creative businesses",
-  "Founder journey & leadership",
-  "Collaboration & partnership opportunities",
+  "Navigating Investors & Raising Smart",
+  "Scaling When It's Still Early",
+  "Building Brands People Actually Want",
+  "Running a Business That's Also Art",
+  "Leading Yourself Before Leading Others",
+  "Building Partnership That Actually Work",
 ];
 
 const LOOKING_FOR_OPTIONS = [

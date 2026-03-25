@@ -215,8 +215,8 @@ export function talkNTales2InvoiceEmailTemplate({
 
         <table width="100%" cellpadding="0" cellspacing="0" border="0">
           ${[
-            ["Session 1", "Broadcast Session"],
-            ["Session 2", "Founder Roundtable Networking"],
+            ["Session 1", "Game Group Session"],
+            ["Session 2", "Senior Founder Roundtable Networking"],
             ["Session 3", "Speed Networking"],
             ["Session 4", "Free Networking Session"],
           ].map(([time, label], i) => `
