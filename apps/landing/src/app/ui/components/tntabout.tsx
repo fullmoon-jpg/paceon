@@ -1,6 +1,9 @@
 "use client";
 import React from "react";
 
+const TOTAL_SEATS = 12;
+const SEATS_FILLED = 8;
+
 const LayeredWordAbout = ({
   text,
   color = "#fff",
@@ -52,6 +55,57 @@ const LayeredWordAbout = ({
     </span>
   </div>
 );
+
+/* ─── Mobile FOMO Section — md:hidden ─────────────────── */
+const MobileFomoSection = () => {
+  const fillPct = Math.round((SEATS_FILLED / TOTAL_SEATS) * 100);
+  return (
+    <div
+      className="md:hidden"
+      style={{
+        background: "#E8121A",
+        borderTop: "4px solid #E8C12A",
+        padding: "clamp(24px, 5vw, 40px) clamp(20px, 6vw, 40px)",
+      }}
+    >
+      {/* Top row: number + meter */}
+      <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "16px" }}>
+        {/* Big number */}
+        <div style={{ flexShrink: 0 }}>
+          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "11px", color: "#E8C12A", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "2px" }}>
+            Already joined
+          </div>
+          <div style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "64px", color: "#fff", lineHeight: 1 }}>
+            {SEATS_FILLED}
+          </div>
+          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "11px", color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: "0.12em" }}>
+            Founders
+          </div>
+        </div>
+
+        {/* Divider */}
+        <div style={{ width: "2px", height: "80px", background: "rgba(232,193,42,0.4)", flexShrink: 0 }} />
+
+        {/* Meter */}
+        <div style={{ flex: 1 }}>
+          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "10px", color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "8px" }}>
+            🔥 Price Going UP Soon
+          </div>
+          <div style={{ width: "100%", height: "10px", background: "rgba(255,255,255,0.2)", borderRadius: "4px", marginBottom: "6px", overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${fillPct}%`, background: "#E8C12A", borderRadius: "4px", transition: "width 1.2s ease-out" }} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "20px", color: "#fff" }}>{fillPct}%</span>
+            <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "10px", color: "#E8C12A", textTransform: "uppercase", letterSpacing: "0.1em" }}>to next price</span>
+          </div>
+          <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "10px", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.08em", marginTop: "6px", lineHeight: 1.5 }}>
+            The higher the bar,<br />the sooner price jumps 💀
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const TalkNTalesAbout = () => {
   return (
@@ -123,23 +177,21 @@ const TalkNTalesAbout = () => {
           padding-top: 8px;
         }
 
-        /* Mobile: right col flush */
         @media (max-width: 767px) {
           .tnt-right-col {
             padding-top: 0;
           }
-          /* Prevent headline overflow on small screens */
           .tnt-about-grid > div:first-child > div {
             overflow: hidden;
           }
         }
 
-        /* Stat item */
         .tnt-stat-item {
           min-width: 0;
         }
       `}</style>
 
+      {/* ── About content ──────────────────────────────────── */}
       <div style={{ background: "#E8C12A", position: "relative", zIndex: 10 }}>
         <div className="tnt-section">
 
@@ -219,8 +271,6 @@ const TalkNTalesAbout = () => {
 
             {/* RIGHT — description */}
             <div className="tnt-right-col">
-
-              {/* Pull quote */}
               <div className="tnt-pull-quote">
                 <p
                   style={{
@@ -236,7 +286,6 @@ const TalkNTalesAbout = () => {
                 </p>
               </div>
 
-              {/* Body */}
               <p
                 className="tnt-body-p"
                 style={{
@@ -247,7 +296,7 @@ const TalkNTalesAbout = () => {
                   margin: 0,
                 }}
               >
-                Talk N Tales is an offline networking event exclusively for GenZ founders those who are building startups, brands, projects, or anything they believe can change something.
+                Talk N Tales is an offline networking event exclusively for GenZ founders — those who are building startups, brands, projects, or anything they believe can change something.
               </p>
 
               <p
@@ -261,7 +310,7 @@ const TalkNTalesAbout = () => {
                   marginBottom: "clamp(24px, 4vh, 40px)",
                 }}
               >
-                Here you&apos;ll meet people on the same frequency. Not to sit and listen but to talk, share, and leave with connections that actually matter.
+                Here you&apos;ll meet people on the same frequency. Not to sit and listen — but to talk, share, and leave with connections that actually matter.
               </p>
 
               {/* Tags */}
@@ -290,6 +339,9 @@ const TalkNTalesAbout = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Mobile FOMO — only visible on mobile, sits right after About ── */}
+      <MobileFomoSection />
     </>
   );
 };

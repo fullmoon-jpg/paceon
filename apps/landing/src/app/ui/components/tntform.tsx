@@ -11,7 +11,7 @@ interface FormData {
   linkedin: string;
   businessName: string;
   industry: string;
-  topicInterest: string[]; // ← changed: was string, now string[]
+  topicInterest: string[];
   mainReason: string;
   lookingFor: string[];
   agreeToTerms: boolean;
@@ -254,6 +254,7 @@ const FomoBar = () => {
   return (
     <div style={{ background: "#1a2d9e", borderBottom: "4px solid #E8C12A", padding: "20px clamp(20px, 6vw, 80px)" }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "clamp(16px, 3vw, 40px)" }}>
+        {/* Seats filled */}
         <div style={{ display: "flex", alignItems: "baseline", gap: "10px", flexShrink: 0 }}>
           <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(36px, 6vw, 52px)", color: "#fff", lineHeight: 1 }}>{SEATS_FILLED}</span>
           <div>
@@ -262,9 +263,11 @@ const FomoBar = () => {
           </div>
           <div style={{ width: "2px", height: "40px", background: "rgba(232,193,42,0.4)", marginLeft: "6px" }} />
         </div>
+
+        {/* Price hike meter */}
         <div style={{ flex: 1, minWidth: "180px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
-            <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(9px, 1vw, 11px)", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.15em" }}>🔥 Price hike meter</span>
+            <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(9px, 1vw, 11px)", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.15em" }}>🔥 To next price</span>
             <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(14px, 2vw, 18px)", color: "#E8C12A" }}>{fillPct}%</span>
           </div>
           <div style={{ width: "100%", height: "12px", background: "rgba(255,255,255,0.15)", borderRadius: "2px", overflow: "hidden" }}>
@@ -272,16 +275,38 @@ const FomoBar = () => {
           </div>
           <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "clamp(9px, 0.9vw, 10px)", color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.12em", marginTop: "5px" }}>Fuller bar = sooner price jumps</div>
         </div>
+
+        {/* Price — strikethrough 249K → 199K badge, NO "Until 20 Apr" */}
         <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(9px, 1vw, 11px)", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: "2px" }}>Early Bird</div>
-            <div style={{ position: "relative", display: "inline-block" }}>
-              <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(16px, 2.5vw, 22px)", color: "rgba(255,255,255,0.35)", textDecoration: "line-through", textDecorationColor: "#E8121A", textDecorationThickness: "3px", letterSpacing: "0.04em" }}>IDR 249K</span>
-              <div style={{ position: "absolute", top: "-14px", right: "-28px", background: "#E8121A", border: "3px solid #E8C12A", padding: "3px 8px", transform: "rotate(4deg)", zIndex: 2, whiteSpace: "nowrap" }}>
-                <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(13px, 1.8vw, 17px)", color: "#E8C12A", letterSpacing: "0.04em" }}>199K</span>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(9px, 1vw, 11px)", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: "6px" }}>Early Bird</div>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {/* Strikethrough original price */}
+              <span style={{
+                fontFamily: "'Alfa Slab One', serif",
+                fontSize: "clamp(16px, 2.5vw, 22px)",
+                color: "rgba(255,255,255,0.35)",
+                textDecoration: "line-through",
+                textDecorationColor: "#E8121A",
+                textDecorationThickness: "3px",
+                letterSpacing: "0.04em",
+              }}>IDR 249K</span>
+              {/* Badge with current price */}
+              <div style={{
+                background: "#E8C12A",
+                border: "3px solid #E8121A",
+                padding: "4px 10px",
+                transform: "rotate(-2deg)",
+                display: "inline-block",
+              }}>
+                <span style={{
+                  fontFamily: "'Alfa Slab One', serif",
+                  fontSize: "clamp(14px, 2vw, 20px)",
+                  color: "#2B3EBF",
+                  letterSpacing: "0.04em",
+                }}>199K</span>
               </div>
             </div>
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(8px, 0.9vw, 10px)", color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.15em", marginTop: "18px" }}>Until 20 Apr</div>
           </div>
         </div>
       </div>
@@ -294,7 +319,7 @@ const TalkNTalesRegisterPage = () => {
   const [formData, setFormData] = useState<FormData>({
     fullName: "", email: "", whatsapp: "", instagram: "", linkedin: "",
     businessName: "", industry: "",
-    topicInterest: [], // ← now an array
+    topicInterest: [],
     mainReason: "",
     lookingFor: [], agreeToTerms: false, agreeToShare: false,
   });
@@ -323,7 +348,7 @@ const TalkNTalesRegisterPage = () => {
           full_name: formData.fullName, email: formData.email, phone: formData.whatsapp,
           instagram: formData.instagram, linkedin_url: formData.linkedin, company: formData.businessName,
           company_industry: formData.industry,
-          topic_interest: formData.topicInterest, // ← now sends array
+          topic_interest: formData.topicInterest,
           reason: formData.mainReason, looking_for: formData.lookingFor, agree_to_share_data: formData.agreeToShare,
         }),
       });
@@ -398,7 +423,8 @@ const TalkNTalesRegisterPage = () => {
             </div>
             <div style={{ position: "relative", display: "inline-block", lineHeight: 0.88 }}>
               <span aria-hidden="true" style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(52px, 10vw, 110px)", textTransform: "uppercase", letterSpacing: "0.02em", color: "#E8C12A", WebkitTextStroke: "5px #E8C12A", position: "absolute", top: "5px", left: "5px", zIndex: 0, whiteSpace: "nowrap", display: "block" }}>Register</span>
-              <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(52px, 10vw, 110px)", textTransform: "uppercase", letterSpacing: "0.02em", color: "#fff", WebkitTextStroke: "4px #2B3EBF", position: "relative", zIndex: 1, whiteSpace: "nowrap", display: "block", // @ts-ignore
+              <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(52px, 10vw, 110px)", textTransform: "uppercase", letterSpacing: "0.02em", color: "#fff", WebkitTextStroke: "4px #2B3EBF", position: "relative", zIndex: 1, whiteSpace: "nowrap", display: "block",
+              // @ts-ignore
               paintOrder: "stroke fill" }}>Register</span>
             </div>
           </div>
@@ -426,8 +452,6 @@ const TalkNTalesRegisterPage = () => {
               <RadioGroup label="Industry" name="industry" options={INDUSTRIES} value={formData.industry} onChange={(val) => setFormData((prev) => ({ ...prev, industry: val }))} required />
 
               <SectionDivider title="Your Interests" />
-
-              {/* ↓ CHANGED: was RadioGroup, now CheckboxGroup with multi-select */}
               <CheckboxGroup
                 label="Which discussions interest you at Talk N Tales?"
                 hint="You can pick more than one."
@@ -436,7 +460,6 @@ const TalkNTalesRegisterPage = () => {
                 onChange={(vals) => setFormData((prev) => ({ ...prev, topicInterest: vals }))}
                 required
               />
-
               <TextareaField label="What is your main reason for joining Talk N Tales?" name="mainReason" placeholder="Tell us briefly — be genuine, we read every submission." value={formData.mainReason} onChange={handleChange} required rows={4} />
               <CheckboxGroup label="What are you currently looking for?" options={LOOKING_FOR_OPTIONS} values={formData.lookingFor} onChange={(vals) => setFormData((prev) => ({ ...prev, lookingFor: vals }))} required />
 
@@ -468,17 +491,19 @@ const TalkNTalesRegisterPage = () => {
                 {loading ? (<><span style={{ display: "inline-block", animation: "spin 0.8s linear infinite" }}>⟳</span>Submitting...</>) : ("Submit Registration →")}
               </button>
 
+              {/* Price display below submit — NO "Until 20 April" */}
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "14px", flexWrap: "wrap" }}>
                 <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "11px", color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: "0.18em", margin: 0 }}>
-                  ✦ Early bird until 20 April 2026
+                  ✦ Early Bird
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                   <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "12px", color: "rgba(0,0,0,0.3)", textDecoration: "line-through", textDecorationColor: "#E8121A", textDecorationThickness: "2px" }}>IDR 249K</span>
-                  <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "14px", color: "#E8121A", background: "#E8C12A", padding: "1px 8px", border: "2px solid #E8121A", transform: "rotate(-1deg)", display: "inline-block" }}>199K</span>
+                  <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "14px", color: "#2B3EBF", background: "#E8C12A", padding: "1px 8px", border: "2px solid #E8121A", transform: "rotate(-1deg)", display: "inline-block" }}>199K</span>
                 </div>
               </div>
             </form>
 
+            {/* Sidebar */}
             <aside className="tnt-sidebar" style={{ display: "none" }}>
               <div style={{ background: "#2B3EBF", border: "4px solid #E8C12A", padding: "24px", marginBottom: "20px" }}>
                 <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "10px", color: "#E8C12A", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "16px" }}>Event Details</div>
@@ -486,7 +511,6 @@ const TalkNTalesRegisterPage = () => {
                   { label: "Date", value: "Saturday, 9 May 2026" },
                   { label: "Time", value: "13.00 WIB – End" },
                   { label: "Location", value: "South Jakarta\n(TBA)" },
-                  { label: "Price", value: "IDR 199K\n(Early Bird)" },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ marginBottom: "14px" }}>
                     <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "9px", color: "rgba(232,193,42,0.6)", textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: "3px" }}>{label}</div>
@@ -502,10 +526,38 @@ const TalkNTalesRegisterPage = () => {
                   </div>
                 ))}
               </div>
-              <div style={{ background: "#E8121A", padding: "16px 20px", textAlign: "center" }}>
-                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "9px", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "6px" }}>Early Bird Until</div>
-                <div style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "20px", color: "#E8C12A", textTransform: "uppercase", letterSpacing: "0.04em" }}>20 April 2026</div>
-                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "8px", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "6px" }}>May vary depending on the price hike meter.</div>
+
+              {/* Sidebar price block — 249K strikethrough → 199K, NO "Until 20 April" */}
+              <div style={{ background: "#E8121A", padding: "20px 20px", textAlign: "center" }}>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "9px", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "10px" }}>Early Bird Price</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
+                  <span style={{
+                    fontFamily: "'Alfa Slab One', serif",
+                    fontSize: "18px",
+                    color: "rgba(255,255,255,0.45)",
+                    textDecoration: "line-through",
+                    textDecorationColor: "#E8C12A",
+                    textDecorationThickness: "3px",
+                    letterSpacing: "0.04em",
+                  }}>IDR 249K</span>
+                  <div style={{
+                    background: "#E8C12A",
+                    border: "3px solid #fff",
+                    padding: "4px 12px",
+                    transform: "rotate(-2deg)",
+                    display: "inline-block",
+                  }}>
+                    <span style={{
+                      fontFamily: "'Alfa Slab One', serif",
+                      fontSize: "20px",
+                      color: "#2B3EBF",
+                      letterSpacing: "0.04em",
+                    }}>199K</span>
+                  </div>
+                </div>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "8px", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.15em", marginTop: "10px" }}>
+                  Price may vary depending on the price hike meter.
+                </div>
               </div>
             </aside>
           </div>
