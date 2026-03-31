@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import TalkNTalesRegisterPage from "@/app/ui/components/tntform";
 import Footer from "@/app/ui/footer";
+import { Analytics } from "@vercel/analytics/next";
 
 export default function RegistrationFormPage() {
   useEffect(() => {
@@ -11,6 +12,7 @@ export default function RegistrationFormPage() {
 
   return (
     <>
+    <Analytics />
       <TalkNTalesRegisterPage />
       <Footer />
     </>
