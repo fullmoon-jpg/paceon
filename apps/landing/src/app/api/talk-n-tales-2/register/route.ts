@@ -2,8 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { transporter } from '@/lib/utils/emailservice';
-import { talkNTales2InvoiceEmailTemplate } from '@/app/ui/components/emailtamplatetnt2invoice';
-import { generateTNT2InvoicePDF } from '@/lib/utils/tnt2-invoice-pdf';
+import { talkNTales2RegistrationConfirmationTemplate } from '@/app/ui/components/emailtamplatetnt2';
 
 // ─── Allowed enum values ──────────────────────────────────────────────────────
 
@@ -50,7 +49,6 @@ const LIMITS = {
   linkedin_url:     { min: 10, max: 200 },
   company:          { min: 1,  max: 100 },
   company_industry: { min: 1,  max: 80  },
-  topic_interest:   { min: 1,  max: 120 },
   reason:           { min: 10, max: 1000 },
 } as const;
 
@@ -72,16 +70,6 @@ const INSTAGRAM_RE = /^@?[a-zA-Z0-9._]{2,30}$/;
 const PHONE_RE     = /^[+\d\s\-().]{7,20}$/;
 const LINKEDIN_RE  = /^(https?:\/\/)?(www\.)?linkedin\.com\/(in\/)?[a-zA-Z0-9\-_%]{3,100}\/?$/;
 
-// ─── Invoice number generator ─────────────────────────────────────────────────
-// Format: TNT2-YYYYMMDD-XXXX (date + 4 random hex chars)
-
-function generateInvoiceNumber(): string {
-  const now = new Date();
-  const date = now.toISOString().slice(0, 10).replace(/-/g, '');
-  const rand = Math.random().toString(16).slice(2, 6).toUpperCase();
-  return `TNT2-${date}-${rand}`;
-}
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ApiResponse {
@@ -99,10 +87,10 @@ interface CleanRegistration {
   linkedin_url: string;
   company: string;
   company_industry: string;
-  topic_interest: string;
+  topic_interest: string[]; // ← now array
   reason: string;
   looking_for: string[];
-  invoice_number: string;
+  agree_to_share_data: boolean;
   status: string;
   created_at: string;
 }
@@ -145,13 +133,12 @@ export async function POST(
     const linkedin_url     = sanitize(raw.linkedin_url);
     const company          = sanitize(raw.company);
     const company_industry = sanitize(raw.company_industry);
-    const topic_interest   = sanitize(raw.topic_interest);
     const reason           = sanitize(raw.reason);
 
-    // Length checks
+    // Length checks (topic_interest removed from scalar limits — handled as array below)
     for (const [field, val] of Object.entries({
       full_name, email, phone, instagram, linkedin_url,
-      company, company_industry, topic_interest, reason,
+      company, company_industry, reason,
     }) as [keyof typeof LIMITS, string][]) {
       const { min, max } = LIMITS[field];
       if (!val || val.length < min) {
@@ -176,15 +163,37 @@ export async function POST(
       return bad('Invalid LinkedIn URL. Expected: linkedin.com/in/yourname');
     }
 
-    // Enum checks
+    // Industry enum check
     if (!ALLOWED_INDUSTRIES.has(company_industry)) {
       return bad('Invalid industry value.');
     }
-    if (!ALLOWED_TOPIC_INTERESTS.has(topic_interest)) {
-      return bad('Invalid topic interest value.');
+
+    // ── 3. Validate topic_interest (now an array) ──────────────────────────────
+
+    const rawTopicInterest = raw.topic_interest;
+
+    if (!Array.isArray(rawTopicInterest)) {
+      return bad('"topic_interest" must be an array.');
+    }
+    if (rawTopicInterest.length === 0) {
+      return bad('"topic_interest" must have at least one selection.');
+    }
+    if (rawTopicInterest.length > ALLOWED_TOPIC_INTERESTS.size) {
+      return bad('"topic_interest" contains too many values.');
     }
 
-    // ── 3. Validate looking_for ────────────────────────────────────────────────
+    const topic_interest: string[] = [];
+    for (const item of rawTopicInterest) {
+      if (typeof item !== 'string') return bad('"topic_interest" items must be strings.');
+      const clean = sanitize(item);
+      if (!ALLOWED_TOPIC_INTERESTS.has(clean)) {
+        return bad(`Invalid "topic_interest" value: "${clean}"`);
+      }
+      topic_interest.push(clean);
+    }
+    const topic_interest_deduped = [...new Set(topic_interest)];
+
+    // ── 4. Validate looking_for ────────────────────────────────────────────────
 
     const rawLookingFor = raw.looking_for;
 
@@ -209,13 +218,14 @@ export async function POST(
     }
     const looking_for_deduped = [...new Set(looking_for)];
 
-    // ── 4. Generate invoice number ─────────────────────────────────────────────
+    // ── 5. Validate agree_to_share_data ───────────────────────────────────────
 
-    const invoice_number = generateInvoiceNumber();
-    const due_date       = '30 March 2026';
-    const amount         = 'IDR 199.000';
+    const agree_to_share_data =
+      typeof raw.agree_to_share_data === 'boolean'
+        ? raw.agree_to_share_data
+        : false;
 
-    // ── 5. Build DB record ────────────────────────────────────────────────────
+    // ── 6. Build DB record ─────────────────────────────────────────────────────
 
     const registrationData: CleanRegistration = {
       full_name,
@@ -225,17 +235,17 @@ export async function POST(
       linkedin_url,
       company,
       company_industry,
-      topic_interest,
+      topic_interest: topic_interest_deduped, // ← array
       reason,
       looking_for: looking_for_deduped,
-      invoice_number,
-      status: 'selected',       // community = auto-accepted
+      agree_to_share_data,
+      status: 'pending',
       created_at: new Date().toISOString(),
     };
 
-    // ── 6. Insert to Supabase ─────────────────────────────────────────────────
+    // ── 7. Insert to Supabase ─────────────────────────────────────────────────
 
-    const { data, error: supabaseError } = await supabase
+    const { error: supabaseError } = await supabase
       .from('talk_n_tales_2_registrations')
       .insert([registrationData])
       .select();
@@ -250,47 +260,27 @@ export async function POST(
       throw new Error(`Database error: ${supabaseError.message}`);
     }
 
-    // ── 7. Generate PDF invoice ───────────────────────────────────────────────
+    // ── 8. Build & send confirmation email ───────────────────────────────────
 
-    const pdfBuffer = await generateTNT2InvoicePDF({
+    const emailHtml = talkNTales2RegistrationConfirmationTemplate({
       name: full_name,
       email,
-      invoiceNumber: invoice_number,
-      amount,
-      dueDate: due_date,
+      eventDate: 'Saturday, 9 May 2026',
+      eventTime: '13.00 WIB – End',
+      eventLocation: 'South Jakarta (TBA)',
     });
-
-    // ── 8. Build email HTML ───────────────────────────────────────────────────
-
-    const emailHtml = talkNTales2InvoiceEmailTemplate({
-      name: full_name,
-      email,
-      invoiceNumber: invoice_number,
-      amount,
-      dueDate: due_date,
-    });
-
-    // ── 9. Send "You're In + Invoice" email with PDF attached ─────────────────
 
     await transporter.sendMail({
       from: '"PACE ON – Talk N Tales" <hi@paceon.id>',
       to: email,
-      subject: "You're In — Talk N Tales Vol. 2",
+      subject: "You're Registered — Talk N Tales Vol. 2",
       html: emailHtml,
-      attachments: [
-        {
-          filename: `TNT2-Invoice-${invoice_number}.pdf`,
-          content: pdfBuffer,
-          contentType: 'application/pdf',
-        },
-      ],
     });
 
     return NextResponse.json(
       {
         success: true,
-        message: 'Registration successful! Invoice sent to your email.',
-        data: { invoice_number },
+        message: 'Registration received! Check your email for confirmation.',
       },
       { status: 200 }
     );

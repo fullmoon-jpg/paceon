@@ -58,6 +58,11 @@ const LayeredWord = ({ text, size = "clamp(80px, 18vw, 160px)" }: { text: string
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
+const TOTAL_SEATS = 12;
+const SEATS_FILLED = 8; // ← update ini sesuai data real
+const seatsLeft = TOTAL_SEATS - SEATS_FILLED;
+const fillPct = Math.round((SEATS_FILLED / TOTAL_SEATS) * 100);
+
 const TalkNTalesHero = () => {
   const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
   const router = useRouter();
@@ -80,6 +85,9 @@ const TalkNTalesHero = () => {
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
   }, []);
+
+  const seatsLeft = TOTAL_SEATS - SEATS_FILLED;
+  const fillPct = Math.round((SEATS_FILLED / TOTAL_SEATS) * 100);
 
   const countdownUnit = (val: number, label: string) => (
     <div style={{ textAlign: "center" }}>
@@ -204,6 +212,49 @@ const TalkNTalesHero = () => {
             </span>
           </div>
 
+          {/* FOMO Badge — bottom left */}
+          <div
+            className="absolute"
+            style={{
+              left: "clamp(16px, 3.5vw, 48px)",
+              bottom: "clamp(60px, 12vh, 90px)",
+              zIndex: 10,
+              background: "#E8121A",
+              border: "4px solid #E8C12A",
+              padding: "clamp(10px, 1.5vh, 14px) clamp(12px, 1.8vw, 18px)",
+              width: "clamp(148px, 18vw, 196px)",
+              transform: "rotate(-2deg)",
+              boxShadow: "5px 5px 0px #E8C12A",
+            }}
+          >
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(9px, 1vw, 11px)", color: "#E8C12A", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "2px" }}>
+              Already joined
+            </div>
+            <div style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(34px, 5vw, 54px)", color: "#fff", lineHeight: 1 }}>
+              {SEATS_FILLED}
+            </div>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(9px, 1vw, 11px)", color: "rgba(255,255,255,0.8)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "8px" }}>
+              founders in
+            </div>
+
+            <div style={{ width: "100%", height: "2px", background: "#E8C12A", margin: "6px 0" }} />
+
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(8px, 0.85vw, 10px)", color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: "0.12em", marginBottom: "4px" }}>
+              Price hike meter
+            </div>
+            <div style={{ width: "100%", height: "8px", background: "rgba(255,255,255,0.2)", borderRadius: "4px", marginBottom: "4px", overflow: "hidden" }}>
+              <div style={{ height: "100%", width: `${fillPct}%`, background: "#E8C12A", borderRadius: "4px", transition: "width 1.2s ease-out" }} />
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(8px, 0.85vw, 10px)", color: "#E8C12A", textTransform: "uppercase", letterSpacing: "0.1em" }}>to next price</span>
+              <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(13px, 1.6vw, 17px)", color: "#fff" }}>{fillPct}%</span>
+            </div>
+
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(8px, 0.9vw, 10px)", color: "#E8C12A", textTransform: "uppercase", letterSpacing: "0.1em", marginTop: "8px", lineHeight: 1.4 }}>
+              ⚑ the higher this bar,<br />the sooner price jumps 💀
+            </div>
+          </div>
+
           {/* Badge */}
           <div
             style={{
@@ -255,7 +306,7 @@ const TalkNTalesHero = () => {
             </span>
           </div>
 
-          {/* CTA — navigates to registration form */}
+          {/* CTA */}
           <button
             onClick={() => router.push("/Talk-n-Tales/registrationform")}
             style={{

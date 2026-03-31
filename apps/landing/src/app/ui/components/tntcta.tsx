@@ -211,7 +211,7 @@ const TalkNTalesCTA = () => {
                   textAlign: "left",
                 }}
               >
-                GenZ Founders Only<br />Early Community Access
+                GenZ Founders Only<br />Early Bird
               </span>
             </div>
 
@@ -226,7 +226,7 @@ const TalkNTalesCTA = () => {
                 margin: 0,
               }}
             >
-              ✦ Early price until 30 March 2026 ✦
+              ✦ Early price until 20 April 2026 ✦
             </p>
           </div>
 
