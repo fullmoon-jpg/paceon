@@ -2,7 +2,7 @@
 import React from "react";
 
 const TOTAL_SEATS = 12;
-const SEATS_FILLED = 8;
+const SEATS_FILLED = 0;
 
 const LayeredWordAbout = ({
   text,
@@ -191,6 +191,8 @@ const TalkNTalesAbout = () => {
         }
       `}</style>
 
+      {/* ── Mobile FOMO — only visible on mobile, sits right after About ── */}
+      <MobileFomoSection />
       {/* ── About content ──────────────────────────────────── */}
       <div style={{ background: "#E8C12A", position: "relative", zIndex: 10 }}>
         <div className="tnt-section">
@@ -339,9 +341,6 @@ const TalkNTalesAbout = () => {
           </div>
         </div>
       </div>
-
-      {/* ── Mobile FOMO — only visible on mobile, sits right after About ── */}
-      <MobileFomoSection />
     </>
   );
 };

@@ -19,7 +19,7 @@ interface FormData {
 }
 
 const TOTAL_SEATS = 12;
-const SEATS_FILLED = 8;
+const SEATS_FILLED = 0;
 
 const INDUSTRIES = [
   "Technology","Creative & Media","E-commerce","Fashion & Lifestyle",

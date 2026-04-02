@@ -12,7 +12,7 @@ export default function RegistrationFormPage() {
 
   return (
     <>
-    <Analytics />
+      <Analytics />
       <TalkNTalesRegisterPage />
       <Footer />
     </>
