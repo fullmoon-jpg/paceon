@@ -22,6 +22,19 @@ const ALLOWED_INDUSTRIES = new Set([
   'Other',
 ]);
 
+const ALLOWED_ROLES = new Set([
+  'CEO',
+  'COO',
+  'CTO',
+  'CMO',
+  'CFO',
+  'Co-Founder',
+  'Founder',
+  'Managing Director',
+  'General Manager',
+  'Other',
+]);
+
 const ALLOWED_TOPIC_INTERESTS = new Set([
   'Navigating Investors & Raising Smart',
   "Scaling When It's Still Early",
@@ -49,6 +62,7 @@ const LIMITS = {
   linkedin_url:     { min: 10, max: 200 },
   company:          { min: 1,  max: 100 },
   company_industry: { min: 1,  max: 80  },
+  role:             { min: 2,  max: 50  },
   reason:           { min: 10, max: 1000 },
 } as const;
 
@@ -87,7 +101,8 @@ interface CleanRegistration {
   linkedin_url: string;
   company: string;
   company_industry: string;
-  topic_interest: string[]; // ← now array
+  role: string;
+  topic_interest: string[];
   reason: string;
   looking_for: string[];
   agree_to_share_data: boolean;
@@ -133,12 +148,13 @@ export async function POST(
     const linkedin_url     = sanitize(raw.linkedin_url);
     const company          = sanitize(raw.company);
     const company_industry = sanitize(raw.company_industry);
+    const role             = sanitize(raw.role);
     const reason           = sanitize(raw.reason);
 
-    // Length checks (topic_interest removed from scalar limits — handled as array below)
+    // Length checks
     for (const [field, val] of Object.entries({
       full_name, email, phone, instagram, linkedin_url,
-      company, company_industry, reason,
+      company, company_industry, role, reason,
     }) as [keyof typeof LIMITS, string][]) {
       const { min, max } = LIMITS[field];
       if (!val || val.length < min) {
@@ -163,12 +179,15 @@ export async function POST(
       return bad('Invalid LinkedIn URL. Expected: linkedin.com/in/yourname');
     }
 
-    // Industry enum check
+    // Enum checks
     if (!ALLOWED_INDUSTRIES.has(company_industry)) {
       return bad('Invalid industry value.');
     }
+    if (!ALLOWED_ROLES.has(role)) {
+      return bad('Invalid role value.');
+    }
 
-    // ── 3. Validate topic_interest (now an array) ──────────────────────────────
+    // ── 3. Validate topic_interest (array) ────────────────────────────────────
 
     const rawTopicInterest = raw.topic_interest;
 
@@ -235,7 +254,8 @@ export async function POST(
       linkedin_url,
       company,
       company_industry,
-      topic_interest: topic_interest_deduped, // ← array
+      role,
+      topic_interest: topic_interest_deduped,
       reason,
       looking_for: looking_for_deduped,
       agree_to_share_data,

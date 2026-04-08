@@ -151,7 +151,7 @@ const CTASection = memo(({
                 transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.5 : 0 }}
                 className="font-body text-sm sm:text-base lg:text-lg text-[#3f3e3d]/80 mb-2 leading-relaxed"
               >
-                A space for young people to learn business. Seats Available. Save yours now!
+                This is the only space in Indonesia where Gen-Z Founders can truly be themselves and collaborate with each other
               </motion.p>
 
               <motion.p
@@ -162,7 +162,7 @@ const CTASection = memo(({
                 transition={{ duration: shouldAnimate ? 0.6 : 0, delay: shouldAnimate ? 0.6 : 0 }}
                 className="font-body text-sm sm:text-base text-[#3f3e3d] font-semibold"
               >
-                #1 LOOP Series will discuss about "How To Create Content Like Creator".
+                Talk n Tales #2.
               </motion.p>
             </div>
 

@@ -11,6 +11,7 @@ interface FormData {
   linkedin: string;
   businessName: string;
   industry: string;
+  role: string;
   topicInterest: string[];
   mainReason: string;
   lookingFor: string[];
@@ -18,14 +19,27 @@ interface FormData {
   agreeToShare: boolean;
 }
 
-const TOTAL_SEATS = 12;
-const SEATS_FILLED = 5;
+const TOTAL_SEATS = 30;
+const SEATS_FILLED = 11;
 
 const INDUSTRIES = [
   "Technology","Creative & Media","E-commerce","Fashion & Lifestyle",
   "Food & Beverage","Education","Sustainability & Climate","Social Impact / NGO",
   "Finance & Fintech","Legal & Compliance","Health & Wellness",
   "Professional Services & Consulting","Other",
+];
+
+const ROLES = [
+  "CEO",
+  "COO",
+  "CTO",
+  "CMO",
+  "CFO",
+  "Co-Founder",
+  "Founder",
+  "Managing Director",
+  "General Manager",
+  "Other",
 ];
 
 const TOPIC_INTERESTS = [
@@ -151,13 +165,13 @@ const TextareaField = ({ label, name, placeholder, value, onChange, required, ro
   </div>
 );
 
-const RadioGroup = ({ label, name, options, value, onChange, required }: {
+const RadioGroup = ({ label, name, options, value, onChange, required, columns }: {
   label: string; name: keyof FormData; options: string[]; value: string;
-  onChange: (val: string) => void; required?: boolean;
+  onChange: (val: string) => void; required?: boolean; columns?: boolean;
 }) => (
   <div style={{ marginBottom: "28px" }}>
     <FieldLabel required={required}>{label}</FieldLabel>
-    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+    <div style={{ display: "grid", gridTemplateColumns: columns ? "repeat(auto-fill, minmax(160px, 1fr))" : "1fr", gap: "10px" }}>
       {options.map((opt) => {
         const selected = value === opt;
         return (
@@ -254,7 +268,6 @@ const FomoBar = () => {
   return (
     <div style={{ background: "#1a2d9e", borderBottom: "4px solid #E8C12A", padding: "20px clamp(20px, 6vw, 80px)" }}>
       <div style={{ maxWidth: "1200px", margin: "0 auto", display: "flex", flexWrap: "wrap", alignItems: "center", gap: "clamp(16px, 3vw, 40px)" }}>
-        {/* Seats filled */}
         <div style={{ display: "flex", alignItems: "baseline", gap: "10px", flexShrink: 0 }}>
           <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(36px, 6vw, 52px)", color: "#fff", lineHeight: 1 }}>{SEATS_FILLED}</span>
           <div>
@@ -264,7 +277,6 @@ const FomoBar = () => {
           <div style={{ width: "2px", height: "40px", background: "rgba(232,193,42,0.4)", marginLeft: "6px" }} />
         </div>
 
-        {/* Price hike meter */}
         <div style={{ flex: 1, minWidth: "180px" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
             <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(9px, 1vw, 11px)", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.15em" }}>🔥 To next price</span>
@@ -276,22 +288,10 @@ const FomoBar = () => {
           <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "clamp(9px, 0.9vw, 10px)", color: "rgba(255,255,255,0.45)", textTransform: "uppercase", letterSpacing: "0.12em", marginTop: "5px" }}>Fuller bar = sooner price jumps</div>
         </div>
 
-        {/* Price — strikethrough 249K → 199K badge, NO "Until 20 Apr" */}
         <div style={{ flexShrink: 0, display: "flex", alignItems: "center", gap: "10px" }}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(9px, 1vw, 11px)", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: "6px" }}>Early Bird</div>
+            <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "clamp(9px, 1vw, 11px)", color: "rgba(255,255,255,0.5)", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: "6px" }}>Pre-Sale 1</div>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              {/* Strikethrough original price */}
-              <span style={{
-                fontFamily: "'Alfa Slab One', serif",
-                fontSize: "clamp(16px, 2.5vw, 22px)",
-                color: "rgba(255,255,255,0.35)",
-                textDecoration: "line-through",
-                textDecorationColor: "#E8121A",
-                textDecorationThickness: "3px",
-                letterSpacing: "0.04em",
-              }}>IDR 249K</span>
-              {/* Badge with current price */}
               <div style={{
                 background: "#E8C12A",
                 border: "3px solid #E8121A",
@@ -304,7 +304,7 @@ const FomoBar = () => {
                   fontSize: "clamp(14px, 2vw, 20px)",
                   color: "#2B3EBF",
                   letterSpacing: "0.04em",
-                }}>199K</span>
+                }}>249K</span>
               </div>
             </div>
           </div>
@@ -318,7 +318,7 @@ const FomoBar = () => {
 const TalkNTalesRegisterPage = () => {
   const [formData, setFormData] = useState<FormData>({
     fullName: "", email: "", whatsapp: "", instagram: "", linkedin: "",
-    businessName: "", industry: "",
+    businessName: "", industry: "", role: "",
     topicInterest: [],
     mainReason: "",
     lookingFor: [], agreeToTerms: false, agreeToShare: false,
@@ -338,6 +338,7 @@ const TalkNTalesRegisterPage = () => {
     e.preventDefault();
     if (formData.lookingFor.length === 0) { setError("Please select at least one option for what you're looking for."); return; }
     if (formData.topicInterest.length === 0) { setError("Please select at least one discussion topic you're interested in."); return; }
+    if (!formData.role) { setError("Please select your role."); return; }
     setError(null);
     setLoading(true);
     try {
@@ -345,11 +346,18 @@ const TalkNTalesRegisterPage = () => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          full_name: formData.fullName, email: formData.email, phone: formData.whatsapp,
-          instagram: formData.instagram, linkedin_url: formData.linkedin, company: formData.businessName,
+          full_name: formData.fullName,
+          email: formData.email,
+          phone: formData.whatsapp,
+          instagram: formData.instagram,
+          linkedin_url: formData.linkedin,
+          company: formData.businessName,
           company_industry: formData.industry,
+          role: formData.role,
           topic_interest: formData.topicInterest,
-          reason: formData.mainReason, looking_for: formData.lookingFor, agree_to_share_data: formData.agreeToShare,
+          reason: formData.mainReason,
+          looking_for: formData.lookingFor,
+          agree_to_share_data: formData.agreeToShare,
         }),
       });
       const data = await res.json();
@@ -449,7 +457,23 @@ const TalkNTalesRegisterPage = () => {
               <div className="tnt-form-grid">
                 <InputField label="Business / Startup Name" name="businessName" placeholder="e.g. Kopiku, Toko Kreatif" value={formData.businessName} onChange={handleChange} required />
               </div>
-              <RadioGroup label="Industry" name="industry" options={INDUSTRIES} value={formData.industry} onChange={(val) => setFormData((prev) => ({ ...prev, industry: val }))} required />
+              <RadioGroup
+                label="Industry"
+                name="industry"
+                options={INDUSTRIES}
+                value={formData.industry}
+                onChange={(val) => setFormData((prev) => ({ ...prev, industry: val }))}
+                required
+              />
+              <RadioGroup
+                label="Your Role"
+                name="role"
+                options={ROLES}
+                value={formData.role}
+                onChange={(val) => setFormData((prev) => ({ ...prev, role: val }))}
+                required
+                columns
+              />
 
               <SectionDivider title="Your Interests" />
               <CheckboxGroup
@@ -491,14 +515,12 @@ const TalkNTalesRegisterPage = () => {
                 {loading ? (<><span style={{ display: "inline-block", animation: "spin 0.8s linear infinite" }}>⟳</span>Submitting...</>) : ("Submit Registration →")}
               </button>
 
-              {/* Price display below submit — NO "Until 20 April" */}
               <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "14px", flexWrap: "wrap" }}>
                 <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "11px", color: "rgba(0,0,0,0.35)", textTransform: "uppercase", letterSpacing: "0.18em", margin: 0 }}>
-                  ✦ Early Bird
+                  ✦ Pre-Sale 1
                 </p>
                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                  <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "12px", color: "rgba(0,0,0,0.3)", textDecoration: "line-through", textDecorationColor: "#E8121A", textDecorationThickness: "2px" }}>IDR 249K</span>
-                  <span style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "14px", color: "#2B3EBF", background: "#E8C12A", padding: "1px 8px", border: "2px solid #E8121A", transform: "rotate(-1deg)", display: "inline-block" }}>199K</span>
+                  <span style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "12px", color: "rgba(0,0,0,0.3)", textDecorationColor: "#E8121A", textDecorationThickness: "2px" }}>IDR 249K</span>
                 </div>
               </div>
             </form>
@@ -527,19 +549,9 @@ const TalkNTalesRegisterPage = () => {
                 ))}
               </div>
 
-              {/* Sidebar price block — 249K strikethrough → 199K, NO "Until 20 April" */}
               <div style={{ background: "#E8121A", padding: "20px 20px", textAlign: "center" }}>
-                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "9px", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "10px" }}>Early Bird Price</div>
+                <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "9px", color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "10px" }}>Pre-Sale 1 Price</div>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
-                  <span style={{
-                    fontFamily: "'Alfa Slab One', serif",
-                    fontSize: "18px",
-                    color: "rgba(255,255,255,0.45)",
-                    textDecoration: "line-through",
-                    textDecorationColor: "#E8C12A",
-                    textDecorationThickness: "3px",
-                    letterSpacing: "0.04em",
-                  }}>IDR 249K</span>
                   <div style={{
                     background: "#E8C12A",
                     border: "3px solid #fff",
@@ -552,7 +564,7 @@ const TalkNTalesRegisterPage = () => {
                       fontSize: "20px",
                       color: "#2B3EBF",
                       letterSpacing: "0.04em",
-                    }}>199K</span>
+                    }}>249K</span>
                   </div>
                 </div>
                 <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "8px", color: "rgba(255,255,255,0.6)", textTransform: "uppercase", letterSpacing: "0.15em", marginTop: "10px" }}>

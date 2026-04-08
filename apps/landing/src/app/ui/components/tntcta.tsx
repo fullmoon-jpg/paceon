@@ -196,7 +196,7 @@ const TalkNTalesCTA = () => {
                   whiteSpace: "nowrap",
                 }}
               >
-                IDR 199K
+                IDR 249K
               </span>
               <div style={{ width: "2px", height: "18px", background: "rgba(255,255,255,0.25)", flexShrink: 0 }} />
               <span
@@ -211,7 +211,7 @@ const TalkNTalesCTA = () => {
                   textAlign: "left",
                 }}
               >
-                GenZ Founders Only<br />Early Bird
+                GenZ Founders Only<br />Pre-sale 1
               </span>
             </div>
 
@@ -226,7 +226,7 @@ const TalkNTalesCTA = () => {
                 margin: 0,
               }}
             >
-              ✦ Early price until 20 April 2026 ✦
+              ✦ Normal Price until Price Hike Meter 100% ✦
             </p>
           </div>
 
