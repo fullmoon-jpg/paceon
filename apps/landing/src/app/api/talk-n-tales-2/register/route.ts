@@ -266,8 +266,8 @@ export async function POST(
       name: full_name,
       email,
       eventDate: 'Saturday, 9 May 2026',
-      eventTime: '13.00 WIB – End',
-      eventLocation: 'South Jakarta (TBA)',
+      eventTime: '14.00 – 19.30 WIB',
+      eventLocation: 'Mantra Space, South Jakarta',
     });
 
     await transporter.sendMail({

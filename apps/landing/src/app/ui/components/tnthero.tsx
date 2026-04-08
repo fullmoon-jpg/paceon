@@ -59,7 +59,7 @@ const LayeredWord = ({ text, size = "clamp(80px, 18vw, 160px)" }: { text: string
 const pad = (n: number) => String(n).padStart(2, "0");
 
 const TOTAL_SEATS = 12;
-const SEATS_FILLED = 0;
+const SEATS_FILLED = 5;
 
 /* ─── FOMO Badge — desktop only (absolute in hero) */
 const FomoBadgeContent = () => {
@@ -226,7 +226,7 @@ const TalkNTalesHero = () => {
                 9 <span style={{ color: "#E8C12A" }}>•</span> Mei <span style={{ color: "#E8C12A" }}>•</span> 2026
               </div>
               <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "clamp(10px, 1.2vw, 14px)", color: "rgba(255,255,255,0.75)", textTransform: "uppercase", letterSpacing: "0.15em", marginTop: "4px" }}>
-                Somewhere in Jakarta Selatan
+                Mantra Space, Jakarta Selatan
               </div>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: "clamp(12px, 2vw, 24px)" }}>

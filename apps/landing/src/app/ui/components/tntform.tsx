@@ -509,8 +509,8 @@ const TalkNTalesRegisterPage = () => {
                 <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 900, fontSize: "10px", color: "#E8C12A", textTransform: "uppercase", letterSpacing: "0.2em", marginBottom: "16px" }}>Event Details</div>
                 {[
                   { label: "Date", value: "Saturday, 9 May 2026" },
-                  { label: "Time", value: "13.00 WIB – End" },
-                  { label: "Location", value: "South Jakarta\n(TBA)" },
+                  { label: "Time", value: "14.00 – 19.30 WIB" },
+                  { label: "Location", value: "Mantra Space\nJakarta Selatan" },
                 ].map(({ label, value }) => (
                   <div key={label} style={{ marginBottom: "14px" }}>
                     <div style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "9px", color: "rgba(232,193,42,0.6)", textTransform: "uppercase", letterSpacing: "0.18em", marginBottom: "3px" }}>{label}</div>
@@ -520,7 +520,7 @@ const TalkNTalesRegisterPage = () => {
               </div>
               <div style={{ background: "#E8C12A", border: "4px solid #2B3EBF", padding: "24px", marginBottom: "20px" }}>
                 <div style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "16px", color: "#2B3EBF", textTransform: "uppercase", marginBottom: "14px" }}>Highlights</div>
-                {["Roundtable with Senior Founder","Curated Founder Networking","Speed Networking Session","Group Networking Game"].map((item) => (
+                {["Group Game Session","Curated Speed Networking","Senior Founder Roundtable","Connection & Collaboration Exploration"].map((item) => (
                   <div key={item} style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "12px", color: "#2B3EBF", marginBottom: "8px", display: "flex", alignItems: "flex-start", gap: "8px" }}>
                     <span style={{ color: "#E8121A", fontWeight: 900, flexShrink: 0 }}>✦</span>{item}
                   </div>
