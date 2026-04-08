@@ -407,7 +407,7 @@ const MentorLineup = () => {
                   letterSpacing: "0.15em",
                 }}
               >
-                Their identities drop on event day ✦
+                Their identities will drop soon ✦
               </div>
             </div>
 
