@@ -140,7 +140,7 @@ const CTASection = memo(({
             {/* Left: Text Content */}
             <div className="flex-1">
               <h3 className="font-brand text-xl sm:text-2xl md:text-3xl lg:text-4xl text-[#3f3e3d] mb-4 sm:mb-6 uppercase">
-                Upcoming Event — LOOP
+                Upcoming Event — Talk n Tales #2
               </h3>
 
               <motion.p

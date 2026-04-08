@@ -22,19 +22,6 @@ const ALLOWED_INDUSTRIES = new Set([
   'Other',
 ]);
 
-const ALLOWED_ROLES = new Set([
-  'CEO',
-  'COO',
-  'CTO',
-  'CMO',
-  'CFO',
-  'Co-Founder',
-  'Founder',
-  'Managing Director',
-  'General Manager',
-  'Other',
-]);
-
 const ALLOWED_TOPIC_INTERESTS = new Set([
   'Navigating Investors & Raising Smart',
   "Scaling When It's Still Early",
@@ -62,7 +49,7 @@ const LIMITS = {
   linkedin_url:     { min: 10, max: 200 },
   company:          { min: 1,  max: 100 },
   company_industry: { min: 1,  max: 80  },
-  role:             { min: 2,  max: 50  },
+  role:             { min: 2,  max: 80  },
   reason:           { min: 10, max: 1000 },
 } as const;
 
@@ -179,12 +166,9 @@ export async function POST(
       return bad('Invalid LinkedIn URL. Expected: linkedin.com/in/yourname');
     }
 
-    // Enum checks
+    // Enum check — industry only (role is now free-text)
     if (!ALLOWED_INDUSTRIES.has(company_industry)) {
       return bad('Invalid industry value.');
-    }
-    if (!ALLOWED_ROLES.has(role)) {
-      return bad('Invalid role value.');
     }
 
     // ── 3. Validate topic_interest (array) ────────────────────────────────────

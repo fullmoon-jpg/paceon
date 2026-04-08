@@ -29,19 +29,6 @@ const INDUSTRIES = [
   "Professional Services & Consulting","Other",
 ];
 
-const ROLES = [
-  "CEO",
-  "COO",
-  "CTO",
-  "CMO",
-  "CFO",
-  "Co-Founder",
-  "Founder",
-  "Managing Director",
-  "General Manager",
-  "Other",
-];
-
 const TOPIC_INTERESTS = [
   "Navigating Investors & Raising Smart",
   "Scaling When It's Still Early",
@@ -165,13 +152,13 @@ const TextareaField = ({ label, name, placeholder, value, onChange, required, ro
   </div>
 );
 
-const RadioGroup = ({ label, name, options, value, onChange, required, columns }: {
+const RadioGroup = ({ label, name, options, value, onChange, required }: {
   label: string; name: keyof FormData; options: string[]; value: string;
-  onChange: (val: string) => void; required?: boolean; columns?: boolean;
+  onChange: (val: string) => void; required?: boolean;
 }) => (
   <div style={{ marginBottom: "28px" }}>
     <FieldLabel required={required}>{label}</FieldLabel>
-    <div style={{ display: "grid", gridTemplateColumns: columns ? "repeat(auto-fill, minmax(160px, 1fr))" : "1fr", gap: "10px" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px" }}>
       {options.map((opt) => {
         const selected = value === opt;
         return (
@@ -338,7 +325,7 @@ const TalkNTalesRegisterPage = () => {
     e.preventDefault();
     if (formData.lookingFor.length === 0) { setError("Please select at least one option for what you're looking for."); return; }
     if (formData.topicInterest.length === 0) { setError("Please select at least one discussion topic you're interested in."); return; }
-    if (!formData.role) { setError("Please select your role."); return; }
+    if (!formData.role) { setError("Please fill in your role."); return; }
     setError(null);
     setLoading(true);
     try {
@@ -453,9 +440,25 @@ const TalkNTalesRegisterPage = () => {
                 <InputField label="LinkedIn Profile" name="linkedin" placeholder="linkedin.com/in/yourname" value={formData.linkedin} onChange={handleChange} required />
               </div>
 
+              {/* ── Business Info — Business Name + Role side by side, then Industry full-width ── */}
               <SectionDivider title="Business Info" />
               <div className="tnt-form-grid">
-                <InputField label="Business / Startup Name" name="businessName" placeholder="e.g. Kopiku, Toko Kreatif" value={formData.businessName} onChange={handleChange} required />
+                <InputField
+                  label="Business / Startup Name"
+                  name="businessName"
+                  placeholder="e.g. Kopiku, Toko Kreatif"
+                  value={formData.businessName}
+                  onChange={handleChange}
+                  required
+                />
+                <InputField
+                  label="Your Role"
+                  name="role"
+                  placeholder="e.g. Founder, CEO, Head of Marketing"
+                  value={formData.role}
+                  onChange={handleChange}
+                  required
+                />
               </div>
               <RadioGroup
                 label="Industry"
@@ -464,15 +467,6 @@ const TalkNTalesRegisterPage = () => {
                 value={formData.industry}
                 onChange={(val) => setFormData((prev) => ({ ...prev, industry: val }))}
                 required
-              />
-              <RadioGroup
-                label="Your Role"
-                name="role"
-                options={ROLES}
-                value={formData.role}
-                onChange={(val) => setFormData((prev) => ({ ...prev, role: val }))}
-                required
-                columns
               />
 
               <SectionDivider title="Your Interests" />
