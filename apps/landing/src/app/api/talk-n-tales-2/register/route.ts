@@ -178,8 +178,8 @@ export async function POST(
     if (!Array.isArray(rawTopicInterest)) {
       return bad('"topic_interest" must be an array.');
     }
-    if (rawTopicInterest.length === 0) {
-      return bad('"topic_interest" must have at least one selection.');
+    if (rawTopicInterest.length < 2) {
+      return bad('"topic_interest" must have at least 2 selections.');
     }
     if (rawTopicInterest.length > ALLOWED_TOPIC_INTERESTS.size) {
       return bad('"topic_interest" contains too many values.');

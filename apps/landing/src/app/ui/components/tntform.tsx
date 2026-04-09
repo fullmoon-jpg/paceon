@@ -20,7 +20,7 @@ interface FormData {
 }
 
 const TOTAL_SEATS = 30;
-const SEATS_FILLED = 11;
+const SEATS_FILLED = 12;
 
 const INDUSTRIES = [
   "Technology","Creative & Media","E-commerce","Fashion & Lifestyle",
@@ -324,7 +324,7 @@ const TalkNTalesRegisterPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.lookingFor.length === 0) { setError("Please select at least one option for what you're looking for."); return; }
-    if (formData.topicInterest.length === 0) { setError("Please select at least one discussion topic you're interested in."); return; }
+    if (formData.topicInterest.length < 2) { setError("Please select at least 2 discussion topics you're interested in."); return; }
     if (!formData.role) { setError("Please fill in your role."); return; }
     setError(null);
     setLoading(true);
@@ -472,7 +472,7 @@ const TalkNTalesRegisterPage = () => {
               <SectionDivider title="Your Interests" />
               <CheckboxGroup
                 label="Which discussions interest you at Talk N Tales?"
-                hint="You can pick more than one."
+                hint="Pick at least 2."
                 options={TOPIC_INTERESTS}
                 values={formData.topicInterest}
                 onChange={(vals) => setFormData((prev) => ({ ...prev, topicInterest: vals }))}
