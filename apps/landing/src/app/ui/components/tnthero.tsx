@@ -58,8 +58,8 @@ const LayeredWord = ({ text, size = "clamp(80px, 18vw, 160px)" }: { text: string
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
-const TOTAL_SEATS = 30;
-const SEATS_FILLED = 12;
+const TOTAL_SEATS = 32;
+const SEATS_FILLED = 15;
 
 /* ─── FOMO Badge — desktop only (absolute in hero) */
 const FomoBadgeContent = () => {
