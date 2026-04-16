@@ -29,7 +29,7 @@ const CTASection = memo(({
   };
 
   const handleTalkNTalesClick = () => {
-    router.push('/talk-n-tales');
+    router.push('/Talk-n-Tales');
   };
 
   const fadeInVariant = {

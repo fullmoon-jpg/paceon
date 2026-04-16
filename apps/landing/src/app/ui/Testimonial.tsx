@@ -71,7 +71,7 @@ const TestimonialCTASection = ({
   };
 
   const handleTalkNTalesClick = () => {
-    window.location.href = '/LOOP';
+    window.location.href = '/Talk-n-Tales';
   };
 
   return (
