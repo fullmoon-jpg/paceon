@@ -161,7 +161,7 @@ export function talkNTales2RegistrationConfirmationTemplate({
           <tr>
             <td style="background:#E8121A;padding:20px 40px;text-align:center;">
               <span style="font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;font-weight:900;font-size:10px;color:rgba(255,255,255,0.9);text-transform:uppercase;letter-spacing:0.2em;">
-                ✦ We’ll let you know if you’re selected by April 20, 2026. ✦
+                ✦ We’ll let you know if you’re selected by April 24, 2026. ✦
               </span>
             </td>
           </tr>

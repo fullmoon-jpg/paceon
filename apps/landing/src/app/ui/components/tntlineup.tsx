@@ -1,13 +1,14 @@
 "use client";
 import React, { useState } from "react";
+import Image from "next/image";
 
 const MENTORS = [
-  { id: 1, table: "Table 01", theme: "Navigating Investors and Raising Smart" },
-  { id: 2, table: "Table 02", theme: "Scaling When It's Still Early" },
+  { id: 1, table: "Table 01", theme: "Building Partnerships That Actually Work", name: "Dinno Ardiansyah", photo: "/images/dinno.jpg", tagline: "The Man behind Minutes of Manager, Muda Mudahan, and MURKA." },
+  { id: 2, table: "Table 02", theme: "Scaling When It's Still Early", name: "Novan Adrian", photo: "/images/novann.png", tagline: "The Tech Mind Empowering Millions of UMKM Through Qasir.id" },
   { id: 3, table: "Table 03", theme: "Building Brands People Actually Want" },
   { id: 4, table: "Table 04", theme: "Running a Business That's Also Art" },
   { id: 5, table: "Table 05", theme: "Leading Yourself, Building for Others" },
-  { id: 6, table: "Table 06", theme: "Building Partnerships That Actually Work" },
+  { id: 6, table: "Table 06", theme: "Navigating Investors and Raising Smart" },
 ];
 
 const CARD_COLORS = [
@@ -75,6 +76,7 @@ const MentorCard = ({
 }) => {
   const [hovered, setHovered] = useState(false);
   const baseColor = CARD_COLORS[index % CARD_COLORS.length];
+  const revealed = !!mentor.photo;
 
   return (
     <div
@@ -104,7 +106,7 @@ const MentorCard = ({
         }}
       />
 
-      {/* Silhouette — unique filter IDs per card */}
+      {/* Photo or silhouette */}
       <div
         style={{
           position: "absolute",
@@ -113,7 +115,16 @@ const MentorCard = ({
           overflow: "hidden",
         }}
       >
-        <SilhouetteSVG id={mentor.id} hovered={hovered} />
+        {revealed ? (
+          <Image
+            src={mentor.photo!}
+            alt={mentor.name ?? "Speaker"}
+            fill
+            style={{ objectFit: "cover", objectPosition: "top" }}
+          />
+        ) : (
+          <SilhouetteSVG id={mentor.id} hovered={hovered} />
+        )}
       </div>
 
       {/* Dark overlay */}
@@ -121,7 +132,9 @@ const MentorCard = ({
         style={{
           position: "absolute",
           inset: 0,
-          background: hovered
+          background: revealed
+            ? "linear-gradient(to top, rgba(5,10,26,0.92) 0%, rgba(5,10,26,0.3) 50%, rgba(0,0,0,0) 100%)"
+            : hovered
             ? "linear-gradient(to top, rgba(43,62,191,0.92) 0%, rgba(10,15,60,0.6) 55%, rgba(0,0,0,0.15) 100%)"
             : "linear-gradient(to top, rgba(5,10,26,0.95) 0%, rgba(5,10,26,0.6) 50%, rgba(5,10,26,0.1) 100%)",
           transition: "background 0.3s ease",
@@ -129,29 +142,31 @@ const MentorCard = ({
         }}
       />
 
-      {/* CLASSIFIED stamp */}
-      <div
-        style={{
-          position: "absolute",
-          top: "14px",
-          right: "14px",
-          zIndex: 5,
-          transform: "rotate(8deg)",
-          opacity: hovered ? 0 : 0.8,
-          transition: "opacity 0.2s",
-          border: "2px solid rgba(232,193,42,0.7)",
-          padding: "3px 7px",
-          fontFamily: "'Poppins', sans-serif",
-          fontWeight: 900,
-          fontSize: "8px",
-          color: "rgba(232,193,42,0.85)",
-          textTransform: "uppercase" as const,
-          letterSpacing: "0.18em",
-          userSelect: "none" as const,
-        }}
-      >
-        Classified
-      </div>
+      {/* CLASSIFIED stamp — only when identity hidden */}
+      {!revealed && (
+        <div
+          style={{
+            position: "absolute",
+            top: "14px",
+            right: "14px",
+            zIndex: 5,
+            transform: "rotate(8deg)",
+            opacity: hovered ? 0 : 0.8,
+            transition: "opacity 0.2s",
+            border: "2px solid rgba(232,193,42,0.7)",
+            padding: "3px 7px",
+            fontFamily: "'Poppins', sans-serif",
+            fontWeight: 900,
+            fontSize: "8px",
+            color: "rgba(232,193,42,0.85)",
+            textTransform: "uppercase" as const,
+            letterSpacing: "0.18em",
+            userSelect: "none" as const,
+          }}
+        >
+          Classified
+        </div>
+      )}
 
       {/* Table number */}
       <div
@@ -192,8 +207,24 @@ const MentorCard = ({
             textShadow: "0 2px 8px rgba(0,0,0,0.6)",
           }}
         >
-          {REDACTED}
+          {revealed ? mentor.name : REDACTED}
         </div>
+
+        {revealed && mentor.tagline && (
+          <div
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 500,
+              fontStyle: "italic",
+              fontSize: "clamp(9px, 0.9vw, 11px)",
+              color: "rgba(255,255,255,0.6)",
+              lineHeight: 1.4,
+              marginBottom: "8px",
+            }}
+          >
+            {mentor.tagline}
+          </div>
+        )}
 
         <div
           style={{
@@ -210,21 +241,23 @@ const MentorCard = ({
           {mentor.theme}
         </div>
 
-        <div
-          style={{
-            fontFamily: "'Poppins', sans-serif",
-            fontWeight: 900,
-            fontSize: "8px",
-            color: hovered
-              ? "rgba(232,193,42,0.8)"
-              : "rgba(255,255,255,0.3)",
-            textTransform: "uppercase" as const,
-            letterSpacing: "0.2em",
-            transition: "color 0.2s",
-          }}
-        >
-          {hovered ? "The reveal is coming ✦" : "Identity — classified"}
-        </div>
+        {!revealed && (
+          <div
+            style={{
+              fontFamily: "'Poppins', sans-serif",
+              fontWeight: 900,
+              fontSize: "8px",
+              color: hovered
+                ? "rgba(232,193,42,0.8)"
+                : "rgba(255,255,255,0.3)",
+              textTransform: "uppercase" as const,
+              letterSpacing: "0.2em",
+              transition: "color 0.2s",
+            }}
+          >
+            {hovered ? "The reveal is coming ✦" : "Identity — classified"}
+          </div>
+        )}
       </div>
     </div>
   );
