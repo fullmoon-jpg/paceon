@@ -4,7 +4,7 @@ import Image from "next/image";
 
 const MENTORS = [
   { id: 1, table: "Table 01", theme: "Building Partnerships That Actually Work", name: "Dinno Ardiansyah", photo: "/images/dinno.jpg", tagline: "The Man behind Minutes of Manager, Muda Mudahan, and MURKA." },
-  { id: 2, table: "Table 02", theme: "Scaling When It's Still Early", name: "Novan Adrian", photo: "/images/novann.png", tagline: "The Tech Mind Empowering Millions of UMKM Through Qasir.id" },
+  { id: 2, table: "Table 02", theme: "Scaling When It's Still Early", name: "Novan Adrian", photo: "/images/novannn.png", tagline: "The Tech Mind Empowering Millions of UMKM Through Qasir.id" },
   { id: 3, table: "Table 03", theme: "Building Brands People Actually Want" },
   { id: 4, table: "Table 04", theme: "Running a Business That's Also Art" },
   { id: 5, table: "Table 05", theme: "Leading Yourself, Building for Others" },
