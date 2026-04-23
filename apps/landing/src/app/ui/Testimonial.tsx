@@ -218,13 +218,13 @@ const TestimonialCTASection = ({
 
             <div className="mb-4">
               <h4 className="font-brand text-lg sm:text-xl md:text-2xl text-[#3f3e3d] mb-2 uppercase">
-                Upcoming Event — LOOP #1
+                Upcoming Event — Talk n Tales
               </h4>
               <p className="font-body text-xs sm:text-sm text-[#3f3e3d]/80 mb-2">
-                A space for young people to learn business. Limited seats — save yours now.
+                A space for Gen-Z Founders can truly be themselves.
               </p>
               <p className="font-body text-xs sm:text-sm font-semibold text-[#3f3e3d]">
-                #1 LOOP Series will discuss about "How To Create Content Like Creator".
+                Connecting Visions: Uniting the visions of Gen-Z founders.
               </p>
             </div>
 

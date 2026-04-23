@@ -19,8 +19,8 @@ interface FormData {
   agreeToShare: boolean;
 }
 
-const TOTAL_SEATS = 32;
-const SEATS_FILLED = 15;
+const TOTAL_SEATS = 30;
+const SEATS_FILLED = 20;
 
 const INDUSTRIES = [
   "Technology","Creative & Media","E-commerce","Fashion & Lifestyle",
