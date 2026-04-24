@@ -19,6 +19,8 @@ interface FormData {
   agreeToShare: boolean;
 }
 
+type FieldErrors = Partial<Record<keyof FormData, string>>;
+
 const TOTAL_SEATS = 30;
 const SEATS_FILLED = 20;
 
@@ -117,48 +119,67 @@ const FieldLabel = ({ children, required }: { children: React.ReactNode; require
   </label>
 );
 
+const FieldError = ({ msg }: { msg?: string }) =>
+  msg ? (
+    <p style={{ fontFamily: "'Poppins', sans-serif", fontWeight: 600, fontSize: "11px", color: "#E8121A", margin: "6px 0 0", display: "flex", alignItems: "center", gap: "4px", letterSpacing: "0.02em" }}>
+      ⚠ {msg}
+    </p>
+  ) : null;
+
 const inputBase: React.CSSProperties = {
   width: "100%", fontFamily: "'Poppins', sans-serif", fontWeight: 600,
   fontSize: "clamp(13px, 1.3vw, 15px)", color: "#1a1a1a", background: "#fff",
-  border: "3px solid #2B3EBF", borderRadius: 0, padding: "12px 14px",
+  borderWidth: "3px", borderStyle: "solid", borderColor: "#2B3EBF",
+  borderRadius: 0, padding: "12px 14px",
   outline: "none", transition: "border-color 0.15s, box-shadow 0.15s",
   appearance: "none" as const, WebkitAppearance: "none" as const, boxSizing: "border-box" as const,
 };
 
-const InputField = ({ label, name, type = "text", placeholder, value, onChange, required }: {
+const InputField = ({ label, name, type = "text", placeholder, value, onChange, required, error }: {
   label: string; name: keyof FormData; type?: string; placeholder?: string;
-  value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; required?: boolean;
-}) => (
-  <div style={{ marginBottom: "24px" }}>
-    <FieldLabel required={required}>{label}</FieldLabel>
-    <input type={type} name={name} placeholder={placeholder} value={value} onChange={onChange} required={required} style={inputBase}
-      onFocus={(e) => { e.currentTarget.style.borderColor = "#E8C12A"; e.currentTarget.style.boxShadow = "4px 4px 0px #2B3EBF"; }}
-      onBlur={(e) => { e.currentTarget.style.borderColor = "#2B3EBF"; e.currentTarget.style.boxShadow = "none"; }}
-    />
-  </div>
-);
+  value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; required?: boolean; error?: string;
+}) => {
+  const hasError = Boolean(error);
+  return (
+    <div style={{ marginBottom: "24px" }} data-field={name}>
+      <FieldLabel required={required}>{label}</FieldLabel>
+      <input
+        type={type} name={name} placeholder={placeholder} value={value} onChange={onChange} required={required}
+        style={{ ...inputBase, borderColor: hasError ? "#E8121A" : "#2B3EBF", background: hasError ? "#fff5f5" : "#fff" }}
+        onFocus={(e) => { e.currentTarget.style.borderColor = "#E8C12A"; e.currentTarget.style.boxShadow = "4px 4px 0px #2B3EBF"; e.currentTarget.style.background = "#fff"; }}
+        onBlur={(e) => { e.currentTarget.style.borderColor = hasError ? "#E8121A" : "#2B3EBF"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = hasError ? "#fff5f5" : "#fff"; }}
+      />
+      <FieldError msg={error} />
+    </div>
+  );
+};
 
-const TextareaField = ({ label, name, placeholder, value, onChange, required, rows = 4 }: {
+const TextareaField = ({ label, name, placeholder, value, onChange, required, rows = 4, error }: {
   label: string; name: keyof FormData; placeholder?: string; value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; required?: boolean; rows?: number;
-}) => (
-  <div style={{ marginBottom: "24px" }}>
-    <FieldLabel required={required}>{label}</FieldLabel>
-    <textarea name={name} placeholder={placeholder} value={value} onChange={onChange} required={required} rows={rows}
-      style={{ ...inputBase, resize: "vertical", minHeight: "110px" }}
-      onFocus={(e) => { e.currentTarget.style.borderColor = "#E8C12A"; e.currentTarget.style.boxShadow = "4px 4px 0px #2B3EBF"; }}
-      onBlur={(e) => { e.currentTarget.style.borderColor = "#2B3EBF"; e.currentTarget.style.boxShadow = "none"; }}
-    />
-  </div>
-);
+  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void; required?: boolean; rows?: number; error?: string;
+}) => {
+  const hasError = Boolean(error);
+  return (
+    <div style={{ marginBottom: "24px" }} data-field={name}>
+      <FieldLabel required={required}>{label}</FieldLabel>
+      <textarea
+        name={name} placeholder={placeholder} value={value} onChange={onChange} required={required} rows={rows}
+        style={{ ...inputBase, resize: "vertical", minHeight: "110px", borderColor: hasError ? "#E8121A" : "#2B3EBF", background: hasError ? "#fff5f5" : "#fff" }}
+        onFocus={(e) => { e.currentTarget.style.borderColor = "#E8C12A"; e.currentTarget.style.boxShadow = "4px 4px 0px #2B3EBF"; e.currentTarget.style.background = "#fff"; }}
+        onBlur={(e) => { e.currentTarget.style.borderColor = hasError ? "#E8121A" : "#2B3EBF"; e.currentTarget.style.boxShadow = "none"; e.currentTarget.style.background = hasError ? "#fff5f5" : "#fff"; }}
+      />
+      <FieldError msg={error} />
+    </div>
+  );
+};
 
-const RadioGroup = ({ label, name, options, value, onChange, required }: {
+const RadioGroup = ({ label, name, options, value, onChange, required, error }: {
   label: string; name: keyof FormData; options: string[]; value: string;
-  onChange: (val: string) => void; required?: boolean;
+  onChange: (val: string) => void; required?: boolean; error?: string;
 }) => (
-  <div style={{ marginBottom: "28px" }}>
+  <div style={{ marginBottom: "28px" }} data-field={name}>
     <FieldLabel required={required}>{label}</FieldLabel>
-    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px" }}>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: "10px", border: error ? "2px solid #E8121A" : "none", padding: error ? "12px" : "0", background: error ? "#fff5f5" : "transparent" }}>
       {options.map((opt) => {
         const selected = value === opt;
         return (
@@ -172,11 +193,12 @@ const RadioGroup = ({ label, name, options, value, onChange, required }: {
         );
       })}
     </div>
+    <FieldError msg={error} />
   </div>
 );
 
-const CheckboxGroup = ({ label, options, values, onChange, required, hint }: {
-  label: string; options: string[]; values: string[]; onChange: (vals: string[]) => void; required?: boolean; hint?: string;
+const CheckboxGroup = ({ label, options, values, onChange, required, hint, error }: {
+  label: string; options: string[]; values: string[]; onChange: (vals: string[]) => void; required?: boolean; hint?: string; error?: string;
 }) => {
   const toggle = (opt: string) => {
     if (values.includes(opt)) onChange(values.filter((v) => v !== opt));
@@ -190,7 +212,7 @@ const CheckboxGroup = ({ label, options, values, onChange, required, hint }: {
           {hint}
         </div>
       )}
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px", border: error ? "2px solid #E8121A" : "none", padding: error ? "12px" : "0", background: error ? "#fff5f5" : "transparent" }}>
         {options.map((opt) => {
           const checked = values.includes(opt);
           return (
@@ -204,19 +226,23 @@ const CheckboxGroup = ({ label, options, values, onChange, required, hint }: {
           );
         })}
       </div>
+      <FieldError msg={error} />
     </div>
   );
 };
 
-const InlineCheckbox = ({ checked, onChange, children }: { checked: boolean; onChange: () => void; children: React.ReactNode }) => (
-  <label style={{ display: "flex", alignItems: "flex-start", gap: "12px", cursor: "pointer" }}>
-    <div style={{ position: "relative", flexShrink: 0, marginTop: "2px" }} onClick={onChange}>
-      <div style={{ width: "22px", height: "22px", border: "3px solid #2B3EBF", background: checked ? "#2B3EBF" : "#fff", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s", cursor: "pointer" }}>
-        {checked && <svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4L4.5 7.5L11 1" stroke="#E8C12A" strokeWidth="2.5" strokeLinecap="square" /></svg>}
+const InlineCheckbox = ({ checked, onChange, children, error }: { checked: boolean; onChange: () => void; children: React.ReactNode; error?: string }) => (
+  <div>
+    <label style={{ display: "flex", alignItems: "flex-start", gap: "12px", cursor: "pointer" }}>
+      <div style={{ position: "relative", flexShrink: 0, marginTop: "2px" }} onClick={onChange}>
+        <div style={{ width: "22px", height: "22px", border: `3px solid ${error ? "#E8121A" : "#2B3EBF"}`, background: checked ? "#2B3EBF" : (error ? "#fff5f5" : "#fff"), display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s", cursor: "pointer" }}>
+          {checked && <svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4L4.5 7.5L11 1" stroke="#E8C12A" strokeWidth="2.5" strokeLinecap="square" /></svg>}
+        </div>
       </div>
-    </div>
-    <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(12px, 1.2vw, 14px)", color: "rgba(0,0,0,0.7)", lineHeight: 1.65 }}>{children}</span>
-  </label>
+      <span style={{ fontFamily: "'Poppins', sans-serif", fontSize: "clamp(12px, 1.2vw, 14px)", color: "rgba(0,0,0,0.7)", lineHeight: 1.65 }}>{children}</span>
+    </label>
+    <FieldError msg={error} />
+  </div>
 );
 
 const SectionDivider = ({ title }: { title: string }) => (
@@ -301,6 +327,55 @@ const FomoBar = () => {
   );
 };
 
+/* ─── Validation ────────────────────────────────────────── */
+function validate(formData: FormData): FieldErrors {
+  const errs: FieldErrors = {};
+
+  if (!formData.fullName.trim())
+    errs.fullName = "Full name is required.";
+
+  if (!formData.email.trim()) {
+    errs.email = "Email address is required.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    errs.email = "Please enter a valid email address (e.g. you@example.com).";
+  }
+
+  if (!formData.whatsapp.trim()) {
+    errs.whatsapp = "WhatsApp number is required.";
+  } else if (!/^[+\d][\d\s\-().]{6,}$/.test(formData.whatsapp)) {
+    errs.whatsapp = "Please enter a valid WhatsApp number (e.g. +62 812 xxxx xxxx).";
+  }
+
+  if (!formData.instagram.trim())
+    errs.instagram = "Instagram handle is required (e.g. @yourhandle).";
+
+  if (!formData.linkedin.trim())
+    errs.linkedin = "LinkedIn profile URL is required (e.g. linkedin.com/in/yourname).";
+
+  if (!formData.businessName.trim())
+    errs.businessName = "Business or startup name is required.";
+
+  if (!formData.role.trim())
+    errs.role = "Your role is required (e.g. Founder, CEO, Head of Marketing).";
+
+  if (!formData.industry)
+    errs.industry = "Please select your industry.";
+
+  if (formData.topicInterest.length < 2)
+    errs.topicInterest = `Please select at least 2 discussion topics (you've selected ${formData.topicInterest.length}).`;
+
+  if (!formData.mainReason.trim())
+    errs.mainReason = "Please tell us your main reason for joining — be genuine, we read every submission.";
+
+  if (formData.lookingFor.length === 0)
+    errs.lookingFor = "Please select at least one option for what you're looking for.";
+
+  if (!formData.agreeToTerms)
+    errs.agreeToTerms = "You must agree to the Terms & Conditions to submit your registration.";
+
+  return errs;
+}
+
 /* ─── Main Page ─────────────────────────────────────────── */
 const TalkNTalesRegisterPage = () => {
   const [formData, setFormData] = useState<FormData>({
@@ -313,20 +388,35 @@ const TalkNTalesRegisterPage = () => {
 
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [showTnC, setShowTnC] = useState(false);
+
+  const clearFieldError = (name: keyof FormData) => {
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => { const next = { ...prev }; delete next[name]; return next; });
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({ ...prev, [name]: type === "checkbox" ? (e.target as HTMLInputElement).checked : value }));
+    clearFieldError(name as keyof FormData);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (formData.lookingFor.length === 0) { setError("Please select at least one option for what you're looking for."); return; }
-    if (formData.topicInterest.length < 2) { setError("Please select at least 2 discussion topics you're interested in."); return; }
-    if (!formData.role) { setError("Please fill in your role."); return; }
-    setError(null);
+    const errs = validate(formData);
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      // scroll to the first field with an error
+      const firstKey = Object.keys(errs)[0];
+      const el = document.querySelector(`[data-field="${firstKey}"]`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
+    setFieldErrors({});
+    setServerError(null);
     setLoading(true);
     try {
       const res = await fetch("/api/talk-n-tales-2/register", {
@@ -351,7 +441,7 @@ const TalkNTalesRegisterPage = () => {
       if (!res.ok || !data.success) throw new Error(data.message || "Registration failed");
       setSubmitted(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+      setServerError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -406,7 +496,7 @@ const TalkNTalesRegisterPage = () => {
       {showTnC && (
         <TnCModal
           onClose={() => setShowTnC(false)}
-          onAgree={() => { setFormData((prev) => ({ ...prev, agreeToTerms: true })); setShowTnC(false); }}
+          onAgree={() => { setFormData((prev) => ({ ...prev, agreeToTerms: true })); clearFieldError("agreeToTerms"); setShowTnC(false); }}
         />
       )}
 
@@ -433,14 +523,13 @@ const TalkNTalesRegisterPage = () => {
 
               <SectionDivider title="Personal Info" />
               <div className="tnt-form-grid">
-                <InputField label="Full Name" name="fullName" placeholder="e.g. Budi Santoso" value={formData.fullName} onChange={handleChange} required />
-                <InputField label="Email Address" name="email" type="email" placeholder="you@email.com" value={formData.email} onChange={handleChange} required />
-                <InputField label="WhatsApp Number" name="whatsapp" type="tel" placeholder="+62 812 xxxx xxxx" value={formData.whatsapp} onChange={handleChange} required />
-                <InputField label="Instagram Handle" name="instagram" placeholder="@yourhandle" value={formData.instagram} onChange={handleChange} required />
-                <InputField label="LinkedIn Profile" name="linkedin" placeholder="linkedin.com/in/yourname" value={formData.linkedin} onChange={handleChange} required />
+                <InputField label="Full Name" name="fullName" placeholder="e.g. Budi Santoso" value={formData.fullName} onChange={handleChange} required error={fieldErrors.fullName} />
+                <InputField label="Email Address" name="email" type="email" placeholder="you@email.com" value={formData.email} onChange={handleChange} required error={fieldErrors.email} />
+                <InputField label="WhatsApp Number" name="whatsapp" type="tel" placeholder="+62 812 xxxx xxxx" value={formData.whatsapp} onChange={handleChange} required error={fieldErrors.whatsapp} />
+                <InputField label="Instagram Handle" name="instagram" placeholder="@yourhandle" value={formData.instagram} onChange={handleChange} required error={fieldErrors.instagram} />
+                <InputField label="LinkedIn Profile" name="linkedin" placeholder="linkedin.com/in/yourname" value={formData.linkedin} onChange={handleChange} required error={fieldErrors.linkedin} />
               </div>
 
-              {/* ── Business Info — Business Name + Role side by side, then Industry full-width ── */}
               <SectionDivider title="Business Info" />
               <div className="tnt-form-grid">
                 <InputField
@@ -450,6 +539,7 @@ const TalkNTalesRegisterPage = () => {
                   value={formData.businessName}
                   onChange={handleChange}
                   required
+                  error={fieldErrors.businessName}
                 />
                 <InputField
                   label="Your Role"
@@ -458,6 +548,7 @@ const TalkNTalesRegisterPage = () => {
                   value={formData.role}
                   onChange={handleChange}
                   required
+                  error={fieldErrors.role}
                 />
               </div>
               <RadioGroup
@@ -465,25 +556,45 @@ const TalkNTalesRegisterPage = () => {
                 name="industry"
                 options={INDUSTRIES}
                 value={formData.industry}
-                onChange={(val) => setFormData((prev) => ({ ...prev, industry: val }))}
+                onChange={(val) => { setFormData((prev) => ({ ...prev, industry: val })); clearFieldError("industry"); }}
                 required
+                error={fieldErrors.industry}
               />
 
               <SectionDivider title="Your Interests" />
-              <CheckboxGroup
-                label="Which discussions interest you at Talk N Tales?"
-                hint="Pick at least 2."
-                options={TOPIC_INTERESTS}
-                values={formData.topicInterest}
-                onChange={(vals) => setFormData((prev) => ({ ...prev, topicInterest: vals }))}
-                required
-              />
-              <TextareaField label="What is your main reason for joining Talk N Tales?" name="mainReason" placeholder="Tell us briefly — be genuine, we read every submission." value={formData.mainReason} onChange={handleChange} required rows={4} />
-              <CheckboxGroup label="What are you currently looking for?" options={LOOKING_FOR_OPTIONS} values={formData.lookingFor} onChange={(vals) => setFormData((prev) => ({ ...prev, lookingFor: vals }))} required />
+              <div data-field="topicInterest">
+                <CheckboxGroup
+                  label="Which discussions interest you at Talk N Tales?"
+                  hint="Pick at least 2."
+                  options={TOPIC_INTERESTS}
+                  values={formData.topicInterest}
+                  onChange={(vals) => { setFormData((prev) => ({ ...prev, topicInterest: vals })); clearFieldError("topicInterest"); }}
+                  required
+                  error={fieldErrors.topicInterest}
+                />
+              </div>
+              <TextareaField label="What is your main reason for joining Talk N Tales?" name="mainReason" placeholder="Tell us briefly — be genuine, we read every submission." value={formData.mainReason} onChange={handleChange} required rows={4} error={fieldErrors.mainReason} />
+              <div data-field="lookingFor">
+                <CheckboxGroup
+                  label="What are you currently looking for?"
+                  options={LOOKING_FOR_OPTIONS}
+                  values={formData.lookingFor}
+                  onChange={(vals) => { setFormData((prev) => ({ ...prev, lookingFor: vals })); clearFieldError("lookingFor"); }}
+                  required
+                  error={fieldErrors.lookingFor}
+                />
+              </div>
 
               <SectionDivider title="Consent" />
-              <div style={{ marginBottom: "16px" }}>
-                <InlineCheckbox checked={formData.agreeToTerms} onChange={() => { if (!formData.agreeToTerms) setShowTnC(true); else setFormData((prev) => ({ ...prev, agreeToTerms: false })); }}>
+              <div style={{ marginBottom: "16px" }} data-field="agreeToTerms">
+                <InlineCheckbox
+                  checked={formData.agreeToTerms}
+                  onChange={() => {
+                    if (!formData.agreeToTerms) setShowTnC(true);
+                    else { setFormData((prev) => ({ ...prev, agreeToTerms: false })); }
+                  }}
+                  error={fieldErrors.agreeToTerms}
+                >
                   By submitting this form, I confirm that I have read and agree to the{" "}
                   <span onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowTnC(true); }} style={{ color: "#2B3EBF", fontWeight: 700, textDecoration: "underline", cursor: "pointer" }}>Terms & Conditions</span>.{" "}
                   <span style={{ color: "#E8121A", fontWeight: 700 }}>*</span>
@@ -495,16 +606,22 @@ const TalkNTalesRegisterPage = () => {
                 </InlineCheckbox>
               </div>
 
-              {error && (
-                <div style={{ background: "#E8121A", color: "#fff", fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "13px", padding: "12px 16px", marginBottom: "20px", border: "3px solid #a00" }}>⚠ {error}</div>
+              {serverError && (
+                <div style={{ background: "#E8121A", color: "#fff", fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "13px", padding: "12px 16px", marginBottom: "20px", border: "3px solid #a00" }}>⚠ {serverError}</div>
+              )}
+
+              {Object.keys(fieldErrors).length > 0 && (
+                <div style={{ background: "#fff5f5", border: "3px solid #E8121A", fontFamily: "'Poppins', sans-serif", fontWeight: 700, fontSize: "12px", color: "#E8121A", padding: "12px 16px", marginBottom: "20px", letterSpacing: "0.03em" }}>
+                  ⚠ {Object.keys(fieldErrors).length} field{Object.keys(fieldErrors).length > 1 ? "s need" : " needs"} your attention — check the red fields above.
+                </div>
               )}
 
               <button
                 type="submit"
-                disabled={loading || !formData.agreeToTerms}
-                style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(14px, 1.8vw, 18px)", background: formData.agreeToTerms ? "#2B3EBF" : "#aaa", color: "#E8C12A", textTransform: "uppercase", letterSpacing: "0.12em", border: `4px solid ${formData.agreeToTerms ? "#2B3EBF" : "#aaa"}`, padding: "clamp(14px, 2vh, 20px) clamp(36px, 5vw, 64px)", cursor: formData.agreeToTerms ? "pointer" : "not-allowed", transition: "all 0.15s ease", display: "inline-flex", alignItems: "center", gap: "12px", opacity: loading ? 0.75 : 1 }}
-                onMouseEnter={(e) => { if (!formData.agreeToTerms) return; const el = e.currentTarget; el.style.background = "transparent"; el.style.color = "#2B3EBF"; el.style.transform = "translate(-4px,-4px)"; el.style.boxShadow = "8px 8px 0px #2B3EBF"; }}
-                onMouseLeave={(e) => { if (!formData.agreeToTerms) return; const el = e.currentTarget; el.style.background = "#2B3EBF"; el.style.color = "#E8C12A"; el.style.transform = "translate(0,0)"; el.style.boxShadow = "none"; }}
+                disabled={loading}
+                style={{ fontFamily: "'Alfa Slab One', serif", fontSize: "clamp(14px, 1.8vw, 18px)", background: "#2B3EBF", color: "#E8C12A", textTransform: "uppercase", letterSpacing: "0.12em", border: "4px solid #2B3EBF", padding: "clamp(14px, 2vh, 20px) clamp(36px, 5vw, 64px)", cursor: loading ? "not-allowed" : "pointer", transition: "all 0.15s ease", display: "inline-flex", alignItems: "center", gap: "12px", opacity: loading ? 0.75 : 1 }}
+                onMouseEnter={(e) => { if (loading) return; const el = e.currentTarget; el.style.background = "transparent"; el.style.color = "#2B3EBF"; el.style.transform = "translate(-4px,-4px)"; el.style.boxShadow = "8px 8px 0px #2B3EBF"; }}
+                onMouseLeave={(e) => { if (loading) return; const el = e.currentTarget; el.style.background = "#2B3EBF"; el.style.color = "#E8C12A"; el.style.transform = "translate(0,0)"; el.style.boxShadow = "none"; }}
               >
                 {loading ? (<><span style={{ display: "inline-block", animation: "spin 0.8s linear infinite" }}>⟳</span>Submitting...</>) : ("Submit Registration →")}
               </button>
