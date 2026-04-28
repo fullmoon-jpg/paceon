@@ -1,8 +1,8 @@
 "use client";
 import React from "react";
 
-const TOTAL_SEATS = 30;
-const SEATS_FILLED = 20;
+const TOTAL_SEATS = 55;
+const SEATS_FILLED = 40;
 
 const LayeredWordAbout = ({
   text,
