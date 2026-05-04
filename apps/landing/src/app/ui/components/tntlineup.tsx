@@ -8,7 +8,7 @@ const MENTORS = [
   { id: 3, table: "Table 03", theme: "Leading Yourself, Building for Others", name: "Ilona Kakerissa", photo: "/images/ilona.jpeg", tagline: "The Woman Behind Educational Impact and Teach First Indonesia" },
   { id: 4, table: "Table 04", theme: "Building Brands People Actually Want", name: "Suri Hidayat", photo: "/images/suri.png", tagline: "The Research Mind Behind Brands Kapal Api and Bonteh." }, 
   { id: 5, table: "Table 05", theme: "Navigating Investors and Raising Smart",  name: "Rendy Alfuadi", photo: "/images/rendy.png", tagline: "The Founder Fixing Healthcare Operations from the Inside through Healthpro.id."},
-  { id: 6, table: "Table 06", theme: "Running a Business That's Also Art" }, 
+  { id: 6, table: "Table 06", theme: "Running a Business That's Also Art", name: "Herlangga Janottama", photo: "/images/ega.png", tagline: "The Creative Mind Behind Produksi Dari Hati and Endgame."}, 
 ];
 
 const CARD_COLORS = [
