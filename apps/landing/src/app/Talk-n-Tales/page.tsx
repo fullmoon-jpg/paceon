@@ -8,6 +8,7 @@ import TalkNTalesAbout from "../ui/components/tntabout";
 import TalkNTalesCTA from "../ui/components/tntcta";
 import { Analytics } from "@vercel/analytics/next";
 import MentorLineup from "../ui/components/tntlineup";
+import SponsorSection from "../ui/components/tntpartners";
 
 export default function TalkNTalesPage() {
   return (
@@ -33,6 +34,13 @@ export default function TalkNTalesPage() {
         style={{ position: "relative", zIndex: 10 }}
       >
         <MentorLineup />
+      </section>
+
+      <section
+        id="sponsor-section"
+        style={{ position: "relative", zIndex: 10 }}
+      >
+        <SponsorSection />
       </section>
 
       <section

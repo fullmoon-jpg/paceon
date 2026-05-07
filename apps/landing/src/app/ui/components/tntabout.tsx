@@ -2,7 +2,7 @@
 import React from "react";
 
 const TOTAL_SEATS = 55;
-const SEATS_FILLED = 40;
+const SEATS_FILLED = 50;
 
 const LayeredWordAbout = ({
   text,

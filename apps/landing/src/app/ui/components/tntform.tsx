@@ -22,7 +22,7 @@ interface FormData {
 type FieldErrors = Partial<Record<keyof FormData, string>>;
 
 const TOTAL_SEATS = 55;
-const SEATS_FILLED = 40;
+const SEATS_FILLED = 50;
 
 const INDUSTRIES = [
   "Technology","Creative & Media","E-commerce","Fashion & Lifestyle",
