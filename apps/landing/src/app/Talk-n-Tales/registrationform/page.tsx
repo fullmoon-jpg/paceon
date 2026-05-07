@@ -2,7 +2,7 @@
 "use client";
 import { useEffect } from "react";
 import TalkNTalesRegisterPage from "@/app/ui/components/tntform";
-import TNTPartners from "@/app/ui/components/tntpartners";
+import SponsorSection from "@/app/ui/components/tntpartners";
 import Footer from "@/app/ui/footer";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -15,7 +15,7 @@ export default function RegistrationFormPage() {
     <>
       <Analytics />
       <TalkNTalesRegisterPage />
-      <TNTPartners />
+      <SponsorSection />
       <Footer />
     </>
   );
