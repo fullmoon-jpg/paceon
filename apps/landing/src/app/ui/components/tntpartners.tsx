@@ -14,7 +14,7 @@ const sponsors = {
   ],
   official: [
     { name: "Mekari", src: "/images/mekari.png" },
-    { name: "Bonteh", src: "/images/bontea.webp" },
+    { name: "Bonteh", src: "/images/Bontea.webp" },
   ],
   media: [
     { name: "Media 1", src: "/images/karsa.png" },
