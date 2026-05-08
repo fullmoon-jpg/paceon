@@ -1,11 +1,9 @@
-import LoopSatisfactionForm from "../ui/loopfeedbackform"
+import TNTFeedbackForm from "../ui/components/tntfeedbackform";
 
 export default function SatisfactionForm() {
   return (
     <main>
-      <section>
-        <LoopSatisfactionForm />
-      </section>
+      <TNTFeedbackForm />
     </main>
-  )
+  );
 }
